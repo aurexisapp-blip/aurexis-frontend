@@ -195,7 +195,7 @@ export default function Waitlist() {
           </div>
         ) : (
           <>
-            <h1 style={styles.headline}>Get Early Access</h1>
+            <h1 style={styles.headline}>Join the Waitlist</h1>
             <div style={styles.divider} />
             <p style={styles.subheadline}>
               AI-powered stock signals that surface high-conviction trades
@@ -224,7 +224,7 @@ export default function Waitlist() {
                 onMouseDown={(e)  => { e.currentTarget.style.transform = "scale(0.98)"; }}
                 onMouseUp={(e)    => { e.currentTarget.style.transform = "scale(1)"; }}
               >
-                {loading ? "Submitting…" : "Join the Waitlist"}
+                {loading ? "Submitting…" : "Get Notified"}
               </button>
             </form>
           </>
