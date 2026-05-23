@@ -509,7 +509,7 @@ function MethodCard({ num, title, body, index }) {
     <motion.div
       ref={ref}
       style={{
-        flex: "1 1 260px", minWidth: 240,
+        flex: "1 1 260px", minWidth: "min(240px, 85vw)",
         background: "rgba(255,255,255,0.025)", borderRadius: 12,
         border: "1px solid rgba(255,255,255,0.07)",
         padding: "28px 24px",
