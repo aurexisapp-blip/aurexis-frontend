@@ -3,7 +3,7 @@ import emailjs from "@emailjs/browser";
 
 // ── EmailJS config — fill these in ───────────────────────────────────────────
 const EMAILJS_SERVICE_ID  = "service_eu25jjf";
-const EMAILJS_TEMPLATE_ID = "1ff4wrf";
+const EMAILJS_TEMPLATE_ID = "template_rh2z2ya";
 const EMAILJS_PUBLIC_KEY  = "sqJqw5fZ52fgPM038";
 
 const GREEN = "#00ff94";
