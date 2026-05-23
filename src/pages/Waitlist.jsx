@@ -190,7 +190,7 @@ export default function Waitlist() {
             </div>
             <h2 style={styles.successHeadline}>You're on the list.</h2>
             <p style={styles.successSub}>
-              We'll reach out when early access opens. Keep an eye on your inbox.
+              You'll get notified the moment you can access the app.
             </p>
           </div>
         ) : (
