@@ -27,6 +27,14 @@ const GLOBAL_CSS = `
   @keyframes demoSpin {
     to { transform: rotate(360deg); }
   }
+  @media (max-width: 640px) {
+    .stats-bar { flex-direction: column; }
+    .stats-bar-sep { display: none; }
+    .stats-bar-item { padding: 36px 24px !important; }
+    .timeline-wrap { flex-direction: column; align-items: stretch; }
+    .timeline-track { display: none; }
+    .pricing-row { grid-template-columns: 1fr !important; }
+  }
 `;
 function GlobalStyle() { return <style>{GLOBAL_CSS}</style>; }
 
@@ -478,6 +486,7 @@ function StatBarItem({ raw, label, delay }) {
   return (
     <motion.div
       ref={ref}
+      className="stats-bar-item"
       style={{ flex: 1, textAlign: "center", padding: "60px 32px" }}
       initial={{ opacity: 0, y: 16 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -1134,11 +1143,11 @@ export default function Landing({ onGetStarted }) {
         <div style={S.divider} />
 
         {/* ── Stats bar — full width with vertical separators ── */}
-        <div style={S.statsBar}>
+        <div style={S.statsBar} className="stats-bar">
           <StatBarItem raw="75%" label="Win Rate" delay={0} />
-          <div style={S.statsBarSep} />
+          <div style={S.statsBarSep} className="stats-bar-sep" />
           <StatBarItem raw="+4.87%" label="Avg Return Per Trade" delay={110} />
-          <div style={S.statsBarSep} />
+          <div style={S.statsBarSep} className="stats-bar-sep" />
           <StatBarItem raw="1200" label="Stocks Scanned Daily" delay={220} />
         </div>
 
@@ -1152,9 +1161,9 @@ export default function Landing({ onGetStarted }) {
             <p style={S.sectionSub}>Aurexis does the analysis. You make the call.</p>
           </Reveal>
 
-          <div style={S.timelineWrap}>
+          <div style={S.timelineWrap} className="timeline-wrap">
             {/* Connecting line */}
-            <div style={S.timelineTrack} />
+            <div style={S.timelineTrack} className="timeline-track" />
 
             {[
               { num: "01", title: "AI scans 1,200+ stocks after close", desc: "Every evening the engine screens momentum, volume, and technical setups across the full market." },
@@ -1475,7 +1484,7 @@ export default function Landing({ onGetStarted }) {
             <h2 style={S.sectionTitle}>Simple, transparent pricing.</h2>
             <p style={S.sectionSub}>One winning trade covers months of the subscription.</p>
           </Reveal>
-          <div style={S.pricingRow}>
+          <div style={S.pricingRow} className="pricing-row">
             {PRICING_PLANS.map((plan, i) => (
               <PricingCard key={plan.tier} plan={plan} index={i} onGetStarted={onGetStarted} />
             ))}
