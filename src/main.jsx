@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
+import LandingPage from "./pages/LandingPage";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Disclaimer from "./pages/Disclaimer";
@@ -21,7 +22,8 @@ createRoot(rootEl).render(
         <Route path="/disclaimer" element={<Disclaimer />} />
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
-        <Route path="/*"          element={<App />} />
+        <Route path="/app/*" element={<App />} />
+        <Route path="/*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
