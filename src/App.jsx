@@ -2004,7 +2004,7 @@ function AppInner() {
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
 
-  const [tab, setTab] = useState("dashboard");
+  const [tab, setTab] = useState("landing");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const cmdInputRef = useRef(null);
 
