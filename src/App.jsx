@@ -4278,7 +4278,7 @@ async function loadWatchlistLive() {
               {recentPicksData.length > 0 ? <div className="cardSub">Last AI trade decisions.</div> : null}
             </div>
           </div>
-          <div className="cardBody" style={{ padding: 0 }}>
+          <div className="cardBody" style={{ padding: 0, maxHeight: 400, overflowY: "auto" }}>
             {errRecentPicks && !recentPicksData.length ? (
               <div className="mutedSmall" style={{ padding: "12px 18px" }}>{errRecentPicks}</div>
             ) : !recentPicksData.length ? (
@@ -4303,7 +4303,7 @@ async function loadWatchlistLive() {
                       if (s) symTotals[s] = (symTotals[s] || 0) + 1;
                     });
                     const symSeen = {};
-                    return recentPicksData.slice(0, 5).map((pick, i) => {
+                    return recentPicksData.map((pick, i) => {
                     const sym = normalizeSymbol(pick?.symbol || pick?.ticker || "");
                     symSeen[sym] = (symSeen[sym] || 0) + 1;
                     const displaySym = symTotals[sym] > 1 ? `${sym} #${symSeen[sym]}` : sym;
@@ -6775,7 +6775,7 @@ async function loadWatchlistLive() {
             </div>
           )}
 
-          <div className="cardBody" style={{ padding: 0 }}>
+          <div className="cardBody" style={{ padding: 0, maxHeight: 400, overflowY: "auto" }}>
             {journalTrades.length === 0 ? (
               <div style={{ padding: "48px 20px", textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 14, opacity: 0.15 }}>▤</div>
