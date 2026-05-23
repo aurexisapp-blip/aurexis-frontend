@@ -1130,17 +1130,6 @@ export default function Landing({ onGetStarted }) {
           </motion.div>
         </section>
 
-        {/* ── Proof section — Bloomberg terminal cards ── */}
-        <div style={{ padding: "0 0 72px" }}>
-          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 28px" }}>
-            <Reveal delay={0}>
-              <div style={S.proofSectionLabel}>Verified Picks</div>
-              <div style={S.proofSectionTitle}>Real trades. Real numbers.</div>
-              <div style={S.proofSectionSub}>Every pick is paper-traded on Alpaca and independently verifiable.</div>
-            </Reveal>
-          </div>
-          <ProofStrip />
-        </div>
 
         <div style={S.divider} />
 
