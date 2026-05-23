@@ -568,7 +568,7 @@ function PricingCard({ plan, index, onGetStarted }) {
         whileHover={btnHover}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        onClick={onGetStarted}
+        onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSfbm7SQuz0LpD4nNHlh6mU639N8FhaRRvsqU5dsWZcCQUHGFA/viewform", "_blank")}
       >
         {btnLabel}
       </motion.button>
@@ -1034,7 +1034,7 @@ export default function Landing({ onGetStarted }) {
               whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={onGetStarted}
+              onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSfbm7SQuz0LpD4nNHlh6mU639N8FhaRRvsqU5dsWZcCQUHGFA/viewform", "_blank")}
             >
               Get Today's Pick →
             </motion.button>
@@ -1121,7 +1121,7 @@ export default function Landing({ onGetStarted }) {
               transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              onClick={onGetStarted}
+              onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSfbm7SQuz0LpD4nNHlh6mU639N8FhaRRvsqU5dsWZcCQUHGFA/viewform", "_blank")}
             >
               <span>Get Today's Pick</span>
               <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>
