@@ -977,17 +977,17 @@ export default function Landing({ onGetStarted }) {
     {
       cardStyle: S.pricingCard, badge: null, tier: "Free", price: "$0", period: "forever",
       features: [["✓","Yesterday's AI pick"],["✓","Top movers dashboard"],["✓","1 stock analysis per day"],["–","Today's pick (delayed 24h)"],["–","Entry / stop / target levels"]],
-      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get started free", featuredColor: null,
+      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Join the Waitlist", featuredColor: null,
     },
     {
       cardStyle: S.pricingCardFeatured, badge: "Most Popular", tier: "Starter", price: "$9", period: "per month",
       features: [["✓","Today's AI pick, live"],["✓","Full entry, stop & target"],["✓","AI analysis & reasoning"],["✓","Trade journal"]],
-      btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Start for $9 / month", featuredColor: "rgba(255,255,255,0.72)",
+      btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Join the Waitlist", featuredColor: "rgba(255,255,255,0.72)",
     },
     {
       cardStyle: S.pricingCard, badge: null, tier: "Pro", price: "$29", period: "per month",
       features: [["✓","Everything in Starter"],["✓","Priority pick alerts"],["✓","Sector momentum alerts"],["✓","Portfolio-aware analysis"],["✓","Priority support"]],
-      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Go Pro", featuredColor: null,
+      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Join the Waitlist", featuredColor: null,
     },
     {
       cardStyle: S.pricingCardElite, badge: "For serious traders", badgeStyle: S.pricingBadgeElite,
@@ -1002,7 +1002,7 @@ export default function Landing({ onGetStarted }) {
       ],
       btnStyle: S.pricingBtnElite,
       btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(245,158,11,0.32)" },
-      btnLabel: "Go Elite",
+      btnLabel: "Join the Waitlist",
       featuredColor: "rgba(253,230,138,0.75)",
       checkColor: "#f59e0b",
     },
