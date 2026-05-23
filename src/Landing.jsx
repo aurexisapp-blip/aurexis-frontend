@@ -34,6 +34,7 @@ const GLOBAL_CSS = `
     .timeline-wrap { flex-direction: column; align-items: stretch; }
     .timeline-track { display: none; }
     .pricing-row { grid-template-columns: 1fr !important; }
+    .dash-sidebar, .demo-sidebar { display: none; }
   }
 `;
 function GlobalStyle() { return <style>{GLOBAL_CSS}</style>; }
@@ -727,7 +728,7 @@ function ProductDemo() {
         }} />
 
         {/* Sidebar */}
-        <div style={{
+        <div className="demo-sidebar" style={{
           width: 168, background: "#050709",
           borderRight: "1px solid rgba(255,255,255,0.05)",
           padding: "18px 0", flexShrink: 0,
@@ -1224,7 +1225,7 @@ export default function Landing({ onGetStarted }) {
               {/* Dashboard layout */}
               <div style={{ display: "flex", background: "#07090e" }}>
                 {/* Sidebar */}
-                <div style={{
+                <div className="dash-sidebar" style={{
                   width: 186, background: "#050709", borderRight: "1px solid rgba(255,255,255,0.05)",
                   padding: "18px 0", flexShrink: 0,
                 }}>
