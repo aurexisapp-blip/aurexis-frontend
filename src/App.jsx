@@ -2723,7 +2723,7 @@ async function loadWatchlistLive() {
     setLoadingRecentPicks(true);
     setErrRecentPicks("");
     try {
-      const data = await apiGet("/portfolio/picks");
+      const data = await apiGet("/performance/picks");
       const picks = Array.isArray(data?.picks) ? data.picks
         : Array.isArray(data?.items) ? data.items
         : Array.isArray(data?.data) ? data.data
