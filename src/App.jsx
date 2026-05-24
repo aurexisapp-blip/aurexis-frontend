@@ -2772,17 +2772,27 @@ async function loadWatchlistLive() {
     if (!data || typeof data !== "object") return null;
     const tp = data.trade_plan || {};
     const ep = data.execution_plan || {};
-    const tech = data.technical_analysis || {};
+    const tech = data.technicals?.technical_analysis || data.technical_analysis || {};
     const sentimentRaw = data.news_sentiment || {};
     const thesis = data.trade_thesis || {};
     const human = data.human_explanation || {};
     const targets = Array.isArray(tp.targets) ? tp.targets : [];
+    const bp = data.best_pick && typeof data.best_pick === "object" ? data.best_pick : null;
     return {
       ...data,
       ticker: data.ticker || data.symbol,
-      aiScore: Math.round(data.ai_score_0_100 ?? (data.ai_score_0_10 ?? 0) * 10),
-      executionScore: Math.round(data.execution_score_0_100 ?? (data.execution_score_0_10 ?? 0) * 10),
-      confidence: Math.round((data.confidence_0_10 ?? data.confidence ?? 0) * 10),
+      aiScore: Math.round(
+        bp?.ai_score_0_100 ?? data.ai_score_0_100 ??
+        (bp?.ai_score_0_10 ?? data.ai_score_0_10 ?? 0) * 10
+      ),
+      executionScore: Math.round(
+        bp?.execution_score_0_100 ?? data.execution_score_0_100 ??
+        (bp?.execution_score_0_10 ?? data.execution_score_0_10 ?? 0) * 10
+      ),
+      confidence: Math.round(
+        bp?.confidence_0_100 ?? data.confidence_0_100 ??
+        (bp?.confidence_0_10 ?? data.confidence_0_10 ?? data.confidence ?? 0) * 10
+      ),
       entryPrice: tp.entry ?? null,
       stopPrice: tp.stop ?? null,
       gain: tp.gain_pct ?? null,
@@ -3043,7 +3053,7 @@ async function loadWatchlistLive() {
       return Math.max(0, Math.min(10, n <= 10 ? n : n / 10));
     };
 
-    const aiScore = best?.ai_score_0_10 ?? best?.ai_score ?? best?.score;
+    const aiScore = (best?.ai_score_0_100 != null ? best.ai_score_0_100 / 10 : null) ?? best?.ai_score_0_10 ?? best?.ai_score ?? best?.score;
     const executionScore = best?.execution_score_0_10 ?? best?.execution_score;
     const confidenceScore = best?.confidence_0_10 ?? best?.confidence;
     const aiScore10 = toScore10(aiScore);
@@ -3474,7 +3484,7 @@ async function loadWatchlistLive() {
                   ) : null}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <AIScoreRing score={ai100} confidence={analysisObj?.confidence ?? null} loading={false} />
-                    <AIScoreRing score={exec100} label="EXECUTION" size={108} strokeWidth={11} loading={false} showConfidence={false} />
+                    <AIScoreRing score={exec100} label="EXECUTION" size={160} strokeWidth={14} loading={false} showConfidence={false} />
                   </div>
                 </div>
               );
@@ -5927,74 +5937,26 @@ async function loadWatchlistLive() {
       setCandidatesError("");
       try {
         const controller = new AbortController();
-        const t = window.setTimeout(() => controller.abort(), 90000);
-        const res = await fetch(
-          `${API_BASE_URL}/best_pick_v2?max_scan=200&allow_llm_news=false`,
-          { signal: controller.signal }
-        );
+        const t = window.setTimeout(() => controller.abort(), 30000);
+        const res = await fetch(`${API_BASE_URL}/watchlist`, { signal: controller.signal });
         window.clearTimeout(t);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const raw = await res.json();
 
-        const payload = raw && typeof raw === "object" ? raw : null;
-        const data =
-          (payload?.data && typeof payload.data === "object" ? payload.data : null) ||
-          (payload?.result && typeof payload.result === "object" ? payload.result : null) ||
-          (payload?.payload && typeof payload.payload === "object" ? payload.payload : null) ||
-          payload;
-
-        // Try multiple candidate array field names
-        let candidateArr =
-          (Array.isArray(data?.candidates) ? data.candidates : null) ||
-          (Array.isArray(data?.close_candidates) ? data.close_candidates : null) ||
-          (Array.isArray(data?.runners_up) ? data.runners_up : null) ||
-          (Array.isArray(data?.watchlist_candidates) ? data.watchlist_candidates : null) ||
-          (Array.isArray(data?.near_picks) ? data.near_picks : null) ||
-          (Array.isArray(data?.all_candidates) ? data.all_candidates : null) ||
-          (Array.isArray(data?.ranked_candidates) ? data.ranked_candidates : null) ||
-          (Array.isArray(raw?.candidates) ? raw.candidates : null) ||
+        const tickers =
+          (Array.isArray(raw?.watchlist) ? raw.watchlist : null) ||
+          (Array.isArray(raw?.symbols) ? raw.symbols : null) ||
+          (Array.isArray(raw?.tickers) ? raw.tickers : null) ||
+          (Array.isArray(raw) ? raw : null) ||
           [];
 
-        // Fallback: if the response itself is a single no-trade result, wrap it
-        if (candidateArr.length === 0) {
-          const bp =
-            (data?.best_pick && typeof data.best_pick === "object" ? data.best_pick : null) ||
-            (data?.pick && typeof data.pick === "object" ? data.pick : null) ||
-            null;
-          const sym = normalizeSymbol(bp?.symbol || bp?.ticker || data?.symbol || data?.ticker || "");
-          if (sym && (bp?.is_trade === false || data?.is_trade === false || bp?.no_trade_reason || data?.no_trade_reason)) {
-            candidateArr = [bp || data];
-          }
-        }
-
-        const normalize10 = (v) => {
-          const n = Number(v);
-          if (!Number.isFinite(n) || n < 0) return null;
-          // Values 0-1 scale → multiply by 10; values 0-10 → keep; values 0-100 → divide by 10
-          if (n <= 1) return Math.round(n * 100) / 10;
-          if (n <= 10) return Math.round(n * 10) / 10;
-          return Math.round(n) / 10;
-        };
-
-        const processed = candidateArr
-          .filter((c) => c && typeof c === "object")
-          .map((c) => {
-            const sym = normalizeSymbol(c?.symbol || c?.ticker || "");
+        const processed = tickers
+          .map((item) => {
+            const sym = normalizeSymbol(typeof item === "string" ? item : (item?.symbol || item?.ticker || ""));
             if (!sym || /ZVZ|ZVZZT|TEST/.test(sym)) return null;
-
-            const rawScore =
-              c?.ai_score_0_10 ?? c?.ai_score ?? c?.score_0_10 ?? c?.score ??
-              c?.confidence_0_10 ?? c?.confidence ?? c?.technical_score ?? null;
-            const score = rawScore !== null ? normalize10(rawScore) : null;
-
-            const edgeSignals = Array.isArray(c?.edge_signals) ? c.edge_signals : [];
-            const noTradeReason = String(c?.no_trade_reason || c?.rejection_reason || "").trim();
-
-            return { symbol: sym, score, edgeSignals, noTradeReason };
+            return { symbol: sym, score: null, edgeSignals: [], noTradeReason: "" };
           })
-          .filter(Boolean)
-          .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-          .slice(0, 5);
+          .filter(Boolean);
 
         setSystemCandidates(processed);
       } catch (e) {
@@ -6250,13 +6212,14 @@ async function loadWatchlistLive() {
         const raw = await res.json();
         const d = unwrapAnalysis(raw);
         if (!d) return { symbol: sym, error: true };
-        const tech = d?.technical_analysis || {};
+        const tech = d?.technicals?.technical_analysis || d?.technical_analysis || {};
+        const dbp = d?.best_pick && typeof d.best_pick === "object" ? d.best_pick : null;
         return {
           symbol: sym,
-          aiScore: toScore100(d?.ai_score_0_100 ?? d?.ai_score_0_10 ?? d?.ai_score ?? d?.technicals?.ai_score),
+          aiScore: toScore100(dbp?.ai_score_0_100 ?? d?.ai_score_0_100 ?? d?.ai_score_0_10 ?? d?.ai_score ?? d?.technicals?.ai_score),
           momentum: toScore100(tech?.momentum ?? d?.technicals?.momentum),
           trend: toScore100(tech?.trend ?? d?.technicals?.trend),
-          confidence: toConf10(d?.confidence_0_10 ?? d?.confidence_10 ?? d?.confidence),
+          confidence: toConf10(d?.confidence_0_10 ?? d?.confidence_10 ?? (dbp?.confidence_0_100 != null ? dbp.confidence_0_100 / 10 : null) ?? (d?.confidence_0_100 != null ? d.confidence_0_100 / 10 : null) ?? d?.confidence),
           direction: extractDir(d),
           error: false,
         };
