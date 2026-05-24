@@ -9,7 +9,6 @@ import Disclaimer from "./pages/Disclaimer";
 import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Waitlist from "./pages/Waitlist";
-import Auth from "./pages/Auth";
 import "./index.css";
 
 const rootEl = document.getElementById("root");
@@ -25,8 +24,6 @@ createRoot(rootEl).render(
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
         <Route path="/waitlist"   element={<Waitlist />} />
-        <Route path="/login"      element={<Auth />} />
-        <Route path="/signup"     element={<Auth />} />
         <Route path="/app/*" element={<App />} />
         <Route path="/*" element={<LandingPage />} />
       </Routes>
