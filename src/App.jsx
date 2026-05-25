@@ -4378,22 +4378,20 @@ async function loadWatchlistLive() {
                           {pickDate ?? "—"}
                         </td>
                         <td>
-                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                            {signals.length === 0 ? (
-                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)" }}>—</span>
-                            ) : signals.map((s, j) => (
-                              <span
-                                key={`rs_${j}`}
-                                style={{
-                                  fontSize: 10, padding: "3px 7px", borderRadius: 5,
-                                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-                                  color: "rgba(255,255,255,0.55)", fontWeight: 500,
-                                  whiteSpace: "nowrap",
-                                }}
-                                title={String(s)}
-                              >{String(s)}</span>
-                            ))}
-                          </div>
+                          {signals.length === 0 ? (
+                            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)" }}>—</span>
+                          ) : signals.map((s, j) => (
+                            <span
+                              key={`rs_${j}`}
+                              style={{
+                                fontSize: 10, padding: "3px 7px", borderRadius: 5,
+                                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+                                color: "rgba(255,255,255,0.55)", fontWeight: 500,
+                                whiteSpace: "nowrap", display: "inline-block", marginRight: 4,
+                              }}
+                              title={String(s)}
+                            >{String(s)}</span>
+                          ))}
                         </td>
                       </tr>
                     );
@@ -4447,6 +4445,11 @@ async function loadWatchlistLive() {
       const edgeSignals = Array.isArray(best0?.edge_signals) ? best0.edge_signals
         : Array.isArray(bestPayload0?.edge_signals) ? bestPayload0.edge_signals : [];
       const positionSizePct = best0?.position_size_pct ?? bestPayload0?.position_size_pct ?? null;
+
+      const marketRegime = String(best0?.market_regime || bestPayload0?.market_regime || "").trim().toUpperCase();
+
+      const isLowConviction = Boolean(best0?.low_conviction || bestPayload0?.low_conviction);
+      const lowConvictionNote = String(best0?.low_conviction_note || bestPayload0?.low_conviction_note || "").trim();
 
       // Scores — ONLY from bestPickData
       const toScore100 = (v) => {
@@ -4782,46 +4785,71 @@ async function loadWatchlistLive() {
           <div className="heroBody">
             <div className="heroTop">
               <div className="heroLeft">
-                <div className="aiPickLabel">Today's AI Pick</div>
-                <div className="heroTicker" style={{ fontSize: 56, lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 800, marginBottom: 6 }}>{ticker || "—"}</div>
-                <div className="heroPrice">
-                  {Number.isFinite(livePrice) && livePrice > 0 ? (
-                    <>
-                      <span className="heroPriceValue" style={{ fontSize: 22 }}>${livePrice.toFixed(2)}</span>
-                      {Number.isFinite(livePctChg) ? (
-                        <span className={`heroPriceChange ${livePctChg >= 0 ? "heroChangeUp" : "heroChangeDown"}`}>
-                          {livePctChg >= 0 ? "+" : ""}{livePctChg.toFixed(2)}%
+                <div className="aiPickLabel">{isLowConviction ? "LOW CONVICTION ENVIRONMENT" : "Today's AI Pick"}</div>
+                {isLowConviction ? (
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.50)", marginTop: 8, maxWidth: 340, lineHeight: 1.5 }}>
+                    {lowConvictionNote || "Low-conviction environment — defensive positioning preferred."}
+                  </div>
+                ) : (
+                  <>
+                    <div className="heroTicker" style={{ fontSize: 56, lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 800, marginBottom: 6 }}>{ticker || "—"}</div>
+                    <div className="heroPrice">
+                      {Number.isFinite(livePrice) && livePrice > 0 ? (
+                        <>
+                          <span className="heroPriceValue" style={{ fontSize: 22 }}>${livePrice.toFixed(2)}</span>
+                          {Number.isFinite(livePctChg) ? (
+                            <span className={`heroPriceChange ${livePctChg >= 0 ? "heroChangeUp" : "heroChangeDown"}`}>
+                              {livePctChg >= 0 ? "+" : ""}{livePctChg.toFixed(2)}%
+                            </span>
+                          ) : null}
+                        </>
+                      ) : Number.isFinite(entryN) && entryN > 0 ? (
+                        <span className="heroPriceValue" style={{ opacity: 0.55, fontSize: 16 }}>
+                          Near ${entryN.toFixed(2)}
                         </span>
                       ) : null}
-                    </>
-                  ) : Number.isFinite(entryN) && entryN > 0 ? (
-                    <span className="heroPriceValue" style={{ opacity: 0.55, fontSize: 16 }}>
-                      Near ${entryN.toFixed(2)}
-                    </span>
-                  ) : null}
-                  {loadingAnalyze ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
-                      <span className="btnSpinner" style={{ width: 10, height: 10 }} />
-                    </span>
-                  ) : null}
-                </div>
+                      {loadingAnalyze ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+                          <span className="btnSpinner" style={{ width: 10, height: 10 }} />
+                        </span>
+                      ) : null}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="heroRight">
-                <div
-                  className="heroConvictionBadge"
-                  style={{
-                    color: convStyle.color,
-                    boxShadow: convStyle.glow,
-                    background: convStyle.bg,
-                    borderColor: convStyle.border,
-                    fontSize: 11,
-                    letterSpacing: "0.08em",
-                    padding: "6px 14px",
-                  }}
-                >
-                  {convStyle.label}
-                </div>
+                {isLowConviction ? (
+                  <div
+                    className="heroConvictionBadge"
+                    style={{
+                      color: "rgba(255,255,255,0.40)",
+                      boxShadow: "none",
+                      background: "rgba(255,255,255,0.04)",
+                      borderColor: "rgba(255,255,255,0.10)",
+                      fontSize: 11,
+                      letterSpacing: "0.08em",
+                      padding: "6px 14px",
+                    }}
+                  >
+                    DEFENSIVE
+                  </div>
+                ) : marketRegime ? (
+                  <div
+                    className="heroConvictionBadge"
+                    style={{
+                      color: convStyle.color,
+                      boxShadow: convStyle.glow,
+                      background: convStyle.bg,
+                      borderColor: convStyle.border,
+                      fontSize: 11,
+                      letterSpacing: "0.08em",
+                      padding: "6px 14px",
+                    }}
+                  >
+                    {marketRegime}
+                  </div>
+                ) : null}
                 {loadingBestPick ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, opacity: 0.5, marginTop: 6 }}>
                     <span className="btnSpinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
@@ -4831,37 +4859,39 @@ async function loadWatchlistLive() {
               </div>
             </div>
 
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "1px",
-              background: "rgba(255,255,255,0.07)",
-              borderRadius: 12,
-              overflow: "hidden",
-              margin: "18px 0 16px",
-            }}>
-              <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Entry</div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
-                  {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
+            {!isLowConviction && (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: "1px",
+                background: "rgba(255,255,255,0.07)",
+                borderRadius: 12,
+                overflow: "hidden",
+                margin: "18px 0 16px",
+              }}>
+                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Entry</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
+                    {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Stop</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
+                    {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Target</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
+                    {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
+                  </div>
                 </div>
               </div>
-              <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Stop</div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
-                  {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
-                </div>
-              </div>
-              <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Target</div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
-                  {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
-                </div>
-              </div>
-            </div>
+            )}
 
             <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-              {ai100 !== null ? (
+              {!isLowConviction && ai100 !== null ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.38)" }}>AI Score</span>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{Math.round(ai100)}</span>
@@ -5321,6 +5351,14 @@ async function loadWatchlistLive() {
           <HeroCard />
         </motion.div>
 
+        <div className="dashCell dashCell--metrics">
+          <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+            <AdvancedMetricsCard />
+          </ProGate>
+        </div>
+
+        <div className="dashCell dashCell--movers"><TopMoversCard /></div>
+
         <motion.div className="dashCell dashCell--performance"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
@@ -5371,14 +5409,6 @@ async function loadWatchlistLive() {
             </>
           );
         })()}
-
-        <div className="dashCell dashCell--metrics">
-          <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
-            <AdvancedMetricsCard />
-          </ProGate>
-        </div>
-
-        <div className="dashCell dashCell--movers"><TopMoversCard /></div>
       </div>
     );
   };
