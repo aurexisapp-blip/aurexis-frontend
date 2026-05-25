@@ -2110,7 +2110,7 @@ function AppInner() {
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
 
-  const [tab, setTab] = useState("landing");
+  const [tab, setTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const cmdInputRef = useRef(null);
 
@@ -7432,7 +7432,6 @@ const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
   if (tab === "screener") return <Screener />;
-  if (tab === "landing") return <Landing onGetStarted={() => setTab("dashboard")} />;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
     return (
