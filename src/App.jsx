@@ -5993,30 +5993,24 @@ async function loadWatchlistLive() {
       try {
         const controller = new AbortController();
         const t = window.setTimeout(() => controller.abort(), 30000);
-        const res = await fetch(`${API_BASE_URL}/watchlist`, { signal: controller.signal });
+        const res = await fetch(`${API_BASE_URL}/watchlist/live`, { signal: controller.signal });
         window.clearTimeout(t);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const raw = await res.json();
 
-        const tickers =
-          (Array.isArray(raw?.watchlist) ? raw.watchlist : null) ||
-          (Array.isArray(raw?.symbols) ? raw.symbols : null) ||
-          (Array.isArray(raw?.tickers) ? raw.tickers : null) ||
-          (Array.isArray(raw) ? raw : null) ||
-          [];
-
-        const processed = tickers
+        const items = Array.isArray(raw?.items) ? raw.items : [];
+        const processed = items
           .map((item) => {
-            const sym = normalizeSymbol(typeof item === "string" ? item : (item?.symbol || item?.ticker || ""));
+            const sym = normalizeSymbol(item?.symbol || item?.ticker || "");
             if (!sym || /ZVZ|ZVZZT|TEST/.test(sym)) return null;
-            return { symbol: sym, score: null, edgeSignals: [], noTradeReason: "" };
+            return { symbol: sym, quote: item?.quote || null };
           })
           .filter(Boolean);
 
         setSystemCandidates(processed);
       } catch (e) {
         console.error("System watchlist candidates load failed:", e);
-        setCandidatesError("Could not load system candidates — click refresh to retry");
+        setCandidatesError("Could not load watchlist — click refresh to retry");
       } finally {
         setLoadingCandidates(false);
       }
@@ -6029,17 +6023,20 @@ async function loadWatchlistLive() {
 
     // ── System Candidate Card ─────────────────────────────────────
     const CandidateCard = ({ candidate }) => {
-      const { symbol: sym, score, edgeSignals, noTradeReason } = candidate;
-      const progress = score !== null ? Math.min(100, Math.round((score / AI_SCORE_THRESHOLD) * 100)) : null;
-      const progressColor =
-        progress === null ? "rgba(255,255,255,0.12)" :
-        progress >= 90 ? "rgba(74,222,128,0.65)" :
-        progress >= 72 ? "rgba(251,191,36,0.65)" :
-        "rgba(147,197,253,0.50)";
+      const { symbol: sym, quote } = candidate;
+      const price = quote?.price != null ? Number(quote.price) : null;
+      const pctChange = quote?.pct_change != null ? Number(quote.pct_change) : null;
+      const volume = quote?.volume != null ? Number(quote.volume) : null;
+      const isPositive = pctChange !== null && pctChange >= 0;
 
-      const signalText = edgeSignals.length > 0
-        ? edgeSignals.slice(0, 3).map((s) => fmt(s)).join(" · ")
-        : noTradeReason || "Edge signals detected";
+      const fmtPrice = (v) => v != null && Number.isFinite(v) ? `$${v.toFixed(2)}` : "—";
+      const fmtPct = (v) => v != null && Number.isFinite(v) ? `${v >= 0 ? "+" : ""}${v.toFixed(2)}%` : "—";
+      const fmtVol = (v) => {
+        if (v == null || !Number.isFinite(v)) return "—";
+        if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
+        if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+        return String(v);
+      };
 
       return (
         <div style={{
@@ -6049,7 +6046,7 @@ async function loadWatchlistLive() {
           padding: "16px 18px",
         }}>
           {/* Row 1: Symbol + badge */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.90)", lineHeight: 1 }}>
               {sym}
             </div>
@@ -6064,43 +6061,27 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
-          {/* Row 2: Why watching */}
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 14, lineHeight: 1.5 }}>
-            <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 11 }}>Edge signals: </span>
-            <span style={{ color: "rgba(147,210,255,0.62)" }}>{signalText}</span>
+          {/* Row 2: Price + % change */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.02em" }}>
+              {fmtPrice(price)}
+            </span>
+            {pctChange !== null && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: isPositive ? "rgba(74,222,128,0.90)" : "rgba(248,113,113,0.90)" }}>
+                {fmtPct(pctChange)}
+              </span>
+            )}
           </div>
 
-          {/* Row 3: Score + progress bar */}
-          {score !== null ? (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: "0.02em" }}>
-                  Conviction progress
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", letterSpacing: "-0.01em" }}>
-                  Score: {score.toFixed(1)} / {AI_SCORE_THRESHOLD.toFixed(1)} needed
-                </span>
-              </div>
-              <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                <div style={{
-                  width: `${progress}%`, height: "100%",
-                  background: progressColor,
-                  borderRadius: 3,
-                  transition: "width 0.6s ease",
-                }} />
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.20)", marginTop: 4 }}>
-                {progress}% of threshold
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginBottom: 14, fontSize: 12, color: "rgba(255,255,255,0.22)" }}>
-              Score pending scan
+          {/* Row 3: Volume */}
+          {volume !== null && (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginBottom: 14 }}>
+              Vol: {fmtVol(volume)}
             </div>
           )}
 
-          {/* Row 4: Actions */}
-          <div style={{ display: "flex", gap: 8 }}>
+          {/* Row 4: Analyze */}
+          <div style={{ display: "flex", gap: 8, marginTop: volume !== null ? 0 : 14 }}>
             <button
               onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
               style={{
@@ -6111,18 +6092,6 @@ async function loadWatchlistLive() {
               }}
             >
               Analyze →
-            </button>
-            <button
-              onClick={() => addToWatchlistLive(sym)}
-              disabled={addingWatchlist}
-              style={{
-                padding: "6px 14px", borderRadius: 7,
-                background: "transparent", border: "1px solid rgba(255,255,255,0.07)",
-                color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 600,
-                cursor: "pointer", letterSpacing: "0.03em",
-              }}
-            >
-              + Watch
             </button>
           </div>
         </div>
