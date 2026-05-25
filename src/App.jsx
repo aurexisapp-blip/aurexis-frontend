@@ -1983,6 +1983,112 @@ class AurexisErrorBoundary extends React.Component {
   }
 }
 
+const ONBOARDING_STEPS = [
+  {
+    icon: null,
+    title: "Welcome to Aurexis",
+    body: "You're in. Here's everything you need to know to get the most out of the system in the next 60 seconds.",
+  },
+  {
+    icon: "🎯",
+    title: "The Daily AI Pick",
+    body: "Every market day at 9:30 AM ET, our system scans thousands of stocks and surfaces the single highest-conviction setup. One pick. No noise.",
+  },
+  {
+    icon: "📊",
+    title: "AI Score & Execution Score",
+    body: "AI Score measures setup quality (momentum, trend, volatility). Execution Score measures timing and entry precision. Above 70 = high conviction. Below 40 = system says wait.",
+  },
+  {
+    icon: "✅",
+    title: "Full Transparency",
+    body: "We track every pick publicly — wins and losses. Current track record: 37 picks tracked, 45.9% win rate, +3.76% avg return. We don't hide misses.",
+  },
+  {
+    icon: "🛡️",
+    title: "When the System Says No",
+    body: "Some days the system returns NO_TRADE. That's not a bug — it means no setup met the threshold. We'd rather find nothing than recommend a weak setup.",
+  },
+];
+
+function OnboardingModal({ onDone }) {
+  const [step, setStep] = React.useState(0);
+  const current = ONBOARDING_STEPS[step];
+  const isLast = step === ONBOARDING_STEPS.length - 1;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(0,0,0,0.85)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 16,
+    }}>
+      <div style={{
+        position: "relative",
+        background: "#0a0f1a",
+        border: "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 16,
+        maxWidth: 480,
+        width: "100%",
+        padding: 40,
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}>
+        <button
+          onClick={onDone}
+          style={{
+            position: "absolute", top: 16, right: 18,
+            background: "none", border: "none",
+            color: "rgba(255,255,255,0.3)", fontSize: 13,
+            cursor: "pointer", fontFamily: "inherit", padding: "4px 6px",
+          }}
+        >
+          Skip
+        </button>
+
+        <div style={{ marginBottom: 20, lineHeight: 1 }}>
+          {current.icon === null ? (
+            <span style={{ fontSize: 64, fontWeight: 800, color: "#00b450", lineHeight: 1 }}>A</span>
+          ) : (
+            <span style={{ fontSize: 52 }}>{current.icon}</span>
+          )}
+        </div>
+
+        <div style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginBottom: 14, lineHeight: 1.25 }}>
+          {current.title}
+        </div>
+
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.60)", lineHeight: 1.65, margin: "0 0 36px" }}>
+          {current.body}
+        </p>
+
+        <div style={{ display: "flex", gap: 7, justifyContent: "center", marginBottom: 28 }}>
+          {ONBOARDING_STEPS.map((_, i) => (
+            <div key={i} style={{
+              width: i === step ? 20 : 7, height: 7,
+              borderRadius: 999,
+              background: i === step ? "#00b450" : "rgba(255,255,255,0.15)",
+              transition: "width 0.2s ease, background 0.2s ease",
+            }} />
+          ))}
+        </div>
+
+        <button
+          onClick={isLast ? onDone : () => setStep(s => s + 1)}
+          style={{
+            width: "100%", padding: "13px 0",
+            background: "#00b450", border: "none",
+            borderRadius: 10, fontSize: 14, fontWeight: 700,
+            color: "#fff", cursor: "pointer",
+            fontFamily: "inherit", letterSpacing: 0.3,
+          }}
+        >
+          {isLast ? "Let's Go" : "Next →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppInner() {
   const NAV = useMemo(
     () => ({
@@ -2153,6 +2259,9 @@ function AppInner() {
   const [loadingAccount, setLoadingAccount] = useState(false);
   const [loadingMovers, setLoadingMovers] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false); // kept
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem("aurexis_onboarding_complete")
+  );
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
 
   const [analyzeStatus, setAnalyzeStatus] = useState("");
@@ -7843,6 +7952,13 @@ const renderPage = () => {
       })() : null}
 
       {toast ? <div className={`toast${toastType === "success" ? " toast--success" : toastType === "error" ? " toast--error" : ""}`}>{toast}</div> : null}
+
+      {showOnboarding ? (
+        <OnboardingModal onDone={() => {
+          localStorage.setItem("aurexis_onboarding_complete", "true");
+          setShowOnboarding(false);
+        }} />
+      ) : null}
     </div>
   );
 }
