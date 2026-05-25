@@ -4277,39 +4277,12 @@ async function loadWatchlistLive() {
 
                 {/* 14-day rolling summary bar */}
                 {picks14d.length > 0 ? (
-                  <div style={{
-                    marginTop: 14,
-                    padding: "10px 14px",
-                    borderRadius: 9,
-                    background: "rgba(34,197,94,0.07)",
-                    border: "1px solid rgba(34,197,94,0.18)",
-                    fontSize: 12,
-                    lineHeight: 1.6,
-                  }}>
-                    <span style={{ color: "rgba(255,255,255,0.65)" }}>
-                      {picks14d.length} pick{picks14d.length !== 1 ? "s" : ""} in 14d
-                    </span>
-                    {" — "}
-                    <span style={{ color: "rgba(255,255,255,0.65)" }}>
-                      {won14d} win{won14d !== 1 ? "s" : ""} / {lost14d} loss{lost14d !== 1 ? "es" : ""}
-                    </span>
-                    {winRate14d !== null ? (
-                      <span style={{ color: "rgba(74,222,128,0.90)" }}> ({winRate14d.toFixed(1)}% win rate)</span>
-                    ) : null}
+                  <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+                    Last 14 days: {won14d}W / {lost14d}L
                     {avgReturn14d !== null ? (
-                      <span style={{ color: "rgba(255,255,255,0.55)" }}>
-                        {", avg return "}
-                        <span style={{ color: "rgba(74,222,128,0.90)", fontWeight: 700 }}>
-                          {avgReturn14d >= 0 ? "+" : ""}{avgReturn14d.toFixed(2)}%
-                        </span>
-                      </span>
+                      <span style={{ color: "rgba(74,222,128,0.6)" }}> · {avgReturn14d >= 0 ? "+" : ""}{avgReturn14d.toFixed(1)}% avg return</span>
                     ) : null}
-                    {avgDrawdown14d !== null ? (
-                      <span style={{ color: "rgba(255,255,255,0.40)" }}>, avg drawdown {avgDrawdown14d.toFixed(2)}%</span>
-                    ) : null}
-                    {pending14d > 0 ? (
-                      <span style={{ color: "rgba(255,255,255,0.35)" }}> ({pending14d} pending)</span>
-                    ) : null}
+                    <span style={{ color: "rgba(255,255,255,0.25)" }}> · rolling window</span>
                   </div>
                 ) : null}
               </>
@@ -4413,8 +4386,8 @@ async function loadWatchlistLive() {
                                 key={`rs_${j}`}
                                 style={{
                                   fontSize: 10, padding: "3px 7px", borderRadius: 5,
-                                  background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.22)",
-                                  color: "rgba(74,222,128,0.85)", fontWeight: 600, letterSpacing: "0.02em",
+                                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+                                  color: "rgba(255,255,255,0.55)", fontWeight: 500,
                                   whiteSpace: "nowrap",
                                 }}
                                 title={String(s)}
@@ -4920,31 +4893,9 @@ async function loadWatchlistLive() {
 
             <div className="heroActions">
               {ticker ? (
-                <>
-                  <button
-                    className="btn btn--ghost"
-                    onClick={() => addToWatchlistLive(ticker)}
-                    disabled={!ticker || addingWatchlist}
-                  >
-                    + Watchlist
-                  </button>
-                  <button
-                    className="btn btn--primary"
-                    onClick={() =>
-                      savePickToPortfolioLive({
-                        symbol: ticker,
-                        source: "best_pick",
-                        analysisSnapshot: ensureAnalyzeSchema(bestPickData, ticker),
-                      })
-                    }
-                    disabled={!ticker || savingPortfolio || !tp0}
-                  >
-                    {savingPortfolio ? "Saving…" : "Save Trade"}
-                  </button>
-                  <RippleButton className="btn btn--ghost" onClick={loadBestPick} disabled={loadingBestPick}>
-                    {loadingBestPick ? "Refreshing…" : "Refresh"}
-                  </RippleButton>
-                </>
+                <RippleButton className="btn btn--ghost" onClick={loadBestPick} disabled={loadingBestPick}>
+                  {loadingBestPick ? "Refreshing…" : "Refresh"}
+                </RippleButton>
               ) : null}
             </div>
             <div className="heroTrustLine">AI scans 100+ stocks daily to surface high-conviction setups</div>
@@ -4982,10 +4933,10 @@ async function loadWatchlistLive() {
               <div className="mutedSmall">{analyzeFallbackText}</div>
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
-                {(summary || hr?.summary) ? (
+                {summary ? (
                   <div className="whySection">
                     <div className="whySectionTitle">Summary</div>
-                    <p className="whySectionText">{fmt(summary || hr?.summary)}</p>
+                    <p className="whySectionText">{fmt(summary)}</p>
                   </div>
                 ) : null}
 
