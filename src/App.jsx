@@ -6229,6 +6229,17 @@ async function loadWatchlistLive() {
       }
     };
 
+    async function batchedScreen(symbols) {
+      const results = [];
+      for (let i = 0; i < symbols.length; i += 3) {
+        const batch = symbols.slice(i, i + 3);
+        const batchResults = await Promise.all(batch.map(sym => screenOne(sym)));
+        results.push(...batchResults);
+        if (i + 3 < symbols.length) await new Promise(r => setTimeout(r, 500));
+      }
+      return results;
+    }
+
     const runScreen = async () => {
       if (screenerRunningRef.current) return;
       const syms = (screenerInputRef.current?.value || "")
@@ -6240,8 +6251,8 @@ async function loadWatchlistLive() {
       setLoading(true);
       setHasScreened(true);
       try {
-        const settled = await Promise.allSettled(syms.map(screenOne));
-        setResults(settled.map((r) => (r.status === "fulfilled" ? r.value : { symbol: "?", error: true })));
+        const allResults = await batchedScreen(syms);
+        setResults(allResults);
       } finally {
         screenerRunningRef.current = false;
         setLoading(false);
