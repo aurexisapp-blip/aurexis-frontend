@@ -4968,8 +4968,8 @@ async function loadWatchlistLive() {
       const bzLow  = ep?.buyZone?.low ?? ep?.buy_zone_low;
       const bzHigh = ep?.buyZone?.high ?? ep?.buy_zone_high;
       const bzText = bzLow != null && bzHigh != null
-        ? `$${Number(bzLow).toFixed(2)} \u2013 $${Number(bzHigh).toFixed(2)}`
-        : "\u2014";
+        ? `$${Number(bzLow).toFixed(2)} – $${Number(bzHigh).toFixed(2)}`
+        : "—";
 
       const _tp   = a?.trade_plan && typeof a.trade_plan === "object" ? a.trade_plan : {};
       const _entry = Number(_tp?.entry ?? a?.entry ?? bzLow);
@@ -5029,7 +5029,7 @@ async function loadWatchlistLive() {
                   <div>
                     <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 12 }}>Technical Scores</div>
                     <div className="mutedSmall" style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
-                      0\u201339 weak \u00b7 40\u201369 mixed \u00b7 70\u2013100 strong
+                      0–39 weak · 40–69 mixed · 70–100 strong
                     </div>
                     {["momentum", "trend", "volatility", "liquidity", "risk"].map((k) => {
                       const v = taToPct(ta?.[k]);
@@ -5039,7 +5039,7 @@ async function loadWatchlistLive() {
                           <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
                             <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, background: barColor(v), transition: "width 600ms ease" }} />
                           </div>
-                          <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800, fontSize: 11 }}>{v === null ? "\u2014" : Math.round(v)}</div>
+                          <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800, fontSize: 11 }}>{v === null ? "—" : Math.round(v)}</div>
                         </div>
                       );
                     })}
@@ -5052,14 +5052,14 @@ async function loadWatchlistLive() {
                     <div className="kv" style={{ marginTop: 0 }}>
                       {ep?.date ? <div className="kvRow"><div className="kvKey">Date</div><div className="kvVal">{fmtAnalyzeValue(ep.date)}</div></div> : null}
                       {ep?.window ? <div className="kvRow"><div className="kvKey">Window</div><div className="kvVal">{fmtAnalyzeValue(ep.window)}</div></div> : null}
-                      {bzText !== "\u2014" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
+                      {bzText !== "—" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
                       {_hasStop ? (
                         <div className="kvRow">
                           <div className="kvKey">Stop Loss</div>
                           <div className="kvVal">
                             {_stopInvalid ? (
                               <span style={{ color: "rgba(255,255,255,0.35)" }}>
-                                \u2014 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontStyle: "italic" }}>(invalid)</span>
+                                — <span style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontStyle: "italic" }}>(invalid)</span>
                               </span>
                             ) : (
                               <span style={{ color: "rgba(248,113,113,0.80)" }}>${_stop.toFixed(2)}</span>
@@ -5275,8 +5275,6 @@ async function loadWatchlistLive() {
           <HeroCard />
         </motion.div>
 
-        <div className="dashCell dashCell--movers"><TopMoversCard /></div>
-
         <motion.div className="dashCell dashCell--performance"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
@@ -5287,6 +5285,7 @@ async function loadWatchlistLive() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
           <RecentPicksCard />
         </motion.div>
+        <div className="dashCell dashCell--movers"><TopMoversCard /></div>
 
         {(() => {
           const bestPayload = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
