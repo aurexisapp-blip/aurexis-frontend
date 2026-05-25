@@ -4178,38 +4178,66 @@ async function loadWatchlistLive() {
       if (loadingPerformance) return <SkeletonCard title="Performance" />;
       const perf = performanceData && typeof performanceData === "object" ? performanceData : null;
 
-      // ── All-time stats computed from local recentPicksData ──
-      const allPicks    = recentPicksData;
-      const totalPicks  = allPicks.length;
-      const wonAllTime  = allPicks.filter(p => /^won/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
-      const lostAllTime = allPicks.filter(p => /^lost/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      // ── API stats (primary source) ──
+      const perfWinRate    = perf?.win_rate    != null ? Number(perf.win_rate)    : null;
+      const perfTotalPicks = perf?.total_picks != null ? Number(perf.total_picks) : null;
+      const perfAvgReturn  = perf?.avg_return_pct != null ? Number(perf.avg_return_pct) : null;
+
+      // ── Local picks (fallback / 14d computation) ──
+      const allPicks     = recentPicksData;
+      const totalPicks   = allPicks.length;
+      const wonAllTime   = allPicks.filter(p => /^won/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      const lostAllTime  = allPicks.filter(p => /^lost/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
       const decisiveAllTime = wonAllTime + lostAllTime;
       const pendingCount    = allPicks.filter(p => String(p?.status || p?.outcome || "").toLowerCase() === "pending").length;
       const resolvedCount   = totalPicks - pendingCount;
       const allTimeWinRate  = decisiveAllTime > 0 ? (wonAllTime / decisiveAllTime) * 100 : null;
-
       const resolvedReturns = allPicks
-        .filter(p => Number.isFinite(Number(p?.max_return_pct)))
-        .map(p => Number(p.max_return_pct));
+        .filter(p => Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)) && !String(p?.outcome || "").includes("pending"))
+        .map(p => Number(p.return_pct ?? p.max_return_pct));
       const allTimeAvgReturn = resolvedReturns.length > 0
         ? resolvedReturns.reduce((a, b) => a + b, 0) / resolvedReturns.length
         : null;
 
-      // ── 14-day rolling window from API (secondary) ──
-      const wins14d   = perf?.wins   ?? null;
-      const losses14d = perf?.losses ?? null;
-      const avgRet14d = Number.isFinite(Number(perf?.avg_return_pct)) ? Number(perf.avg_return_pct) : null;
+      // ── Display values — API preferred ──
+      const displayWinRate   = perfWinRate   ?? allTimeWinRate;
+      const displayPicks     = perfTotalPicks ?? (totalPicks > 0 ? totalPicks : null);
+      const displayAvgReturn = perfAvgReturn  ?? allTimeAvgReturn;
 
-      const hasAnyData = totalPicks > 0 || perf != null;
+      // ── 14-day rolling window from picks ──
+      const ms14d = 14 * 24 * 60 * 60 * 1000;
+      const picks14d = allPicks.filter(p => {
+        const d = new Date(p?.date || p?.recorded_at || "").getTime();
+        return Number.isFinite(d) && (Date.now() - d) <= ms14d;
+      });
+      const won14d     = picks14d.filter(p => /^won/.test(String(p?.outcome || p?.status || "").toLowerCase())).length;
+      const lost14d    = picks14d.filter(p => /^lost/.test(String(p?.outcome || p?.status || "").toLowerCase())).length;
+      const pending14d = picks14d.filter(p => String(p?.outcome || p?.status || "").toLowerCase() === "pending").length;
+      const decisive14d = won14d + lost14d;
+      const winRate14d  = decisive14d > 0 ? (won14d / decisive14d) * 100 : null;
+      const wonReturns14d = picks14d
+        .filter(p => /^won/.test(String(p?.outcome || "").toLowerCase()) && Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)))
+        .map(p => Number(p.return_pct ?? p.max_return_pct));
+      const avgReturn14d = wonReturns14d.length > 0
+        ? wonReturns14d.reduce((a, b) => a + b, 0) / wonReturns14d.length
+        : (perfAvgReturn ?? null);
+      const lossReturns14d = picks14d
+        .filter(p => /^lost/.test(String(p?.outcome || "").toLowerCase()) && Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)))
+        .map(p => Math.abs(Number(p.return_pct ?? p.max_return_pct)));
+      const avgDrawdown14d = lossReturns14d.length > 0
+        ? lossReturns14d.reduce((a, b) => a + b, 0) / lossReturns14d.length
+        : null;
+
+      const hasAnyData = displayPicks != null || perf != null;
 
       return (
         <div className="card">
           <div className="cardHead">
             <div>
               <div className="cardTitle">Performance</div>
-              {totalPicks > 0 ? (
+              {displayPicks != null ? (
                 <div className="cardSub">
-                  {totalPicks} pick{totalPicks !== 1 ? "s" : ""}{pendingCount > 0 ? ` (${pendingCount} pending)` : ""}
+                  {displayPicks} pick{displayPicks !== 1 ? "s" : ""}{pendingCount > 0 ? ` (${pendingCount} pending)` : ""}
                 </div>
               ) : null}
             </div>
@@ -4219,54 +4247,69 @@ async function loadWatchlistLive() {
               <div className="mutedSmall">Performance tracking just started — results will appear after first trades.</div>
             ) : (
               <>
-                {/* 3-stat grid — all-time numbers */}
-                {(allTimeWinRate !== null || totalPicks > 0 || allTimeAvgReturn !== null) ? (
-                  <div className="stats3">
-                    {allTimeWinRate !== null ? (
-                      <div className="stat">
-                        <div className="statLabel">Win Rate</div>
-                        <div className={`statValue ${allTimeWinRate >= 50 ? "perfStatGood" : "perfStatBad"}`}>
-                          {allTimeWinRate.toFixed(1)}%
-                        </div>
-                        {decisiveAllTime > 0 ? (
-                          <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>
-                            {wonAllTime}W / {lostAllTime}L
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    {totalPicks > 0 ? (
-                      <div className="stat">
-                        <div className="statLabel">Picks</div>
-                        <div className="statValue">{totalPicks}</div>
-                        <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>
-                          {resolvedCount > 0 ? `${resolvedCount} resolved` : pendingCount > 0 ? `${pendingCount} pending` : null}
-                        </div>
-                      </div>
-                    ) : null}
-                    {allTimeAvgReturn !== null ? (
-                      <div className="stat">
-                        <div className="statLabel">Avg Return</div>
-                        <div className={`statValue ${allTimeAvgReturn >= 0 ? "perfStatGood" : "perfStatBad"}`}>
-                          {allTimeAvgReturn >= 0 ? "+" : ""}{allTimeAvgReturn.toFixed(1)}%
-                        </div>
-                      </div>
+                {/* 3-stat grid — horizontal row */}
+                <div className="stats3">
+                  <div className="stat">
+                    <div className="statLabel">Win Rate</div>
+                    <div className={`statValue ${(displayWinRate ?? 0) >= 50 ? "perfStatGood" : "perfStatBad"}`}>
+                      {displayWinRate !== null ? `${displayWinRate.toFixed(1)}%` : "—"}
+                    </div>
+                    {perf?.wins != null && perf?.losses != null ? (
+                      <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>{perf.wins}W / {perf.losses}L</div>
+                    ) : decisiveAllTime > 0 ? (
+                      <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>{wonAllTime}W / {lostAllTime}L</div>
                     ) : null}
                   </div>
-                ) : (
-                  <div className="mutedSmall">Performance tracking just started — results will appear after first trades.</div>
-                )}
-                {/* 14-day rolling window — secondary context */}
-                {(wins14d != null || losses14d != null) ? (
-                  <div className="mutedSmall" style={{ marginTop: 10, fontSize: 11 }}>
-                    Last 14 days:{" "}
-                    {wins14d ?? 0}W / {losses14d ?? 0}L
-                    {avgRet14d !== null ? (
-                      <span style={{ color: avgRet14d >= 0 ? "rgba(74,222,128,0.50)" : "rgba(248,113,113,0.50)" }}>
-                        {" · "}{avgRet14d >= 0 ? "+" : ""}{avgRet14d.toFixed(1)}% avg return
+                  <div className="stat">
+                    <div className="statLabel">Picks</div>
+                    <div className="statValue">{displayPicks ?? "—"}</div>
+                    <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>
+                      {resolvedCount > 0 ? `${resolvedCount} resolved` : pendingCount > 0 ? `${pendingCount} pending` : null}
+                    </div>
+                  </div>
+                  <div className="stat">
+                    <div className="statLabel">Avg Return</div>
+                    <div className={`statValue ${(displayAvgReturn ?? 0) >= 0 ? "perfStatGood" : "perfStatBad"}`}>
+                      {displayAvgReturn !== null ? `${displayAvgReturn >= 0 ? "+" : ""}${displayAvgReturn.toFixed(2)}%` : "—"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 14-day rolling summary bar */}
+                {picks14d.length > 0 ? (
+                  <div style={{
+                    marginTop: 14,
+                    padding: "10px 14px",
+                    borderRadius: 9,
+                    background: "rgba(34,197,94,0.07)",
+                    border: "1px solid rgba(34,197,94,0.18)",
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                  }}>
+                    <span style={{ color: "rgba(255,255,255,0.65)" }}>
+                      {picks14d.length} pick{picks14d.length !== 1 ? "s" : ""} in 14d
+                    </span>
+                    {" — "}
+                    <span style={{ color: "rgba(255,255,255,0.65)" }}>
+                      {won14d} win{won14d !== 1 ? "s" : ""} / {lost14d} loss{lost14d !== 1 ? "es" : ""}
+                    </span>
+                    {winRate14d !== null ? (
+                      <span style={{ color: "rgba(74,222,128,0.90)" }}> ({winRate14d.toFixed(1)}% win rate)</span>
+                    ) : null}
+                    {avgReturn14d !== null ? (
+                      <span style={{ color: "rgba(255,255,255,0.55)" }}>
+                        {", avg return "}
+                        <span style={{ color: "rgba(74,222,128,0.90)", fontWeight: 700 }}>
+                          {avgReturn14d >= 0 ? "+" : ""}{avgReturn14d.toFixed(2)}%
+                        </span>
                       </span>
                     ) : null}
-                    <span style={{ color: "rgba(255,255,255,0.18)" }}> · rolling window</span>
+                    {avgDrawdown14d !== null ? (
+                      <span style={{ color: "rgba(255,255,255,0.40)" }}>, avg drawdown {avgDrawdown14d.toFixed(2)}%</span>
+                    ) : null}
+                    {pending14d > 0 ? (
+                      <span style={{ color: "rgba(255,255,255,0.35)" }}> ({pending14d} pending)</span>
+                    ) : null}
                   </div>
                 ) : null}
               </>
@@ -4319,7 +4362,7 @@ async function loadWatchlistLive() {
                     const displaySym = symTotals[sym] > 1 ? `${sym} #${symSeen[sym]}` : sym;
                     const ret = Number(pick?.max_return_pct ?? pick?.return_pct ?? pick?.return ?? pick?.pnl_pct);
                     const outcome = String(pick?.outcome || pick?.status || "pending").toLowerCase();
-                    const signals = Array.isArray(pick?.edge_signals) ? pick.edge_signals : [];
+                    const signals = Array.isArray(pick?.signals) ? pick.signals : (Array.isArray(pick?.edge_signals) ? pick.edge_signals : []);
                     const outcomeClass = outcome.includes("win") ? "pill--good"
                       : outcome.includes("loss") ? "pill--bad" : "pill--neutral";
                     const pickDate = fmtPickTimestamp(pick);
@@ -4363,13 +4406,19 @@ async function loadWatchlistLive() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                            {signals.map((s, j) => (
+                            {signals.length === 0 ? (
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)" }}>—</span>
+                            ) : signals.map((s, j) => (
                               <span
                                 key={`rs_${j}`}
-                                className="pill pill--neutral"
-                                style={{ fontSize: 10, padding: "3px 7px", whiteSpace: "normal", wordBreak: "break-word" }}
+                                style={{
+                                  fontSize: 10, padding: "3px 7px", borderRadius: 5,
+                                  background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.22)",
+                                  color: "rgba(74,222,128,0.85)", fontWeight: 600, letterSpacing: "0.02em",
+                                  whiteSpace: "nowrap",
+                                }}
                                 title={String(s)}
-                              >{fmt(s)}</span>
+                              >{String(s)}</span>
                             ))}
                           </div>
                         </td>
