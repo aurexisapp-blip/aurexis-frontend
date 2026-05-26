@@ -2839,20 +2839,11 @@ async function loadWatchlistLive() {
     setErrPerformance("");
     try {
       const data = await fetchWithRetry(
-        () => safeApiCall(() => apiGet("/portfolio/picks"), { context: "performance" }),
+        () => safeApiCall(() => apiGet("/performance"), { context: "performance" }),
         2
       );
-      const items = Array.isArray(data?.items) ? data.items
-        : Array.isArray(data?.picks) ? data.picks
-        : Array.isArray(data) ? data : [];
-      if (items.length > 0) {
-        const won = items.filter(p => /^won/i.test(String(p?.outcome || p?.status || ""))).length;
-        const lost = items.filter(p => /^lost/i.test(String(p?.outcome || p?.status || ""))).length;
-        const decisive = won + lost;
-        const win_rate = decisive > 0 ? Math.round((won / decisive) * 1000) / 10 : 0;
-        const returns = items.filter(p => Number.isFinite(Number(p?.pnl_pct ?? p?.return_pct ?? p?.max_return_pct))).map(p => Number(p.pnl_pct ?? p.return_pct ?? p.max_return_pct));
-        const avg_return_pct = returns.length > 0 ? Math.round((returns.reduce((a, b) => a + b, 0) / returns.length) * 100) / 100 : 0;
-        const perf = { total_picks: items.length, wins: won, losses: lost, win_rate, avg_return_pct };
+      const perf = data && typeof data === "object" ? data : null;
+      if (perf) {
         setPerformanceData(perf);
         lastValidPerformanceRef.current = perf;
         markDataFetchSuccess();
@@ -2874,11 +2865,11 @@ async function loadWatchlistLive() {
     setErrRecentPicks("");
     try {
       const data = await fetchWithRetry(
-        () => safeApiCall(() => apiGet("/portfolio/picks"), { context: "recent_picks" }),
+        () => safeApiCall(() => apiGet("/performance/picks"), { context: "recent_picks" }),
         2
       );
-      const picks = Array.isArray(data?.items) ? data.items
-        : Array.isArray(data?.picks) ? data.picks
+      const picks = Array.isArray(data?.picks) ? data.picks
+        : Array.isArray(data?.items) ? data.items
         : Array.isArray(data?.data) ? data.data
         : Array.isArray(data) ? data
         : [];
