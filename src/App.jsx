@@ -2502,8 +2502,24 @@ function AppInner() {
 
       setSavedPortfolioMap((prev) => ({ ...(prev && typeof prev === "object" ? prev : {}), [saveKey]: true }));
       showToast("Added to portfolio");
+      // Optimistically insert into recent picks so it appears immediately
+      setRecentPicksData((prev) => {
+        const existing = Array.isArray(prev) ? prev : [];
+        const alreadyIn = existing.some((p) => normalizeSymbol(p?.symbol || p?.ticker || "") === s);
+        if (alreadyIn) return existing;
+        const newPick = {
+          symbol: s,
+          status: "pending",
+          outcome: "pending",
+          recorded_at: new Date().toISOString(),
+          entry_price: planNums.entry,
+        };
+        return [newPick, ...existing].slice(0, 20);
+      });
       await loadPortfolioLive();
       await loadAccount();
+      safeLoad(loadRecentPicks);
+      safeLoad(loadPerformance);
     } catch (e) {
       const raw = String(e?.message || "").toLowerCase();
       const timedOut = e?.code === "TIMEOUT" || raw.includes("timeout") || raw.includes("timed out");
@@ -2522,6 +2538,8 @@ function AppInner() {
           if (hasSaved) {
             await loadPortfolioLive();
             await loadAccount();
+            safeLoad(loadRecentPicks);
+            safeLoad(loadPerformance);
             setSavePortfolioErr("");
             showToast("Added to portfolio");
             return;
@@ -3299,13 +3317,6 @@ async function loadWatchlistLive() {
                 <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <button className="btn btn--ghost" onClick={() => useSymbol(bestSymbol)}>Use symbol</button>
                   <button
-                    className="btn btn--ghost"
-                    onClick={() => addToWatchlistLive(bestSymbol)}
-                    disabled={!bestSymbol || addingWatchlist}
-                  >
-                    Add to Watchlist
-                  </button>
-                  <button
                     className="btn btn--primary"
                     onClick={() =>
                       savePickToPortfolioLive({
@@ -3767,13 +3778,6 @@ async function loadWatchlistLive() {
             {analyzeSym ? (
               <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button
-                  className="btn btn--ghost"
-                  onClick={() => addToWatchlistLive(analyzeSym)}
-                  disabled={!analyzeSym || addingWatchlist}
-                >
-                  Add to Watchlist
-                </button>
-                <button
                   className="btn btn--primary"
                   onClick={() =>
                     savePickToPortfolioLive({
@@ -4219,9 +4223,6 @@ async function loadWatchlistLive() {
                 disabled={!symbol || savingPortfolio || alreadySaved || !hasTp || Boolean(analysis && analysis.__fallback)}
               >
                 {alreadySaved ? "Saved" : savingPortfolio ? "Saving…" : "Save to Portfolio"}
-              </button>
-              <button className="btn btn--ghost" onClick={() => addToWatchlistLive(symbol)} disabled={!symbol || addingWatchlist}>
-                Add to Watchlist
               </button>
             </div>
           </div>
@@ -4787,19 +4788,10 @@ async function loadWatchlistLive() {
                     </div>
                   ) : null}
                   {/* Action row */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", fontStyle: "italic" }}>
                       Did not pass conviction threshold — monitoring for confirmation
                     </span>
-                    <button
-                      style={{
-                        padding: "6px 14px", borderRadius: 7, border: "1px solid rgba(99,179,237,0.25)",
-                        background: "rgba(99,179,237,0.08)", color: "rgba(147,210,255,0.80)",
-                        fontSize: 11, fontWeight: 600, cursor: "pointer", letterSpacing: "0.03em",
-                        whiteSpace: "nowrap", flexShrink: 0,
-                      }}
-                      onClick={() => addToWatchlistLive(candidateSym)} disabled={addingWatchlist}
-                    >+ Add to Watchlist</button>
                   </div>
                 </div>
               </div>
@@ -5031,6 +5023,19 @@ async function loadWatchlistLive() {
             ) : null}
 
             <div className="heroActions">
+              {ticker && tp0 ? (
+                <RippleButton
+                  className="btn btn--primary"
+                  onClick={() => savePickToPortfolioLive({
+                    symbol: ticker,
+                    source: "best_pick",
+                    analysisSnapshot: ensureAnalyzeSchema(bestPayload0, ticker),
+                  })}
+                  disabled={savingPortfolio || Boolean(savedPortfolioMap?.[`${ticker}:best_pick`])}
+                >
+                  {savedPortfolioMap?.[`${ticker}:best_pick`] ? "Tracked ✓" : savingPortfolio ? "Saving…" : "Track Pick"}
+                </RippleButton>
+              ) : null}
               {ticker ? (
                 <RippleButton className="btn btn--ghost" onClick={loadBestPick} disabled={loadingBestPick}>
                   {loadingBestPick ? "Refreshing…" : "Refresh"}
