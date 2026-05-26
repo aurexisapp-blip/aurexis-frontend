@@ -437,11 +437,11 @@ a:hover{
   display: grid;
   grid-template-columns: 1.35fr 1fr;
   grid-template-areas:
-    "banner banner"
-    "hero   hero"
-    "perf   picks"
-    "why    summary"
-    "metrics movers";
+    "banner  banner"
+    "hero    hero"
+    "why     perf"
+    "why     picks"
+    "why     summary";
   gap: 12px;
   align-items: stretch;
   min-width: 0;
@@ -489,12 +489,8 @@ a:hover{
 .dashCell--hero > .card{ min-height: clamp(180px, 22vh, 260px); }
 .dashCell--performance > .card{ min-height: clamp(140px, 18vh, 220px); }
 
-.dashCell--picks{ align-self: center; }
 .dashCell--picks > .card{ height: fit-content; min-height: 0; }
-.dashCell--why > .card{ min-height: clamp(220px, 28vh, 340px); }
-.dashCell--summary > .card{ min-height: clamp(220px, 28vh, 340px); }
-.dashCell--metrics > .card,
-.dashCell--movers > .card{ min-height: clamp(180px, 22vh, 280px); }
+.dashCell--summary > .card{ min-height: clamp(180px, 20vh, 280px); }
 
 /* ---------- Tracked Symbols section (portfolio) ---------- */
 .trackedSymbolsSection{
@@ -841,10 +837,8 @@ a:hover{
       "hero"
       "perf"
       "picks"
-      "why"
       "summary"
-      "metrics"
-      "movers";
+      "why";
   }
   .dashMasonry{
     grid-template-columns: 1fr;

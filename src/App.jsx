@@ -5504,7 +5504,6 @@ async function loadWatchlistLive() {
         </div>
 
         <div className="dashCell dashCell--summary"><TopMoversCard /></div>
-        <div className="dashCell dashCell--movers" />
       </div>
     );
   };
