@@ -5116,25 +5116,35 @@ async function loadWatchlistLive() {
 
     // ---- ANALYSIS (merged: Why This Trade + AI Summary + Advanced Metrics) ----
     const AnalysisCard = () => {
+      const [activeTab, setActiveTab] = React.useState("why");
       const a = analysisObj;
-      if (!a) return (
-        <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: 16, overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
-          height: "100%", display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Analysis</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Technical scores, execution plan, and AI reasoning.</div>
-          </div>
-          <div style={{ padding: "20px 18px", flex: 1, display: "flex", alignItems: "center" }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>{analyzeFallbackText}</div>
-          </div>
-        </div>
-      );
 
+      // Why This Trade data
+      const why      = Array.isArray(a?.why) ? a.why : [];
+      const confirms = Array.isArray(a?.what_confirms) ? a.what_confirms : [];
+      const breaks   = Array.isArray(a?.what_breaks) ? a.what_breaks : [];
+      const trSummary  = a?.summary || a?.whyThisSetup || "";
+      const riskNotes = a?.riskNotes || "";
+      const execNotes = a?.executionNotes || "";
+      const whyHasContent = Boolean(trSummary || why.length || confirms.length || breaks.length || riskNotes || execNotes);
+
+      // AI Summary data
+      const ns = (a?.sentiment && typeof a.sentiment === "object" ? a.sentiment : null)
+        ?? (a?.news_sentiment && typeof a.news_sentiment === "object" ? a.news_sentiment : null);
+      const human = a?.human_explanation && typeof a.human_explanation === "object" ? a.human_explanation : null;
+      const direction  = ns?.direction || ns?.bias || "NEUTRAL";
+      const nsSummary  = ns?.summary || human?.plain_summary || human?.summary || null;
+      const catalysts  = Array.isArray(ns?.catalysts) ? ns.catalysts : [];
+      const nsRisks    = Array.isArray(ns?.risk_flags) ? ns.risk_flags : [];
+      const dirStyle = (() => {
+        const d = String(direction || "").toUpperCase();
+        if (d.includes("BULL") || d.includes("POS")) return { cls: "pill pill--good", text: "Bullish" };
+        if (d.includes("BEAR") || d.includes("NEG")) return { cls: "pill pill--bad",  text: "Bearish" };
+        return { cls: "pill pill--neutral", text: "Neutral" };
+      })();
+      const summaryHasContent = Boolean(nsSummary || catalysts.length || nsRisks.length);
+
+      // Advanced Metrics data
       const ta = (a?.technicals && typeof a.technicals === "object" ? a.technicals : null)
         ?? (a?.technical_analysis && typeof a.technical_analysis === "object" ? a.technical_analysis : null);
 
@@ -5166,237 +5176,258 @@ async function loadWatchlistLive() {
         ? `$${Number(bzLow).toFixed(2)} – $${Number(bzHigh).toFixed(2)}`
         : "—";
 
-      const _tp   = a?.trade_plan && typeof a.trade_plan === "object" ? a.trade_plan : {};
-      const _entry = Number(_tp?.entry ?? a?.entry ?? bzLow);
-      const _stop  = Number(_tp?.stop  ?? a?.stop  ?? a?.execution_plan?.stop);
-      const _dir   = String(_tp?.direction || a?.direction || "long").toLowerCase();
-      const _rawTgts = Array.isArray(_tp?.targets) ? _tp.targets
+      const _advTp   = a?.trade_plan && typeof a.trade_plan === "object" ? a.trade_plan : {};
+      const _advEntry = Number(_advTp?.entry ?? a?.entry ?? bzLow);
+      const _advStop  = Number(_advTp?.stop  ?? a?.stop  ?? a?.execution_plan?.stop);
+      const _advDir   = String(_advTp?.direction || a?.direction || "long").toLowerCase();
+      const _advRawTgts = Array.isArray(_advTp?.targets) ? _advTp.targets
         : a?.targets && !Array.isArray(a.targets) && typeof a.targets === "object"
           ? [a.targets.t1, a.targets.t2, a.targets.t3].filter(v => v != null)
-          : Array.isArray(a?.take_profit) ? a.take_profit
-          : [];
-      const _targets = _rawTgts.map(Number).filter(v => Number.isFinite(v) && v > 0);
-      const _hasStop = Number.isFinite(_stop) && _stop > 0;
-      const _stopBad = _dir === "long" && _hasStop && Number.isFinite(_entry) && _entry > 0 && _stop > _entry;
-      const _stopShortBad = _dir === "short" && _hasStop && Number.isFinite(_entry) && _entry > 0 && _stop < _entry;
-      const _stopInvalid = _stopBad || _stopShortBad;
-      const _targetUnrealistic = _targets.length > 0 && Number.isFinite(_entry) && _entry > 0
-        && _targets.some(t => Math.abs((t - _entry) / _entry) > 0.50);
+          : Array.isArray(a?.take_profit) ? a.take_profit : [];
+      const _advTargets = _advRawTgts.map(Number).filter(v => Number.isFinite(v) && v > 0);
+      const _advHasStop = Number.isFinite(_advStop) && _advStop > 0;
+      const _advStopBad = _advDir === "long" && _advHasStop && Number.isFinite(_advEntry) && _advEntry > 0 && _advStop > _advEntry;
+      const _advStopShortBad = _advDir === "short" && _advHasStop && Number.isFinite(_advEntry) && _advEntry > 0 && _advStop < _advEntry;
+      const _advStopInvalid = _advStopBad || _advStopShortBad;
+      const _advTargetUnrealistic = _advTargets.length > 0 && Number.isFinite(_advEntry) && _advEntry > 0
+        && _advTargets.some(t => Math.abs((t - _advEntry) / _advEntry) > 0.50);
+      const _advIsWarn = Boolean(a?.display_warning)
+        || ["NO_TRADE", "LOW_CONVICTION", "MISSED_ENTRY"].includes(String(a?.trade_decision || "").toUpperCase());
 
-      const why      = Array.isArray(a?.why) ? a.why : [];
-      const confirms = Array.isArray(a?.what_confirms) ? a.what_confirms : [];
-      const breaks   = Array.isArray(a?.what_breaks) ? a.what_breaks : [];
-      const riskNotes = a?.riskNotes || "";
-
-      const ns = (a?.sentiment && typeof a.sentiment === "object" ? a.sentiment : null)
-        ?? (a?.news_sentiment && typeof a.news_sentiment === "object" ? a.news_sentiment : null);
-      const human = a?.human_explanation && typeof a.human_explanation === "object" ? a.human_explanation : null;
-      const aiSummaryText = ns?.summary || human?.plain_summary || human?.summary || a?.summary || a?.whyThisSetup || null;
-      const direction  = ns?.direction || ns?.bias || "NEUTRAL";
-      const catalysts  = Array.isArray(ns?.catalysts) ? ns.catalysts : [];
-      const aiRisks    = Array.isArray(ns?.risk_flags) ? ns.risk_flags : [];
-
-      const dirStyle = (() => {
-        const d = String(direction || "").toUpperCase();
-        if (d.includes("BULL") || d.includes("POS")) return { cls: "pill pill--good", text: "Bullish" };
-        if (d.includes("BEAR") || d.includes("NEG")) return { cls: "pill pill--bad",  text: "Bearish" };
-        return { cls: "pill pill--neutral", text: "Neutral" };
-      })();
+      const tabs = [
+        { id: "why",     label: "Why This Trade" },
+        { id: "summary", label: "AI Summary" },
+        { id: "metrics", label: "Advanced Metrics" },
+      ];
 
       if (loadingAnalyze) return <SkeletonCard title="Analysis" />;
 
       return (
-        <div className="card">
-          <div className="cardHead">
-            <div>
-              <div className="cardTitle">Analysis</div>
-              <div className="cardSub">Technical scores, execution plan, and AI reasoning.</div>
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : "rgba(255,255,255,0.07)"}`,
+          borderRadius: 16, overflow: "hidden",
+          boxShadow: _advIsWarn && activeTab === "metrics"
+            ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)"
+            : "0 8px 40px rgba(0,0,0,0.5)",
+          display: "flex", flexDirection: "column",
+          height: "100%",
+        }}>
+          <div style={{ padding: "14px 18px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Analysis</div>
+              {activeTab === "summary" && summaryHasContent ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
             </div>
-            {(ns || human) ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Setup reasoning, market context, and technical metrics.</div>
           </div>
-          <div className="cardBody">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
 
-              {/* LEFT COLUMN */}
-              <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
+          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingLeft: 20, paddingRight: 20, marginTop: 12 }}>
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  padding: "8px 14px", fontSize: 12.5,
+                  fontWeight: activeTab === tab.id ? 700 : 500,
+                  color: activeTab === tab.id ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.42)",
+                  borderBottom: activeTab === tab.id ? "2px solid rgba(255,255,255,0.72)" : "2px solid transparent",
+                  marginBottom: "-1px", transition: "color 0.15s ease, border-color 0.15s ease",
+                  letterSpacing: "0.02em", fontFamily: "inherit",
+                }}
+              >{tab.label}</button>
+            ))}
+          </div>
 
-                {ta ? (
-                  <div>
-                    <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 12 }}>Technical Scores</div>
-                    <div className="mutedSmall" style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
-                      0–39 weak · 40–69 mixed · 70–100 strong
+          <div style={{ flex: 1, padding: "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
+            {activeTab === "why" && (
+              !a || !whyHasContent ? (
+                <div className="mutedSmall">{analyzeFallbackText}</div>
+              ) : (
+                <div style={{ display: "grid", gap: 14 }}>
+                  {trSummary ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">Summary</div>
+                      <p className="whySectionText">{fmt(trSummary)}</p>
                     </div>
-                    {["momentum", "trend", "volatility", "liquidity", "risk"].map((k) => {
-                      const v = taToPct(ta?.[k]);
-                      return (
-                        <div key={k} style={{ display: "grid", gridTemplateColumns: "100px 1fr 30px", gap: 10, alignItems: "center", marginBottom: 9 }}>
-                          <div className="mutedSmall" style={{ fontWeight: 700, textTransform: "capitalize", fontSize: 12 }}>{k}</div>
-                          <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-                            <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, background: barColor(v), transition: "width 600ms ease" }} />
-                          </div>
-                          <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800, fontSize: 11 }}>{v === null ? "—" : Math.round(v)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {(ep || _hasStop || _targets.length > 0) ? (
-                  <div>
-                    <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Execution Plan</div>
-                    <div className="kv" style={{ marginTop: 0 }}>
-                      {ep?.date ? <div className="kvRow"><div className="kvKey">Date</div><div className="kvVal">{fmtAnalyzeValue(ep.date)}</div></div> : null}
-                      {ep?.window ? <div className="kvRow"><div className="kvKey">Window</div><div className="kvVal">{fmtAnalyzeValue(ep.window)}</div></div> : null}
-                      {bzText !== "—" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
-                      {_hasStop ? (
-                        <div className="kvRow">
-                          <div className="kvKey">Stop Loss</div>
-                          <div className="kvVal">
-                            {_stopInvalid ? (
-                              <span style={{ color: "rgba(255,255,255,0.35)" }}>
-                                — <span style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontStyle: "italic" }}>(invalid)</span>
-                              </span>
-                            ) : (
-                              <span style={{ color: "rgba(248,113,113,0.80)" }}>${_stop.toFixed(2)}</span>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-                      {_targets.length > 0 ? (
-                        <div className="kvRow">
-                          <div className="kvKey">Targets</div>
-                          <div className="kvVal">
-                            <span style={{ color: "rgba(74,222,128,0.80)" }}>
-                              {_targets.map(t => `$${t.toFixed(2)}`).join(", ")}
-                            </span>
-                            {_targetUnrealistic ? (
-                              <>
-                                <span style={{ marginLeft: 5, fontSize: 12, color: "rgba(251,191,36,0.80)" }}>&#9888;</span>
-                                <span style={{ marginLeft: 4, fontSize: 11, color: "rgba(251,191,36,0.55)", fontStyle: "italic" }}>(may be unrealistic)</span>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
-                      ) : null}
+                  ) : null}
+                  {why.length > 0 ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">Setup Signals</div>
+                      <ul className="whyList">
+                        {why.slice(0, 5).map((x, i) => (
+                          <li key={`why_${i}`} className="whyListItem">
+                            <span className="whyDot whyDot--good">●</span>
+                            <span>{fmt(x)}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                ) : null}
-
-                {(Number.isFinite(Number(a?.aiScore)) || Number.isFinite(Number(a?.executionScore))) ? (
-                  <div>
-                    <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Score Rings</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <AIScoreRing
-                        score={Number.isFinite(Number(a?.aiScore)) ? Number(a.aiScore) : null}
-                        confidence={a?.confidence ?? null}
-                        loading={false}
-                      />
-                      <AIScoreRing
-                        score={Number.isFinite(Number(a?.executionScore)) ? Number(a.executionScore) : null}
-                        label="EXECUTION"
-                        size={160}
-                        strokeWidth={14}
-                        loading={false}
-                        showConfidence={false}
-                      />
+                  ) : null}
+                  {confirms.length > 0 ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">What Confirms</div>
+                      <ul className="whyList">
+                        {confirms.slice(0, 4).map((x, i) => (
+                          <li key={`conf_${i}`} className="whyListItem">
+                            <span className="whyDot whyDot--neutral">◆</span>
+                            <span>{fmt(x)}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                ) : null}
+                  ) : null}
+                  {(breaks.length > 0 || riskNotes) ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle whySectionTitle--warn">Risk Factors</div>
+                      <ul className="whyList">
+                        {breaks.slice(0, 4).map((x, i) => (
+                          <li key={`break_${i}`} className="whyListItem">
+                            <span className="whyDot whyDot--bad">▲</span>
+                            <span>{fmt(x)}</span>
+                          </li>
+                        ))}
+                        {!breaks.length && riskNotes ? (
+                          <li className="whyListItem">
+                            <span className="whyDot whyDot--bad">▲</span>
+                            <span>{fmt(riskNotes)}</span>
+                          </li>
+                        ) : null}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {execNotes ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">Execution Notes</div>
+                      <p className="whySectionText">{fmt(execNotes)}</p>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            )}
 
-              </div>
+            {activeTab === "summary" && (
+              !a || !summaryHasContent ? (
+                <div className="mutedSmall">Sentiment data will appear after analysis.</div>
+              ) : (
+                <div style={{ display: "grid", gap: 14 }}>
+                  {nsSummary ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">Overview</div>
+                      <p className="whySectionText">{fmt(nsSummary)}</p>
+                    </div>
+                  ) : null}
+                  {catalysts.length > 0 ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle">Key Drivers</div>
+                      <ul className="whyList">
+                        {catalysts.slice(0, 5).map((item, i) => (
+                          <li key={`cat_${i}`} className="whyListItem">
+                            <span className="whyDot whyDot--good">●</span>
+                            <span>{fmt(item)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {nsRisks.length > 0 ? (
+                    <div className="whySection">
+                      <div className="whySectionTitle whySectionTitle--warn">Risk Flags</div>
+                      <ul className="whyList">
+                        {nsRisks.slice(0, 4).map((item, i) => (
+                          <li key={`risk_${i}`} className="whyListItem">
+                            <span className="whyDot whyDot--bad">▲</span>
+                            <span>{fmt(item)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            )}
 
-              {/* RIGHT COLUMN */}
-              <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
-
-                {why.length > 0 ? (
-                  <div className="whySection">
-                    <div className="whySectionTitle">Setup Signals</div>
-                    <ul className="whyList">
-                      {why.slice(0, 5).map((x, i) => (
-                        <li key={`why_${i}`} className="whyListItem">
-                          <span className="whyDot whyDot--good">&#9679;</span>
-                          <span>{fmt(x)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {confirms.length > 0 ? (
-                  <div className="whySection">
-                    <div className="whySectionTitle">What Confirms</div>
-                    <ul className="whyList">
-                      {confirms.slice(0, 4).map((x, i) => (
-                        <li key={`conf_${i}`} className="whyListItem">
-                          <span className="whyDot whyDot--neutral">&#9670;</span>
-                          <span>{fmt(x)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {(breaks.length > 0 || riskNotes) ? (
-                  <div className="whySection">
-                    <div className="whySectionTitle whySectionTitle--warn">Risk Factors</div>
-                    <ul className="whyList">
-                      {breaks.slice(0, 4).map((x, i) => (
-                        <li key={`break_${i}`} className="whyListItem">
-                          <span className="whyDot whyDot--bad">&#9650;</span>
-                          <span>{fmt(x)}</span>
-                        </li>
-                      ))}
-                      {!breaks.length && riskNotes ? (
-                        <li className="whyListItem">
-                          <span className="whyDot whyDot--bad">&#9650;</span>
-                          <span>{fmt(riskNotes)}</span>
-                        </li>
-                      ) : null}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {(aiSummaryText || catalysts.length > 0 || aiRisks.length > 0) ? (
-                  <div style={{ display: "grid", gap: 14 }}>
-                    {aiSummaryText ? (
-                      <div className="whySection">
-                        <div className="whySectionTitle">AI Summary</div>
-                        <p className="whySectionText">{fmt(aiSummaryText)}</p>
+            {activeTab === "metrics" && (
+              !a ? (
+                <div className="mutedSmall">{analyzeFallbackText}</div>
+              ) : (
+                <div style={{ display: "grid", gap: 16 }}>
+                  {ta ? (
+                    <div>
+                      <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 12 }}>Technical Scores</div>
+                      <div className="mutedSmall" style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
+                        0–39 weak · 40–69 mixed · 70–100 strong
                       </div>
-                    ) : null}
-                    {catalysts.length > 0 ? (
-                      <div className="whySection">
-                        <div className="whySectionTitle">Key Drivers</div>
-                        <ul className="whyList">
-                          {catalysts.slice(0, 5).map((item, i) => (
-                            <li key={`cat_${i}`} className="whyListItem">
-                              <span className="whyDot whyDot--good">&#9679;</span>
-                              <span>{fmt(item)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    {aiRisks.length > 0 ? (
-                      <div className="whySection">
-                        <div className="whySectionTitle whySectionTitle--warn">Risk Flags</div>
-                        <ul className="whyList">
-                          {aiRisks.slice(0, 4).map((item, i) => (
-                            <li key={`risk_${i}`} className="whyListItem">
-                              <span className="whyDot whyDot--bad">&#9650;</span>
-                              <span>{fmt(item)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="mutedSmall">{analyzeFallbackText}</div>
-                )}
+                      {["momentum", "trend", "volatility", "liquidity", "risk"].map((k) => {
+                        const v = taToPct(ta?.[k]);
+                        return (
+                          <div key={k} style={{ display: "grid", gridTemplateColumns: "100px 1fr 30px", gap: 10, alignItems: "center", marginBottom: 9 }}>
+                            <div className="mutedSmall" style={{ fontWeight: 700, textTransform: "capitalize", fontSize: 12 }}>{k}</div>
+                            <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                              <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, background: barColor(v), transition: "width 600ms ease" }} />
+                            </div>
+                            <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800, fontSize: 11 }}>{v === null ? "—" : Math.round(v)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
 
-              </div>
-            </div>
+                  {(ep || _advHasStop || _advTargets.length > 0) ? (
+                    <div>
+                      <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Execution Plan</div>
+                      <div className="kv" style={{ marginTop: 0 }}>
+                        {ep?.date ? <div className="kvRow"><div className="kvKey">Date</div><div className="kvVal">{fmtAnalyzeValue(ep.date)}</div></div> : null}
+                        {ep?.window ? <div className="kvRow"><div className="kvKey">Window</div><div className="kvVal">{fmtAnalyzeValue(ep.window)}</div></div> : null}
+                        {bzText !== "—" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
+                        {_advHasStop ? (
+                          <div className="kvRow">
+                            <div className="kvKey">Stop Loss</div>
+                            <div className="kvVal">
+                              {_advStopInvalid ? (
+                                <span style={{ color: "rgba(255,255,255,0.35)" }}>— <span style={{ fontSize: 11, fontStyle: "italic" }}>(invalid)</span></span>
+                              ) : (
+                                <span style={{ color: "rgba(248,113,113,0.80)" }}>${_advStop.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                        {_advTargets.length > 0 ? (
+                          <div className="kvRow">
+                            <div className="kvKey">Targets</div>
+                            <div className="kvVal">
+                              <span style={{ color: "rgba(74,222,128,0.80)" }}>{_advTargets.map(t => `$${t.toFixed(2)}`).join(", ")}</span>
+                              {_advTargetUnrealistic ? <span style={{ marginLeft: 6, fontSize: 11, color: "rgba(251,191,36,0.55)", fontStyle: "italic" }}>(may be unrealistic)</span> : null}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {a && (Number.isFinite(Number(a?.aiScore)) || Number.isFinite(Number(a?.executionScore))) ? (
+                    <div>
+                      <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Score Rings</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <AIScoreRing
+                          score={Number.isFinite(Number(a?.aiScore)) ? Number(a.aiScore) : null}
+                          confidence={a?.confidence ?? null}
+                          loading={false}
+                        />
+                        <AIScoreRing
+                          score={Number.isFinite(Number(a?.executionScore)) ? Number(a.executionScore) : null}
+                          label="EXECUTION"
+                          size={108}
+                          strokeWidth={11}
+                          loading={false}
+                          showConfidence={false}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            )}
           </div>
         </div>
       );
