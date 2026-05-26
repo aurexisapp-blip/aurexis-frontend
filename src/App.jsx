@@ -5464,46 +5464,31 @@ async function loadWatchlistLive() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
           <RecentPicksCard />
         </motion.div>
-        <div className="dashCell dashCell--movers"><TopMoversCard /></div>
-
-        {(() => {
-          const bestPayload = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
-          const best = (bestPayload?.pick && typeof bestPayload.pick === "object" ? bestPayload.pick : null)
-            || (bestPayload?.best_pick && typeof bestPayload.best_pick === "object" ? bestPayload.best_pick : null)
-            || bestPayload;
-          const activeTicker = normalizeSymbol(best?.symbol || best?.ticker || "");
-          const isNoTrade = best?.is_trade === false || bestPayload?.is_trade === false;
-          const hasActivePick = Boolean(activeTicker && !isNoTrade && !loadingBestPick);
-
-          if (!hasActivePick) return null;
-
-          if (analyzeIsLowConviction && analyzeData) {
-            return (
-              <div className="dashCell dashCell--why" style={{ gridColumn: "span 2" }}>
-                <div className="card lowConvictionCard">
-                  <div className="cardHead">
-                    <div>
-                      <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
-                      <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
-                    </div>
-                  </div>
-                  <div className="cardBody">
-                    <div className="mutedSmall">
-                      {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
-                      Consider waiting for a stronger setup or analyzing a different symbol.
-                    </div>
-                  </div>
+        <div className="dashCell dashCell--why">
+          {analyzeIsLowConviction ? (
+            <div className="card lowConvictionCard">
+              <div className="cardHead">
+                <div>
+                  <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
+                  <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
                 </div>
               </div>
-            );
-          }
-
-          return (
-            <div className="dashCell" style={{ gridColumn: "span 2" }}>
-              <AnalysisCard />
+              <div className="cardBody">
+                <div className="mutedSmall">
+                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
+                  Consider waiting for a stronger setup or analyzing a different symbol.
+                </div>
+              </div>
             </div>
-          );
-        })()}
+          ) : (
+            <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+              <AnalysisCard />
+            </ProGate>
+          )}
+        </div>
+
+        <div className="dashCell dashCell--summary"><TopMoversCard /></div>
+        <div className="dashCell dashCell--movers" />
       </div>
     );
   };
