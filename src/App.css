@@ -437,11 +437,10 @@ a:hover{
   display: grid;
   grid-template-columns: 1.35fr 1fr;
   grid-template-areas:
-    "banner  banner"
-    "hero    hero"
-    "why     perf"
-    "why     picks"
-    "why     summary";
+    "banner banner"
+    "hero   hero"
+    "perf   picks"
+    "why    summary";
   gap: 12px;
   align-items: stretch;
   min-width: 0;
@@ -837,8 +836,8 @@ a:hover{
       "hero"
       "perf"
       "picks"
-      "summary"
-      "why";
+      "why"
+      "summary";
   }
   .dashMasonry{
     grid-template-columns: 1fr;
