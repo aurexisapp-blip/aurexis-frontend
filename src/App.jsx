@@ -5117,7 +5117,23 @@ async function loadWatchlistLive() {
     // ---- ANALYSIS (merged: Why This Trade + AI Summary + Advanced Metrics) ----
     const AnalysisCard = () => {
       const a = analysisObj;
-      if (!a) return null;
+      if (!a) return (
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 16, overflow: "hidden",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          height: "100%", display: "flex", flexDirection: "column",
+        }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Analysis</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Technical scores, execution plan, and AI reasoning.</div>
+          </div>
+          <div style={{ padding: "20px 18px", flex: 1, display: "flex", alignItems: "center" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>{analyzeFallbackText}</div>
+          </div>
+        </div>
+      );
 
       const ta = (a?.technicals && typeof a.technicals === "object" ? a.technicals : null)
         ?? (a?.technical_analysis && typeof a.technical_analysis === "object" ? a.technical_analysis : null);
