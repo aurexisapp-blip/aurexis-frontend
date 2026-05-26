@@ -2290,6 +2290,8 @@ function AppInner() {
   const lastValidAnalysisRef = useRef(null);
 
   const lastValidMoversRef = useRef([]);
+  const lastValidPerformanceRef = useRef(null);
+  const lastValidRecentPicksRef = useRef([]);
 
   // cmd-bar validation message (display-only, no layout change)
   const [cmdErr, setCmdErr] = useState("");
@@ -2836,11 +2838,23 @@ async function loadWatchlistLive() {
     setLoadingPerformance(true);
     setErrPerformance("");
     try {
-      const data = await apiGet("/performance");
-      setPerformanceData(data && typeof data === "object" ? data : null);
-      markDataFetchSuccess();
+      const data = await fetchWithRetry(
+        () => safeApiCall(() => apiGet("/performance"), { context: "performance" }),
+        2
+      );
+      const perf = data && typeof data === "object" ? data : null;
+      if (perf) {
+        setPerformanceData(perf);
+        lastValidPerformanceRef.current = perf;
+        markDataFetchSuccess();
+      } else {
+        const fallback = lastValidPerformanceRef.current;
+        if (fallback) setPerformanceData(fallback);
+      }
     } catch (e) {
-      setErrPerformance("Data unavailable — retrying…");
+      const fallback = lastValidPerformanceRef.current;
+      if (fallback) setPerformanceData(fallback);
+      else setErrPerformance("Data unavailable — retrying…");
     } finally {
       setLoadingPerformance(false);
     }
@@ -2850,16 +2864,28 @@ async function loadWatchlistLive() {
     setLoadingRecentPicks(true);
     setErrRecentPicks("");
     try {
-      const data = await apiGet("/performance/picks");
+      const data = await fetchWithRetry(
+        () => safeApiCall(() => apiGet("/performance/picks"), { context: "recent_picks" }),
+        2
+      );
       const picks = Array.isArray(data?.picks) ? data.picks
         : Array.isArray(data?.items) ? data.items
         : Array.isArray(data?.data) ? data.data
         : Array.isArray(data) ? data
         : [];
-      setRecentPicksData(picks.slice(0, 20));
-      markDataFetchSuccess();
+      if (picks.length > 0) {
+        const sliced = picks.slice(0, 20);
+        setRecentPicksData(sliced);
+        lastValidRecentPicksRef.current = sliced;
+        markDataFetchSuccess();
+      } else {
+        const fallback = lastValidRecentPicksRef.current;
+        if (fallback?.length) setRecentPicksData(fallback);
+      }
     } catch (e) {
-      setErrRecentPicks("Data unavailable — retrying…");
+      const fallback = lastValidRecentPicksRef.current;
+      if (fallback?.length) setRecentPicksData(fallback);
+      else setErrRecentPicks("Data unavailable — retrying…");
     } finally {
       setLoadingRecentPicks(false);
     }
@@ -3117,10 +3143,19 @@ async function loadWatchlistLive() {
     safeLoad(loadWatchlistLive);
     safeLoad(loadPerformance);
     safeLoad(loadRecentPicks);
-    // Best pick is loaded explicitly by the user via the "Get Today's Best Pick" button.
+    safeLoad(loadBestPick);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      safeLoad(loadPerformance);
+      safeLoad(loadRecentPicks);
+    }, 300000); // refresh every 5 minutes
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -3935,20 +3970,29 @@ async function loadWatchlistLive() {
         const volume = vol != null ? Number(vol) : null;
         const sym = String(m?.symbol || "").toUpperCase();
         if (sym.includes("ZVZ") || sym.includes("TEST")) return false;
-        return Number.isFinite(price) && price >= 1 && (volume === null || volume >= 10000);
+        return Number.isFinite(price) && price >= 1 && (volume === null || volume === 0 || volume >= 10000);
       });
       return (
-        <div className="card">
-          <div className="cardHead">
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 16, overflow: "hidden",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          display: "flex", flexDirection: "column",
+          height: "100%",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 18px 12px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+          }}>
             <div>
-              <div className="cardTitle">Top movers</div>
-              <div className="cardSub">Market leaders by movement.</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Top Movers</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Market leaders by movement.</div>
             </div>
-            <div className="cardRight">
-              <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
-            </div>
+            <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
           </div>
-          <div className="cardBody">
+          <div style={{ flex: 1, padding: "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
             {errMovers ? (
               <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <span>Unable to load movers</span>
@@ -3974,7 +4018,6 @@ async function loadWatchlistLive() {
             ) : (
               <div className="mutedSmall">No liquid movers passed UI filters (price ≥ $1, volume ≥ 10k).</div>
             )}
-
             <div style={{ marginTop: 12 }}>
               <button className="btn btn--ghost" onClick={() => setTab("movers")}>Open full movers</button>
             </div>
@@ -4288,114 +4331,102 @@ async function loadWatchlistLive() {
       if (loadingPerformance) return <SkeletonCard title="Performance" />;
       const perf = performanceData && typeof performanceData === "object" ? performanceData : null;
 
-      // ── API stats (primary source) ──
-      const perfWinRate    = perf?.win_rate    != null ? Number(perf.win_rate)    : null;
-      const perfTotalPicks = perf?.total_picks != null ? Number(perf.total_picks) : null;
-      const perfAvgReturn  = perf?.avg_return_pct != null ? Number(perf.avg_return_pct) : null;
+      // ── API aggregated stats (primary source) ──
+      const apiTotalPicks  = Number.isFinite(Number(perf?.total_picks))    ? Number(perf.total_picks)    : null;
+      const apiWins        = Number.isFinite(Number(perf?.wins))           ? Number(perf.wins)           : null;
+      const apiLosses      = Number.isFinite(Number(perf?.losses))         ? Number(perf.losses)         : null;
+      const apiWinRate     = Number.isFinite(Number(perf?.win_rate))       ? Number(perf.win_rate)       : null;
+      const apiAvgReturn   = Number.isFinite(Number(perf?.avg_return_pct)) ? Number(perf.avg_return_pct) : null;
 
-      // ── Local picks (fallback / 14d computation) ──
+      // ── Computed from recentPicksData (fallback) ──
       const allPicks     = recentPicksData;
-      const totalPicks   = allPicks.length;
-      const wonAllTime   = allPicks.filter(p => /^won/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
-      const lostAllTime  = allPicks.filter(p => /^lost/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
-      const decisiveAllTime = wonAllTime + lostAllTime;
-      const pendingCount    = allPicks.filter(p => String(p?.status || p?.outcome || "").toLowerCase() === "pending").length;
-      const resolvedCount   = totalPicks - pendingCount;
-      const allTimeWinRate  = decisiveAllTime > 0 ? (wonAllTime / decisiveAllTime) * 100 : null;
-      const resolvedReturns = allPicks
-        .filter(p => Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)) && !String(p?.outcome || "").includes("pending"))
-        .map(p => Number(p.return_pct ?? p.max_return_pct));
-      const allTimeAvgReturn = resolvedReturns.length > 0
-        ? resolvedReturns.reduce((a, b) => a + b, 0) / resolvedReturns.length
-        : null;
+      const wonLocal     = allPicks.filter(p => /^won/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      const lostLocal    = allPicks.filter(p => /^lost/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      const decisiveLocal = wonLocal + lostLocal;
+      const pendingCount = allPicks.filter(p => String(p?.status || p?.outcome || "").toLowerCase() === "pending").length;
+      const resolvedCount = allPicks.length - pendingCount;
+      const localWinRate = decisiveLocal > 0 ? (wonLocal / decisiveLocal) * 100 : null;
+      const localReturns = allPicks.filter(p => Number.isFinite(Number(p?.max_return_pct))).map(p => Number(p.max_return_pct));
+      const localAvgReturn = localReturns.length > 0 ? localReturns.reduce((a, b) => a + b, 0) / localReturns.length : null;
 
-      // ── Display values — API preferred ──
-      const displayWinRate   = perfWinRate   ?? allTimeWinRate;
-      const displayPicks     = perfTotalPicks ?? (totalPicks > 0 ? totalPicks : null);
-      const displayAvgReturn = perfAvgReturn  ?? allTimeAvgReturn;
+      // ── Merged: prefer API, fall back to computed ──
+      const totalPicks      = apiTotalPicks ?? allPicks.length;
+      const wonAllTime      = apiWins       ?? wonLocal;
+      const lostAllTime     = apiLosses     ?? lostLocal;
+      const allTimeWinRate  = apiWinRate    ?? localWinRate;
+      const allTimeAvgReturn = apiAvgReturn ?? localAvgReturn;
 
-      // ── 14-day rolling window from picks ──
-      const ms14d = 14 * 24 * 60 * 60 * 1000;
-      const picks14d = allPicks.filter(p => {
-        const d = new Date(p?.date || p?.recorded_at || "").getTime();
-        return Number.isFinite(d) && (Date.now() - d) <= ms14d;
-      });
-      const won14d     = picks14d.filter(p => /^won/.test(String(p?.outcome || p?.status || "").toLowerCase())).length;
-      const lost14d    = picks14d.filter(p => /^lost/.test(String(p?.outcome || p?.status || "").toLowerCase())).length;
-      const pending14d = picks14d.filter(p => String(p?.outcome || p?.status || "").toLowerCase() === "pending").length;
-      const decisive14d = won14d + lost14d;
-      const winRate14d  = decisive14d > 0 ? (won14d / decisive14d) * 100 : null;
-      const wonReturns14d = picks14d
-        .filter(p => /^won/.test(String(p?.outcome || "").toLowerCase()) && Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)))
-        .map(p => Number(p.return_pct ?? p.max_return_pct));
-      const avgReturn14d = wonReturns14d.length > 0
-        ? wonReturns14d.reduce((a, b) => a + b, 0) / wonReturns14d.length
-        : (perfAvgReturn ?? null);
-      const lossReturns14d = picks14d
-        .filter(p => /^lost/.test(String(p?.outcome || "").toLowerCase()) && Number.isFinite(Number(p?.return_pct ?? p?.max_return_pct)))
-        .map(p => Math.abs(Number(p.return_pct ?? p.max_return_pct)));
-      const avgDrawdown14d = lossReturns14d.length > 0
-        ? lossReturns14d.reduce((a, b) => a + b, 0) / lossReturns14d.length
-        : null;
-
-      const hasAnyData = displayPicks != null || perf != null;
+      const hasAnyData = totalPicks > 0 || perf != null;
 
       return (
-        <div className="card">
-          <div className="cardHead">
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 16,
+          overflow: "hidden",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          height: "100%", display: "flex", flexDirection: "column",
+        }}>
+          {/* Header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 18px 12px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+          }}>
             <div>
-              <div className="cardTitle">Performance</div>
-              {displayPicks != null ? (
-                <div className="cardSub">
-                  {displayPicks} pick{displayPicks !== 1 ? "s" : ""}{pendingCount > 0 ? ` (${pendingCount} pending)` : ""}
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Performance</div>
+              {totalPicks > 0 ? (
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>
+                  {totalPicks} pick{totalPicks !== 1 ? "s" : ""}{pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
                 </div>
               ) : null}
             </div>
+            {allTimeWinRate !== null ? (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
+                background: allTimeWinRate >= 50 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
+                border: `1px solid ${allTimeWinRate >= 50 ? "rgba(74,222,128,0.20)" : "rgba(248,113,113,0.20)"}`,
+                color: allTimeWinRate >= 50 ? "#4ade80" : "#f87171",
+                letterSpacing: "0.04em",
+              }}>{allTimeWinRate.toFixed(1)}% WR</span>
+            ) : null}
           </div>
-          <div className="cardBody">
-            {!hasAnyData ? (
-              <div className="mutedSmall">Performance tracking just started — results will appear after first trades.</div>
-            ) : (
-              <>
-                {/* 3-stat grid — horizontal row */}
-                <div className="stats3">
-                  <div className="stat">
-                    <div className="statLabel">Win Rate</div>
-                    <div className={`statValue ${(displayWinRate ?? 0) >= 50 ? "perfStatGood" : "perfStatBad"}`}>
-                      {displayWinRate !== null ? `${displayWinRate.toFixed(1)}%` : "—"}
-                    </div>
-                    {perf?.wins != null && perf?.losses != null ? (
-                      <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>{perf.wins}W / {perf.losses}L</div>
-                    ) : decisiveAllTime > 0 ? (
-                      <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>{wonAllTime}W / {lostAllTime}L</div>
-                    ) : null}
-                  </div>
-                  <div className="stat">
-                    <div className="statLabel">Picks</div>
-                    <div className="statValue">{displayPicks ?? "—"}</div>
-                    <div className="mutedSmall" style={{ fontSize: 10, marginTop: 3 }}>
-                      {resolvedCount > 0 ? `${resolvedCount} resolved` : pendingCount > 0 ? `${pendingCount} pending` : null}
-                    </div>
-                  </div>
-                  <div className="stat">
-                    <div className="statLabel">Avg Return</div>
-                    <div className={`statValue ${(displayAvgReturn ?? 0) >= 0 ? "perfStatGood" : "perfStatBad"}`}>
-                      {displayAvgReturn !== null ? `${displayAvgReturn >= 0 ? "+" : ""}${displayAvgReturn.toFixed(2)}%` : "—"}
-                    </div>
-                  </div>
-                </div>
 
-                {/* 14-day rolling summary bar */}
-                {picks14d.length > 0 ? (
-                  <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
-                    Last 14 days: {won14d}W / {lost14d}L
-                    {avgReturn14d !== null ? (
-                      <span style={{ color: "rgba(74,222,128,0.6)" }}> · {avgReturn14d >= 0 ? "+" : ""}{avgReturn14d.toFixed(1)}% avg return</span>
-                    ) : null}
-                    <span style={{ color: "rgba(255,255,255,0.25)" }}> · rolling window</span>
+          {/* Stats */}
+          <div style={{ padding: "16px 18px" }}>
+            {!hasAnyData ? (
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>
+                Performance tracking just started — results will appear after first trades.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: "rgba(255,255,255,0.05)", borderRadius: 12, overflow: "hidden" }}>
+                {[
+                  {
+                    label: "Win Rate",
+                    value: allTimeWinRate !== null ? `${allTimeWinRate.toFixed(1)}%` : "—",
+                    sub: (wonAllTime > 0 || lostAllTime > 0) ? `${wonAllTime}W / ${lostAllTime}L` : null,
+                    color: allTimeWinRate !== null ? (allTimeWinRate >= 50 ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.60)",
+                  },
+                  {
+                    label: "Picks",
+                    value: totalPicks > 0 ? String(totalPicks) : "—",
+                    sub: resolvedCount > 0 ? `${resolvedCount} resolved` : pendingCount > 0 ? `${pendingCount} pending` : null,
+                    color: "rgba(255,255,255,0.88)",
+                  },
+                  {
+                    label: "Avg Return",
+                    value: allTimeAvgReturn !== null ? `${allTimeAvgReturn >= 0 ? "+" : ""}${allTimeAvgReturn.toFixed(1)}%` : "—",
+                    sub: null,
+                    color: allTimeAvgReturn !== null ? (allTimeAvgReturn >= 0 ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.60)",
+                  },
+                ].map(({ label, value, sub, color }) => (
+                  <div key={label} style={{ background: "rgba(9,12,22,0.90)", padding: "14px 16px" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 8 }}>{label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color, letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</div>
+                    {sub ? <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 5 }}>{sub}</div> : null}
                   </div>
-                ) : null}
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -4406,109 +4437,143 @@ async function loadWatchlistLive() {
     const RecentPicksCard = () => {
       if (loadingRecentPicks) return <SkeletonCard title="Recent Picks" />;
 
-      return (
-        <div className="card">
-          <div className="cardHead">
-            <div>
-              <div className="cardTitle">Recent Picks</div>
-              {recentPicksData.length > 0 ? <div className="cardSub">Last AI trade decisions.</div> : null}
-            </div>
-          </div>
-          <div className="cardBody" style={{ padding: 0, maxHeight: 400, overflowY: "auto" }}>
-            {errRecentPicks && !recentPicksData.length ? (
-              <div className="mutedSmall" style={{ padding: "12px 18px" }}>{errRecentPicks}</div>
-            ) : !recentPicksData.length ? (
-              <div className="mutedSmall" style={{ padding: "12px 18px" }}>No recent picks available.</div>
-            ) : (
-              <table className="table" style={{ margin: 0 }}>
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Return</th>
-                    <th>Outcome</th>
-                    <th>Date</th>
-                    <th>Signals</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    // Pre-count symbols for dedup display (Issue 5)
-                    const symTotals = {};
-                    recentPicksData.slice(0, 5).forEach(p => {
-                      const s = normalizeSymbol(p?.symbol || p?.ticker || "");
-                      if (s) symTotals[s] = (symTotals[s] || 0) + 1;
-                    });
-                    const symSeen = {};
-                    return recentPicksData.map((pick, i) => {
-                    const sym = normalizeSymbol(pick?.symbol || pick?.ticker || "");
-                    symSeen[sym] = (symSeen[sym] || 0) + 1;
-                    const displaySym = symTotals[sym] > 1 ? `${sym} #${symSeen[sym]}` : sym;
-                    const ret = Number(pick?.max_return_pct ?? pick?.return_pct ?? pick?.return ?? pick?.pnl_pct);
-                    const outcome = String(pick?.outcome || pick?.status || "pending").toLowerCase();
-                    const signals = Array.isArray(pick?.signals) ? pick.signals : (Array.isArray(pick?.edge_signals) ? pick.edge_signals : []);
-                    const outcomeClass = outcome.includes("win") ? "pill--good"
-                      : outcome.includes("loss") ? "pill--bad" : "pill--neutral";
-                    const pickDate = fmtPickTimestamp(pick);
-                    // Old pending indicator (Issue 2)
-                    const isOldPending = outcome === "pending" && (() => {
-                      try {
-                        const ms = new Date(pick?.recorded_at).getTime();
-                        return !isNaN(ms) && (Date.now() - ms) > 5 * 24 * 60 * 60 * 1000;
-                      } catch { return false; }
-                    })();
+      const symTotals = {};
+      recentPicksData.forEach(p => {
+        const s = normalizeSymbol(p?.symbol || p?.ticker || "");
+        if (s) symTotals[s] = (symTotals[s] || 0) + 1;
+      });
+      const symSeen = {};
 
-                    return (
-                      <tr
-                        key={`rpick_${i}`}
-                        className="tableRow tableRow--clickable"
-                        onClick={() => {
-                          if (sym) {
-                            setSymbol(sym);
-                            runAnalyze(sym);
-                            setTab("dashboard");
-                          }
-                        }}
-                      >
-                        <td className="tableCellSymbol">
-                          {displaySym || "—"}
-                          {isOldPending ? (
-                            <span
-                              title="Evaluation pending — will resolve when window expires"
-                              style={{ marginLeft: 5, cursor: "help", opacity: 0.55, fontSize: 12 }}
-                            >⏳</span>
-                          ) : null}
-                        </td>
-                        <td className={Number.isFinite(ret) && outcome !== "pending" ? ret >= 0 ? "tableCellGood" : "tableCellBad" : ""}>
-                          {Number.isFinite(ret) && outcome !== "pending" ? `${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%` : "—"}
-                        </td>
-                        <td>
-                          <span className={`pill ${outcomeClass}`} style={{ fontSize: 11 }}>{outcome}</span>
-                        </td>
-                        <td style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap" }}>
-                          {pickDate ?? "—"}
-                        </td>
-                        <td>
-                          {signals.length === 0 ? (
-                            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)" }}>—</span>
-                          ) : signals.map((s, j) => (
-                            <span
-                              key={`rs_${j}`}
-                              style={{
-                                fontSize: 10, padding: "3px 7px", borderRadius: 5,
-                                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-                                color: "rgba(255,255,255,0.55)", fontWeight: 500,
-                                whiteSpace: "nowrap", display: "inline-block", marginRight: 4,
-                              }}
-                              title={String(s)}
-                            >{String(s)}</span>
-                          ))}
-                        </td>
-                      </tr>
-                    );
-                  });})()}
-                </tbody>
-              </table>
-            )}
+      return (
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 16,
+          overflow: "hidden",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+        }}>
+          {/* Header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 18px 12px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+          }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Recent Picks</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Last AI trade decisions</div>
+            </div>
+            {recentPicksData.length > 0 ? (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em",
+              }}>{recentPicksData.length} picks</span>
+            ) : null}
+          </div>
+
+          {/* Column labels */}
+          {recentPicksData.length > 0 ? (
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 60px 72px",
+              padding: "7px 18px", gap: 8,
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
+            }}>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)" }}>Symbol</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)", textAlign: "right" }}>Return</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)", textAlign: "right" }}>Outcome</span>
+            </div>
+          ) : null}
+
+          {/* Rows */}
+          <div style={{ overflowY: "auto", maxHeight: 260 }}>
+            {errRecentPicks && !recentPicksData.length ? (
+              <div style={{ padding: "16px 18px", fontSize: 12, color: "rgba(255,255,255,0.30)" }}>{errRecentPicks}</div>
+            ) : !recentPicksData.length ? (
+              <div style={{ padding: "24px 18px", textAlign: "center" }}>
+                <div style={{ fontSize: 22, opacity: 0.08, marginBottom: 8 }}>◎</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>No recent picks available.</div>
+              </div>
+            ) : recentPicksData.map((pick, i) => {
+              const sym = normalizeSymbol(pick?.symbol || pick?.ticker || "");
+              symSeen[sym] = (symSeen[sym] || 0) + 1;
+              const displaySym = symTotals[sym] > 1 ? `${sym} #${symSeen[sym]}` : sym;
+              const ret = Number(pick?.max_return_pct ?? pick?.return_pct ?? pick?.return ?? pick?.pnl_pct);
+              const outcome = String(pick?.outcome || pick?.status || "pending").toLowerCase();
+              const signals = Array.isArray(pick?.signals) ? pick.signals : Array.isArray(pick?.edge_signals) ? pick.edge_signals : [];
+              const pickDate = fmtPickTimestamp(pick);
+              const isWin  = outcome === "won" || outcome === "win" || outcome.includes("win");
+              const isLoss = outcome === "lost" || outcome === "loss" || outcome.includes("loss") || outcome.includes("lose");
+              const isExpired = outcome.includes("expired") || outcome.includes("neutral");
+              const isPending = !isWin && !isLoss && !isExpired;
+              const isLast = i === recentPicksData.length - 1;
+              const isOldPending = isPending && (() => {
+                try { const ms = new Date(pick?.recorded_at).getTime(); return !isNaN(ms) && (Date.now() - ms) > 5 * 24 * 60 * 60 * 1000; }
+                catch { return false; }
+              })();
+
+              const retColor = isWin ? "#4ade80" : isLoss ? "#f87171" : "rgba(255,255,255,0.40)";
+              const outcomeBg     = isWin ? "rgba(74,222,128,0.08)" : isLoss ? "rgba(248,113,113,0.08)" : isExpired ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.04)";
+              const outcomeBorder = isWin ? "rgba(74,222,128,0.20)" : isLoss ? "rgba(248,113,113,0.20)" : isExpired ? "rgba(251,191,36,0.18)" : "rgba(255,255,255,0.09)";
+              const outcomeColor  = isWin ? "#4ade80"               : isLoss ? "#f87171"               : isExpired ? "#fbbf24"               : "rgba(255,255,255,0.35)";
+              const outcomeLabel  = isWin ? "Won" : isLoss ? "Lost" : isExpired ? "Expired" : "Pending";
+
+              return (
+                <div
+                  key={`rpick_${i}`}
+                  onClick={() => { if (sym) { setSymbol(sym); runAnalyze(sym); setTab("dashboard"); } }}
+                  style={{
+                    display: "grid", gridTemplateColumns: "1fr 60px 72px",
+                    gap: 8, alignItems: "center",
+                    padding: "11px 18px",
+                    borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
+                    cursor: sym ? "pointer" : "default",
+                    transition: "background 0.12s",
+                  }}
+                  onMouseEnter={e => { if (sym) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  {/* Symbol + date + signals */}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>
+                        {displaySym || "—"}
+                      </span>
+                      {isOldPending ? <span style={{ fontSize: 11, opacity: 0.45 }} title="Pending — evaluation window may have expired">⏳</span> : null}
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{pickDate ?? "—"}</span>
+                    </div>
+                    {signals.length > 0 ? (
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {signals.slice(0, 3).map((s, j) => (
+                          <span key={`sig_${j}`} style={{
+                            fontSize: 9, fontWeight: 600, padding: "1px 5px", borderRadius: 3,
+                            background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.14)",
+                            color: "rgba(147,210,255,0.55)", letterSpacing: "0.03em", whiteSpace: "nowrap",
+                          }}>{fmt(s)}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Return */}
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: retColor, letterSpacing: "-0.01em" }}>
+                      {Number.isFinite(ret) && !isPending ? `${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%` : "—"}
+                    </span>
+                  </div>
+
+                  {/* Outcome badge */}
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+                      letterSpacing: "0.04em", whiteSpace: "nowrap",
+                      background: outcomeBg, border: `1px solid ${outcomeBorder}`, color: outcomeColor,
+                      minWidth: 48,
+                    }}>{outcomeLabel}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
