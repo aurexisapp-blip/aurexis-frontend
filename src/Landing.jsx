@@ -908,9 +908,9 @@ function ProductDemo() {
               border: "1px solid rgba(255,255,255,0.05)", borderRadius: 9, overflow: "hidden",
             }}>
               {[
-                { label: "WIN RATE",   val: "75%"    },
-                { label: "PICKS",      val: "14"     },
-                { label: "AVG RETURN", val: "+6.94%" },
+                { label: "WIN RATE",   val: "45.9%"  },
+                { label: "PICKS",      val: "37"     },
+                { label: "AVG RETURN", val: "+3.8%"  },
               ].map(({ label, val }, i) => (
                 <div key={label} style={{
                   flex: 1, textAlign: "center", padding: "10px 8px",
@@ -1109,7 +1109,7 @@ export default function Landing({ onGetStarted }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.88 }}
           >
-            Verified on Alpaca. 75% win rate. $9/month.
+            Verified on Alpaca. 45.9% win rate. $9/month.
           </motion.p>
 
           {/* CTA */}
