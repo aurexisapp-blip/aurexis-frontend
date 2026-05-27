@@ -5961,7 +5961,7 @@ async function loadWatchlistLive() {
         const price = Number(m?.price ?? m?.last_price ?? m?.last);
         const vol = m?.volume;
         const volume = vol != null ? Number(vol) : null;
-        return Number.isFinite(price) && price >= 1 && (volume === null || volume >= 10000);
+        return Number.isFinite(price) && price >= 1 && (volume === null || volume === 0 || volume >= 10000);
       });
       const key = String(sort?.key || "");
       const dir = sort?.dir === "asc" ? 1 : -1;
