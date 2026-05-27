@@ -2695,7 +2695,7 @@ async function loadBestPick() {
   setErrBestPick("");
   setBestPickTimedOut(false);
   try {
-    const path = "/best_pick_v2?max_scan=50&allow_llm_news=false";
+    const path = "/best_pick_v2?allow_llm_news=false";
     const candidateUrls = Array.from(new Set([
       API_BASE ? `${API_BASE}${path}` : path,
     ]));
@@ -6095,7 +6095,7 @@ async function loadWatchlistLive() {
         const controller = new AbortController();
         const t = window.setTimeout(() => controller.abort(), 90000);
         const res = await fetch(
-          `${API_BASE_URL}/best_pick_v2?max_scan=200&allow_llm_news=false`,
+          `${API_BASE_URL}/best_pick_v2?allow_llm_news=false`,
           { signal: controller.signal }
         );
         window.clearTimeout(t);
