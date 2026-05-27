@@ -1145,9 +1145,9 @@ export default function Landing({ onGetStarted }) {
 
         {/* ── Stats bar — full width with vertical separators ── */}
         <div style={S.statsBar} className="stats-bar">
-          <StatBarItem raw="75%" label="Win Rate" delay={0} />
+          <StatBarItem raw="45.9%" label="Live Win Rate" delay={0} />
           <div style={S.statsBarSep} className="stats-bar-sep" />
-          <StatBarItem raw="+4.87%" label="Avg Return Per Trade" delay={110} />
+          <StatBarItem raw="+3.8%" label="Avg Return Per Pick" delay={110} />
           <div style={S.statsBarSep} className="stats-bar-sep" />
           <StatBarItem raw="1200" label="Stocks Scanned Daily" delay={220} />
         </div>
