@@ -2095,6 +2095,7 @@ function AppInner() {
       main: [
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
+        { key: "premovers", label: "Pre-Movers", icon: "⚡" },
         { key: "screener", label: "Screener", icon: "⊞" },
       ],
       trading: [
@@ -6081,6 +6082,152 @@ async function loadWatchlistLive() {
   };
 
 
+  // ---------------------------------------------------------------------------
+  // Pre-Movers: small-cap $1-$20 setups likely to jump 50-200% next session
+  // ---------------------------------------------------------------------------
+  const PreMovers = () => {
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [err, setErr] = useState("");
+    const [scanned, setScanned] = useState(0);
+    const [elapsed, setElapsed] = useState(null);
+    const [source, setSource] = useState("");
+    const [ts, setTs] = useState(null);
+
+    const load = async (refresh = false) => {
+      setLoading(true);
+      setErr("");
+      try {
+        const path = `/scan/pre_movers?max_results=25${refresh ? "&refresh=true" : ""}`;
+        const data = await safeApiCall(() => apiGet(path), { context: "pre_movers" });
+        setResults(Array.isArray(data?.results) ? data.results : []);
+        setScanned(data?.scanned || 0);
+        setElapsed(data?.elapsed || null);
+        setSource(data?.source || "");
+        setTs(data?.ts || null);
+      } catch (e) {
+        setErr(friendlyError(e, "pre_movers") || "Could not load pre-movers");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    useEffect(() => { load(false); }, []);
+
+    const scoreColor = (s) => {
+      const n = Number(s);
+      if (n >= 75) return "#4ade80";
+      if (n >= 55) return "#facc15";
+      return "rgba(255,255,255,0.55)";
+    };
+
+    const fmtTs = (t) => {
+      if (!t) return "";
+      try {
+        return new Date(Number(t) * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      } catch { return ""; }
+    };
+
+    return (
+      <div className="pageGrid">
+        <div className="card">
+          <div className="cardHead">
+            <div>
+              <div className="cardTitle">Pre-Mover Scanner</div>
+              <div className="cardSub">
+                Small-caps $1–$20 coiling up for a potential 50-200% move.
+                {ts ? <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 11 }}>Updated {fmtTs(ts)}{source === "cache" ? " (cached)" : ""}</span> : null}
+              </div>
+            </div>
+            <div className="cardRight">
+              {loading ? <span className="btnSpinner" /> : null}
+              <button className="btn btn--ghost" onClick={() => load(false)} disabled={loading}>
+                {loading ? "Loading…" : "Refresh"}
+              </button>
+              <button className="btn btn--ghost" onClick={() => load(true)} disabled={loading}
+                title="Force a full rescan (~2-5 min)">
+                Full Scan
+              </button>
+            </div>
+          </div>
+
+          <div className="cardBody">
+            {err ? (
+              <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <span>{err}</span>
+                <button className="btn btn--ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => load(false)}>Retry</button>
+              </div>
+            ) : results.length === 0 && !loading ? (
+              <div className="mutedSmall">
+                No results yet — the background scan runs every 2 hours. Hit <b>Full Scan</b> to run one now (takes ~2-5 min).
+              </div>
+            ) : results.length > 0 ? (
+              <>
+                {scanned > 0 ? (
+                  <div style={{ fontSize: 11, opacity: 0.45, marginBottom: 10 }}>
+                    Scanned {scanned} candidates{elapsed ? ` in ${elapsed}s` : ""}
+                  </div>
+                ) : null}
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Price</th>
+                      <th>Score</th>
+                      <th>Vol Surge</th>
+                      <th>ATR Squeeze</th>
+                      <th>News</th>
+                      <th>Entry Zone</th>
+                      <th>Invalidation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r) => {
+                      const sig = r?.signals || {};
+                      const volRatio = sig?.vol_surge?.ratio;
+                      const atrRatio = sig?.atr_compression?.atr5_atr20;
+                      const hasNews = Boolean(sig?.news_catalyst);
+                      return (
+                        <tr key={r.symbol} className="rowClickable" onClick={() => onSelectMover(r.symbol)} title="Click to analyze">
+                          <td><b style={{ fontSize: 13.5 }}>{r.symbol}</b></td>
+                          <td>{r.price != null ? money(r.price) : "—"}</td>
+                          <td>
+                            <span style={{ fontWeight: 800, color: scoreColor(r.score) }}>
+                              {r.score != null ? r.score : "—"}
+                            </span>
+                          </td>
+                          <td>{volRatio != null ? `${volRatio}x` : "—"}</td>
+                          <td style={{ color: atrRatio != null && atrRatio < 0.75 ? "#4ade80" : undefined }}>
+                            {atrRatio != null ? atrRatio.toFixed(2) : "—"}
+                          </td>
+                          <td style={{ color: hasNews ? "#4ade80" : "rgba(255,255,255,0.3)" }}>
+                            {hasNews ? "Yes" : "—"}
+                          </td>
+                          <td style={{ fontSize: 12, opacity: 0.75 }}>{r.entry_zone || "—"}</td>
+                          <td style={{ fontSize: 12, color: "rgba(251,113,133,0.85)" }}>{r.invalidation || "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            ) : loading ? (
+              <div className="mutedSmall">Scanning small-cap universe…</div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="card" style={{ fontSize: 12, opacity: 0.6 }}>
+          <div className="cardBody" style={{ paddingTop: 12, paddingBottom: 12 }}>
+            <b>How scores work:</b> Volume surge (30pts) + ATR squeeze (25pts) + close near day high (15pts) + near 20d high (15pts) + news catalyst (10pts) + RS vs SPY (5pts).
+            Scores ≥75 are high-conviction. ATR squeeze &lt;0.75 = coiling up. These are setups, not guarantees — always check the chart.
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
   const Watchlist = () => {
     const AI_SCORE_THRESHOLD = 7.0;
 
@@ -7555,6 +7702,7 @@ async function loadWatchlistLive() {
 const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
+  if (tab === "premovers") return <PreMovers />;
   if (tab === "screener") return <Screener />;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
