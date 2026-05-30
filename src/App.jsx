@@ -6208,7 +6208,7 @@ async function loadWatchlistLive() {
                   <tbody>
                     {results.map((r) => {
                       const sig = r?.signals || {};
-                      const volRatio = sig?.vol_surge?.ratio;
+                      const volRatio = sig?.quiet_accumulation?.vol_ratio ?? sig?.vol_surge?.ratio;
                       const atrRatio = sig?.atr_compression?.atr5_atr20;
                       const floatRot = sig?.float_rotation?.rotation_pct;
                       const catalyst = sig?.catalyst;
