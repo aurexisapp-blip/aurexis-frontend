@@ -6093,6 +6093,7 @@ async function loadWatchlistLive() {
     const [elapsed, setElapsed] = useState(null);
     const [source, setSource] = useState("");
     const [ts, setTs] = useState(null);
+    const [hotSectors, setHotSectors] = useState([]);
 
     const load = async (refresh = false) => {
       setLoading(true);
@@ -6105,6 +6106,7 @@ async function loadWatchlistLive() {
         setElapsed(data?.elapsed || null);
         setSource(data?.source || "");
         setTs(data?.ts || null);
+        setHotSectors(Array.isArray(data?.hot_sectors) ? data.hot_sectors : []);
       } catch (e) {
         setErr(friendlyError(e, "pre_movers") || "Could not load pre-movers");
       } finally {
@@ -6128,6 +6130,13 @@ async function loadWatchlistLive() {
       } catch { return ""; }
     };
 
+    const tagStyle = (tag) => {
+      if (tag === "squeeze") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.35)" };
+      if (tag === "low_float") return { background: "rgba(250,204,21,0.12)", color: "#facc15", border: "1px solid rgba(250,204,21,0.3)" };
+      if (tag === "8K_catalyst") return { background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" };
+      return { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" };
+    };
+
     return (
       <div className="pageGrid">
         <div className="card">
@@ -6135,7 +6144,7 @@ async function loadWatchlistLive() {
             <div>
               <div className="cardTitle">Pre-Mover Scanner</div>
               <div className="cardSub">
-                Small-caps $1–$20 coiling up for a potential 50-200% move.
+                Small-caps $1–$20 — float rotation, squeeze setups, and 8-K catalysts.
                 {ts ? <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 11 }}>Updated {fmtTs(ts)}{source === "cache" ? " (cached)" : ""}</span> : null}
               </div>
             </div>
@@ -6152,6 +6161,14 @@ async function loadWatchlistLive() {
           </div>
 
           <div className="cardBody">
+            {hotSectors.length > 0 && (
+              <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 8, fontSize: 12 }}>
+                <span style={{ color: "#4ade80", fontWeight: 700 }}>⚡ Hot sector alert:</span>
+                <span style={{ color: "rgba(255,255,255,0.75)", marginLeft: 6 }}>
+                  {hotSectors.map(s => s.toUpperCase()).join(", ")} — multiple stocks in the same sector are coiling up simultaneously.
+                </span>
+              </div>
+            )}
             {err ? (
               <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <span>{err}</span>
@@ -6168,15 +6185,20 @@ async function loadWatchlistLive() {
                     Scanned {scanned} candidates{elapsed ? ` in ${elapsed}s` : ""}
                   </div>
                 ) : null}
+                <div style={{ overflowX: "auto" }}>
                 <table className="table">
                   <thead>
                     <tr>
                       <th>Symbol</th>
+                      <th>Tags</th>
                       <th>Price</th>
                       <th>Score</th>
+                      <th>Float</th>
+                      <th>Short %</th>
                       <th>Vol Surge</th>
+                      <th>Float Rotation</th>
                       <th>ATR Squeeze</th>
-                      <th>News</th>
+                      <th>Catalyst</th>
                       <th>Entry Zone</th>
                       <th>Invalidation</th>
                     </tr>
@@ -6186,22 +6208,42 @@ async function loadWatchlistLive() {
                       const sig = r?.signals || {};
                       const volRatio = sig?.vol_surge?.ratio;
                       const atrRatio = sig?.atr_compression?.atr5_atr20;
-                      const hasNews = Boolean(sig?.news_catalyst);
+                      const floatRot = sig?.float_rotation?.rotation_pct;
+                      const catalyst = sig?.catalyst;
+                      const tags = Array.isArray(r?.tags) ? r.tags : [];
                       return (
                         <tr key={r.symbol} className="rowClickable" onClick={() => onSelectMover(r.symbol)} title="Click to analyze">
                           <td><b style={{ fontSize: 13.5 }}>{r.symbol}</b></td>
+                          <td>
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                              {tags.map(tag => (
+                                <span key={tag} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.04em", ...tagStyle(tag) }}>
+                                  {tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
                           <td>{r.price != null ? money(r.price) : "—"}</td>
                           <td>
                             <span style={{ fontWeight: 800, color: scoreColor(r.score) }}>
                               {r.score != null ? r.score : "—"}
                             </span>
                           </td>
+                          <td style={{ fontSize: 12 }}>
+                            {r.float_m != null ? `${r.float_m}M` : "—"}
+                          </td>
+                          <td style={{ color: r.short_pct != null && r.short_pct >= 20 ? "#fb7185" : undefined, fontSize: 12 }}>
+                            {r.short_pct != null ? `${r.short_pct}%` : "—"}
+                          </td>
                           <td>{volRatio != null ? `${volRatio}x` : "—"}</td>
+                          <td style={{ color: floatRot != null && floatRot >= 30 ? "#4ade80" : floatRot != null && floatRot >= 10 ? "#facc15" : undefined, fontSize: 12 }}>
+                            {floatRot != null ? `${floatRot}%` : "—"}
+                          </td>
                           <td style={{ color: atrRatio != null && atrRatio < 0.75 ? "#4ade80" : undefined }}>
                             {atrRatio != null ? atrRatio.toFixed(2) : "—"}
                           </td>
-                          <td style={{ color: hasNews ? "#4ade80" : "rgba(255,255,255,0.3)" }}>
-                            {hasNews ? "Yes" : "—"}
+                          <td style={{ color: catalyst?.type === "sec_8k" ? "#4ade80" : catalyst?.type === "news" ? "#facc15" : "rgba(255,255,255,0.3)", fontSize: 12 }}>
+                            {catalyst?.type === "sec_8k" ? "8-K" : catalyst?.type === "news" ? "News" : "—"}
                           </td>
                           <td style={{ fontSize: 12, opacity: 0.75 }}>{r.entry_zone || "—"}</td>
                           <td style={{ fontSize: 12, color: "rgba(251,113,133,0.85)" }}>{r.invalidation || "—"}</td>
@@ -6210,6 +6252,7 @@ async function loadWatchlistLive() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </>
             ) : loading ? (
               <div className="mutedSmall">Scanning small-cap universe…</div>
@@ -6219,8 +6262,11 @@ async function loadWatchlistLive() {
 
         <div className="card" style={{ fontSize: 12, opacity: 0.6 }}>
           <div className="cardBody" style={{ paddingTop: 12, paddingBottom: 12 }}>
-            <b>How scores work:</b> Volume surge (30pts) + ATR squeeze (25pts) + close near day high (15pts) + near 20d high (15pts) + news catalyst (10pts) + RS vs SPY (5pts).
-            Scores ≥75 are high-conviction. ATR squeeze &lt;0.75 = coiling up. These are setups, not guarantees — always check the chart.
+            <b>Scoring:</b> Float rotation (30pts) + squeeze potential (20pts) + ATR squeeze (20pts) + vol surge (20pts) + 8-K catalyst (15pts) + other signals.
+            <b style={{ marginLeft: 6 }}>Tags:</b> <span style={{ color: "#fb7185" }}>SQUEEZE</span> = short% ≥20 + vol building.
+            <span style={{ color: "#facc15", marginLeft: 4 }}>LOW FLOAT</span> = &lt;10M shares = explosive moves.
+            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC material event filed.
+            These are setups, not guarantees — always verify before trading.
           </div>
         </div>
       </div>
