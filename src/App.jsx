@@ -6132,7 +6132,7 @@ async function loadWatchlistLive() {
 
     const tagStyle = (tag) => {
       if (tag === "penny") return { background: "rgba(167,139,250,0.18)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" };
-      if (tag === "pre_surge") return { background: "rgba(251,146,60,0.18)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.4)", fontWeight: 800 };
+      if (tag === "news") return { background: "rgba(250,204,21,0.1)", color: "#facc15", border: "1px solid rgba(250,204,21,0.25)" };
       if (tag === "squeeze") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.35)" };
       if (tag === "low_float") return { background: "rgba(250,204,21,0.12)", color: "#facc15", border: "1px solid rgba(250,204,21,0.3)" };
       if (tag === "8K_catalyst") return { background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" };
@@ -6220,7 +6220,7 @@ async function loadWatchlistLive() {
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                               {tags.map(tag => (
                                 <span key={tag} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.04em", ...tagStyle(tag) }}>
-                                  {tag === "penny" ? "PENNY" : tag === "pre_surge" ? "⚡ PRE-SURGE" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
+                                  {tag === "penny" ? "PENNY" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
                                 </span>
                               ))}
                             </div>
