@@ -2096,7 +2096,6 @@ function AppInner() {
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
         { key: "premovers", label: "Pre-Movers", icon: "⚡" },
-        { key: "brain", label: "Brain", icon: "◈" },
         { key: "screener", label: "Screener", icon: "⊞" },
       ],
       trading: [
@@ -7896,7 +7895,6 @@ const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
   if (tab === "premovers") return <PreMovers />;
-  if (tab === "brain") return <BrainStats />;
   if (tab === "screener") return <Screener />;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
