@@ -6132,6 +6132,9 @@ async function loadWatchlistLive() {
 
     const tagStyle = (tag) => {
       if (tag === "penny") return { background: "rgba(167,139,250,0.18)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" };
+      if (tag === "high_vol") return { background: "rgba(251,146,60,0.15)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.35)" };
+      if (tag === "coiled") return { background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.35)" };
+      if (tag === "breakout") return { background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.35)" };
       if (tag === "news") return { background: "rgba(250,204,21,0.1)", color: "#facc15", border: "1px solid rgba(250,204,21,0.25)" };
       if (tag === "squeeze") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.35)" };
       if (tag === "low_float") return { background: "rgba(250,204,21,0.12)", color: "#facc15", border: "1px solid rgba(250,204,21,0.3)" };
@@ -6220,7 +6223,7 @@ async function loadWatchlistLive() {
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                               {tags.map(tag => (
                                 <span key={tag} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.04em", ...tagStyle(tag) }}>
-                                  {tag === "penny" ? "PENNY" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
+                                  {tag === "penny" ? "PENNY" : tag === "high_vol" ? "🔥 HIGH VOL" : tag === "coiled" ? "COILED" : tag === "breakout" ? "BREAKOUT" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
                                 </span>
                               ))}
                             </div>
@@ -6266,10 +6269,12 @@ async function loadWatchlistLive() {
           <div className="cardBody" style={{ paddingTop: 12, paddingBottom: 12 }}>
             <b>Scoring:</b> Quiet accumulation (25pts) + float rotation (30pts) + squeeze potential (20pts) + ATR compression (20pts) + catalyst (15pts) + other signals. Higher = stronger setup.
             <b style={{ marginLeft: 6 }}>Tags:</b>
-            <span style={{ color: "#facc15", marginLeft: 4 }}>NEWS</span> = recent news coverage.
-            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC material event filed.
-            <span style={{ color: "#fb7185", marginLeft: 4 }}>SQUEEZE</span> = short% ≥20 + vol building.
-            <span style={{ color: "#facc15", marginLeft: 4 }}>LOW FLOAT</span> = &lt;10M shares.
+            <span style={{ color: "#fb923c", marginLeft: 4 }}>🔥 HIGH VOL</span> = 20x+ normal volume.
+            <span style={{ color: "#818cf8", marginLeft: 4 }}>COILED</span> = ATR tightening, spring loaded.
+            <span style={{ color: "#22c55e", marginLeft: 4 }}>BREAKOUT</span> = within 3% of 20-day high.
+            <span style={{ color: "#facc15", marginLeft: 4 }}>NEWS</span> = recent coverage.
+            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC filing.
+            <span style={{ color: "#fb7185", marginLeft: 4 }}>SQUEEZE</span> = high short + vol building.
             <span style={{ color: "#a78bfa", marginLeft: 4 }}>PENNY</span> = sub-$1.
             These are setups, not guarantees — always verify before trading.
           </div>
