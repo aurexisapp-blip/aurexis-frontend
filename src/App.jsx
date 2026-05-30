@@ -6264,12 +6264,13 @@ async function loadWatchlistLive() {
 
         <div className="card" style={{ fontSize: 12, opacity: 0.6 }}>
           <div className="cardBody" style={{ paddingTop: 12, paddingBottom: 12 }}>
-            <b>Scoring:</b> Float rotation (30pts) + squeeze potential (20pts) + ATR squeeze (20pts) + vol surge (20pts) + 8-K catalyst (15pts) + other signals.
-            <b style={{ marginLeft: 6 }}>Tags:</b> <span style={{ color: "#fb923c", fontWeight: 800 }}>⚡ PRE-SURGE</span> = vol 2x+ but price flat = accumulation phase (day-before signal).
-            <span style={{ color: "#a78bfa", marginLeft: 4 }}>PENNY</span> = sub-$1.
+            <b>Scoring:</b> Quiet accumulation (25pts) + float rotation (30pts) + squeeze potential (20pts) + ATR compression (20pts) + catalyst (15pts) + other signals. Higher = stronger setup.
+            <b style={{ marginLeft: 6 }}>Tags:</b>
+            <span style={{ color: "#facc15", marginLeft: 4 }}>NEWS</span> = recent news coverage.
+            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC material event filed.
             <span style={{ color: "#fb7185", marginLeft: 4 }}>SQUEEZE</span> = short% ≥20 + vol building.
             <span style={{ color: "#facc15", marginLeft: 4 }}>LOW FLOAT</span> = &lt;10M shares.
-            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC material event filed.
+            <span style={{ color: "#a78bfa", marginLeft: 4 }}>PENNY</span> = sub-$1.
             These are setups, not guarantees — always verify before trading.
           </div>
         </div>
