@@ -2096,6 +2096,7 @@ function AppInner() {
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
         { key: "premovers", label: "Pre-Movers", icon: "⚡" },
+        { key: "brain", label: "Brain", icon: "◈" },
         { key: "screener", label: "Screener", icon: "⊞" },
       ],
       trading: [
@@ -7293,6 +7294,148 @@ async function loadWatchlistLive() {
     </div>
   );
 
+  // ---------------------------------------------------------------------------
+  // Brain Stats — self-learning signal weight tracker
+  // ---------------------------------------------------------------------------
+  const BrainStats = () => {
+    const [data, setData] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+      fetch(`${API}/scan/brain_stats`)
+        .then(r => r.json())
+        .then(d => { setData(d); setLoading(false); })
+        .catch(() => setLoading(false));
+    }, []);
+
+    const multColor = (m) => {
+      if (!m) return "rgba(255,255,255,0.4)";
+      if (m >= 1.3) return "#4ade80";
+      if (m <= 0.7) return "#fb7185";
+      return "rgba(255,255,255,0.6)";
+    };
+
+    return (
+      <div className="pageGrid">
+        <div className="card">
+          <div className="cardHead">
+            <div>
+              <div className="cardTitle">◈ Scanner Brain</div>
+              <div className="cardSub">Learns from every pick. Signals that predict wins get boosted automatically.</div>
+            </div>
+          </div>
+          <div className="cardBody">
+            {loading && <div style={{ color: "rgba(255,255,255,0.4)", padding: 20 }}>Loading brain stats…</div>}
+            {!loading && !data && <div style={{ color: "#fb7185", padding: 20 }}>Could not load brain data.</div>}
+            {data && (
+              <div style={{ display: "grid", gap: 20 }}>
+
+                {/* Summary row */}
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                  {[
+                    { label: "Picks Recorded", val: data.total_picks_recorded ?? "—" },
+                    { label: "Outcomes Checked", val: data.outcomes_checked ?? "—" },
+                    { label: "Win Rate", val: data.overall_win_rate_pct != null ? `${data.overall_win_rate_pct}%` : "—" },
+                    { label: "Best Pick", val: data.best_ever ? `${data.best_ever.symbol} +${data.best_ever.change_pct}%` : "—" },
+                  ].map(({ label, val }) => (
+                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "12px 18px", minWidth: 130 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Signal weight table */}
+                {data.signal_weights?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8, letterSpacing: "0.06em" }}>LEARNED SIGNAL WEIGHTS</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>
+                      Multipliers update automatically as outcomes come in. Green = this signal predicts wins. Red = unreliable.
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Signal</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Appearances</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Win Rate</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Multiplier</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.signal_weights.map(s => (
+                          <tr key={s.signal} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                            <td style={{ padding: "6px 8px", fontFamily: "monospace", color: "rgba(255,255,255,0.75)" }}>{s.signal}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.45)" }}>{s.appearances}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.6)" }}>{s.win_rate_pct}%</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: multColor(s.multiplier) }}>{s.multiplier}x</td>
+                            <td style={{ padding: "6px 8px" }}>
+                              <span style={{
+                                fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700,
+                                background: s.status === "boosted" ? "rgba(74,222,128,0.12)" : s.status === "penalized" ? "rgba(251,113,133,0.12)" : "rgba(255,255,255,0.06)",
+                                color: s.status === "boosted" ? "#4ade80" : s.status === "penalized" ? "#fb7185" : "rgba(255,255,255,0.4)",
+                              }}>{s.status.toUpperCase()}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Recent picks with outcomes */}
+                {data.recent_picks?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8, letterSpacing: "0.06em" }}>RECENT PICKS & OUTCOMES</div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Symbol</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Score</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Entry</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Change</th>
+                          <th style={{ textAlign: "right", padding: "4px 8px" }}>Days</th>
+                          <th style={{ textAlign: "left", padding: "4px 8px" }}>Result</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.recent_picks.map((p, i) => (
+                          <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#fff" }}>{p.symbol}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.5)" }}>{p.score}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.5)" }}>{p.entry != null ? `$${p.entry}` : "—"}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#4ade80" : p.change_pct < 0 ? "#fb7185" : "rgba(255,255,255,0.4)" }}>
+                              {p.change_pct != null ? `${p.change_pct > 0 ? "+" : ""}${p.change_pct}%` : "pending"}
+                            </td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.35)" }}>{p.days != null ? `${p.days}d` : "—"}</td>
+                            <td style={{ padding: "6px 8px" }}>
+                              {p.won == null
+                                ? <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>PENDING</span>
+                                : p.won
+                                  ? <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 11 }}>WIN</span>
+                                  : <span style={{ color: "#fb7185", fontWeight: 700, fontSize: 11 }}>MISS</span>
+                              }
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {(!data.signal_weights?.length && !data.recent_picks?.length) && (
+                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, padding: 12 }}>
+                    The brain is brand new — no picks recorded yet. Run the Pre-Movers scanner and come back after a day or two to see it learning.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const Settings = () => (
     <div className="pageGrid">
       <div className="card">
@@ -7753,6 +7896,7 @@ const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
   if (tab === "premovers") return <PreMovers />;
+  if (tab === "brain") return <BrainStats />;
   if (tab === "screener") return <Screener />;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
