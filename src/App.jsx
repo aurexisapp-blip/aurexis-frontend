@@ -6139,6 +6139,10 @@ async function loadWatchlistLive() {
       if (tag === "squeeze") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.35)" };
       if (tag === "low_float") return { background: "rgba(250,204,21,0.12)", color: "#facc15", border: "1px solid rgba(250,204,21,0.3)" };
       if (tag === "8K_catalyst") return { background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" };
+      if (tag === "opt_sweep") return { background: "rgba(139,92,246,0.18)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.4)" };
+      if (tag === "viral") return { background: "rgba(251,146,60,0.18)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.4)" };
+      if (tag === "hot_borrow") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.4)" };
+      if (tag === "insider_buy") return { background: "rgba(74,222,128,0.18)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.4)" };
       return { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" };
     };
 
@@ -6204,6 +6208,9 @@ async function loadWatchlistLive() {
                       <th>Float Rotation</th>
                       <th>ATR Squeeze</th>
                       <th>Catalyst</th>
+                      <th>Options</th>
+                      <th>Reddit</th>
+                      <th>Borrow</th>
                       <th>Entry Zone</th>
                       <th>Invalidation</th>
                     </tr>
@@ -6223,7 +6230,7 @@ async function loadWatchlistLive() {
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                               {tags.map(tag => (
                                 <span key={tag} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.04em", ...tagStyle(tag) }}>
-                                  {tag === "penny" ? "PENNY" : tag === "high_vol" ? "🔥 HIGH VOL" : tag === "coiled" ? "COILED" : tag === "breakout" ? "BREAKOUT" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag.toUpperCase()}
+                                  {tag === "penny" ? "PENNY" : tag === "high_vol" ? "🔥 HIGH VOL" : tag === "coiled" ? "COILED" : tag === "breakout" ? "BREAKOUT" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag === "opt_sweep" ? "⚡ OPT SWEEP" : tag === "viral" ? "🚀 VIRAL" : tag === "hot_borrow" ? "🔥 HOT BORROW" : tag === "insider_buy" ? "👔 INSIDER BUY" : tag.toUpperCase()}
                                 </span>
                               ))}
                             </div>
@@ -6249,6 +6256,23 @@ async function loadWatchlistLive() {
                           </td>
                           <td style={{ color: catalyst?.type === "sec_8k" ? "#4ade80" : catalyst?.type === "news" ? "#facc15" : "rgba(255,255,255,0.3)", fontSize: 12 }}>
                             {catalyst?.type === "sec_8k" ? "8-K" : catalyst?.type === "news" ? "News" : "—"}
+                          </td>
+                          <td style={{ fontSize: 11 }}>
+                            {r.options_flow?.unusual_calls
+                              ? <span style={{ color: "#a78bfa", fontWeight: 700 }}>⚡ SWEEP</span>
+                              : r.options_flow?.call_put_ratio != null
+                              ? <span style={{ color: r.options_flow.call_put_ratio > 2 ? "#4ade80" : "rgba(255,255,255,0.4)", fontSize: 11 }}>{r.options_flow.call_put_ratio}:1</span>
+                              : <span style={{ opacity: 0.3 }}>—</span>}
+                          </td>
+                          <td style={{ fontSize: 11 }}>
+                            {r.reddit_mentions != null
+                              ? <span style={{ color: r.reddit_mentions >= 10 ? "#fb923c" : "rgba(255,255,255,0.5)" }}>{r.reddit_mentions >= 10 ? `🚀 ${r.reddit_mentions}` : r.reddit_mentions}</span>
+                              : <span style={{ opacity: 0.3 }}>—</span>}
+                          </td>
+                          <td style={{ fontSize: 11 }}>
+                            {r.borrow_rate != null
+                              ? <span style={{ color: r.borrow_rate > 50 ? "#fb7185" : r.borrow_rate > 20 ? "#facc15" : "rgba(255,255,255,0.5)" }}>{r.borrow_rate}%</span>
+                              : <span style={{ opacity: 0.3 }}>—</span>}
                           </td>
                           <td style={{ fontSize: 12, opacity: 0.75 }}>{r.entry_zone || "—"}</td>
                           <td style={{ fontSize: 12, color: "rgba(251,113,133,0.85)" }}>{r.invalidation || "—"}</td>
@@ -6276,6 +6300,10 @@ async function loadWatchlistLive() {
             <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC filing.
             <span style={{ color: "#fb7185", marginLeft: 4 }}>SQUEEZE</span> = high short + vol building.
             <span style={{ color: "#a78bfa", marginLeft: 4 }}>PENNY</span> = sub-$1.
+            <span style={{ color: "#a78bfa", marginLeft: 4 }}>⚡ OPT SWEEP</span> = unusual call options activity.
+            <span style={{ color: "#fb923c", marginLeft: 4 }}>🚀 VIRAL</span> = 10+ Reddit mentions today.
+            <span style={{ color: "#fb7185", marginLeft: 4 }}>🔥 HOT BORROW</span> = 50%+ short borrow rate.
+            <span style={{ color: "#4ade80", marginLeft: 4 }}>👔 INSIDER BUY</span> = net insider purchases last 90 days.
             These are setups, not guarantees — always verify before trading.
           </div>
         </div>
