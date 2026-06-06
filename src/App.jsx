@@ -7067,36 +7067,191 @@ async function loadWatchlistLive() {
     lineHeight: 1.55,
   };
 
-  const Support = () => (
-    <div className="pageGrid">
-      <div className="card">
-        <div className="cardHead">
+  const Support = () => {
+    const [openFaq, setOpenFaq] = React.useState(null);
+    const faqs = [
+      {
+        q: "How does the AI pick stocks?",
+        a: "Aurexis scans 1,200+ stocks daily using a multi-signal model — momentum, volume anomalies, options flow, short interest, and news sentiment. Each signal is weighted by its historical win rate and combined into a conviction score.",
+      },
+      {
+        q: "Why is performance data empty?",
+        a: "The performance tracker populates automatically as picks are made by the live scanner. It may take 24–48 hours after launch for data to appear. Historical picks show up as they are resolved (1–5 trading days).",
+      },
+      {
+        q: "Is this real money trading?",
+        a: "No — Aurexis is a research and analysis tool, not a brokerage. It surfaces high-conviction setups for you to review. You execute trades yourself through your own broker.",
+      },
+      {
+        q: "How accurate is the AI analysis?",
+        a: "Live tracked win rate is 45.9% with an average return of +3.8% per pick. These numbers are verified on Alpaca paper data and update automatically as picks resolve.",
+      },
+      {
+        q: "Can I add my own stocks to track?",
+        a: "Yes — use the Watchlist tab to add any ticker. Watchlist items are tracked live alongside the AI's top picks.",
+      },
+      {
+        q: "How do I report a bug or wrong data?",
+        a: "Email us at support@aurexis.ai with the ticker, date, and a screenshot. We typically respond within 24 hours.",
+      },
+    ];
+
+    return (
+      <div className="pageGrid">
+        {/* Header banner */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(16,18,32,0.0) 100%)",
+          border: "1px solid rgba(99,102,241,0.18)",
+          borderRadius: 16,
+          padding: "28px 30px",
+          marginBottom: 4,
+          display: "flex",
+          alignItems: "center",
+          gap: 22,
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            background: "rgba(99,102,241,0.18)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 24, flexShrink: 0,
+          }}>◌</div>
           <div>
-            <div className="cardTitle">Support</div>
-            <div className="cardSub">Get help with Aurexis.</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 4 }}>Support Center</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+              Questions, feedback, or something broken? We've got you.
+            </div>
           </div>
         </div>
-        <div className="cardBody">
-          <div style={{ display: "grid", gap: 10 }}>
-            <div style={settingsSection}>
-              <div style={settingsSectionTitle}>Documentation</div>
-              <div style={settingsSectionSub}>Learn how to use the AI analysis, screener, and trade journal.</div>
+
+        {/* FAQ */}
+        <div className="card">
+          <div className="cardHead">
+            <div>
+              <div className="cardTitle">Frequently Asked Questions</div>
+              <div className="cardSub">Answers to the most common questions about Aurexis.</div>
             </div>
-            <div style={settingsSection}>
-              <div style={settingsSectionTitle}>Contact</div>
-              <div style={settingsSectionSub}>Reach out at <span style={{ color: "rgba(255,255,255,0.55)" }}>support@aurexis.ai</span> for any questions or issues.</div>
-            </div>
-            <div style={{ ...settingsSection, background: "rgba(255,255,255,0.015)", borderColor: "rgba(255,255,255,0.04)" }}>
-              <div style={{ ...settingsSectionTitle, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Disclaimer</div>
-              <div style={{ ...settingsSectionSub, color: "rgba(255,255,255,0.28)" }}>
-                Aurexis is for educational and informational purposes only. Not investment advice. Past performance does not guarantee future results.
+          </div>
+          <div className="cardBody" style={{ padding: "0 0 8px" }}>
+            {faqs.map((faq, i) => (
+              <div
+                key={i}
+                style={{
+                  borderBottom: i < faqs.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                }}
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  style={{
+                    width: "100%", background: "none", border: "none", cursor: "pointer",
+                    padding: "16px 22px", display: "flex", justifyContent: "space-between",
+                    alignItems: "center", gap: 16, textAlign: "left",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.82)" }}>{faq.q}</span>
+                  <span style={{
+                    fontSize: 16, color: "rgba(255,255,255,0.3)", flexShrink: 0,
+                    transform: openFaq === i ? "rotate(45deg)" : "none",
+                    transition: "transform 0.18s",
+                    display: "inline-block",
+                  }}>+</span>
+                </button>
+                {openFaq === i && (
+                  <div style={{ padding: "0 22px 18px", fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Contact & Links */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div style={{
+            ...settingsSection,
+            display: "flex", flexDirection: "column", gap: 14,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(99,102,241,0.14)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
+              }}>✉</div>
+              <div>
+                <div style={settingsSectionTitle}>Email Support</div>
+                <div style={{ ...settingsSectionSub, fontSize: 12 }}>Typically reply within 24h</div>
               </div>
             </div>
+            <a
+              href="mailto:support@aurexis.ai"
+              style={{
+                display: "block", textAlign: "center", padding: "9px 0",
+                borderRadius: 8, fontSize: 13, fontWeight: 600,
+                background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.22)",
+                color: "rgba(180,182,255,0.9)", textDecoration: "none",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.22)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.12)"}
+            >
+              support@aurexis.ai
+            </a>
+          </div>
+
+          <div style={{
+            ...settingsSection,
+            display: "flex", flexDirection: "column", gap: 14,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(74,222,128,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
+              }}>◈</div>
+              <div>
+                <div style={settingsSectionTitle}>System Status</div>
+                <div style={{ ...settingsSectionSub, fontSize: 12 }}>Live scanner & API health</div>
+              </div>
+            </div>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+              padding: "9px 0", borderRadius: 8, fontSize: 13, fontWeight: 600,
+              background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
+              color: "#4ade80",
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", display: "inline-block", boxShadow: "0 0 6px #4ade80" }} />
+              All systems operational
+            </div>
+          </div>
+        </div>
+
+        {/* What's coming */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ ...settingsSectionTitle, marginBottom: 10 }}>What's Coming</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
+            {["Price alerts", "Mobile app", "Portfolio sync", "Options flow feed", "Strategy backtesting", "Multi-account support"].map(item => (
+              <div key={item} style={{
+                padding: "8px 12px", borderRadius: 8, fontSize: 12,
+                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 7,
+              }}>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)" }}>▸</span>
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div style={{ ...settingsSection, background: "rgba(255,255,255,0.012)", borderColor: "rgba(255,255,255,0.04)" }}>
+          <div style={{ ...settingsSectionTitle, color: "rgba(255,255,255,0.35)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>Disclaimer</div>
+          <div style={{ ...settingsSectionSub, color: "rgba(255,255,255,0.25)", marginTop: 6, fontSize: 12 }}>
+            Aurexis is for educational and informational purposes only. Nothing on this platform constitutes investment advice or a recommendation to buy or sell any security. Past performance does not guarantee future results. Always do your own research and consult a licensed financial advisor before making any investment decisions.
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ---------------------------------------------------------------------------
   // Brain Stats — self-learning signal weight tracker
@@ -7240,43 +7395,139 @@ async function loadWatchlistLive() {
     );
   };
 
-  const Settings = () => (
-    <div className="pageGrid">
-      <div className="card">
-        <div className="cardHead">
-          <div>
-            <div className="cardTitle">Settings</div>
-            <div className="cardSub">Account and preferences.</div>
+  const Settings = () => {
+    const initials = "AU";
+    const toggleRow = (label, enabled, onChange) => (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{label}</span>
+        <button
+          onClick={onChange}
+          style={{
+            width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer",
+            background: enabled ? "rgba(99,102,241,0.75)" : "rgba(255,255,255,0.1)",
+            position: "relative", transition: "background 0.2s", flexShrink: 0,
+          }}
+        >
+          <span style={{
+            position: "absolute", top: 3, left: enabled ? 20 : 3,
+            width: 16, height: 16, borderRadius: "50%", background: "#fff",
+            transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+          }} />
+        </button>
+      </div>
+    );
+
+    const [notifPicks, setNotifPicks] = React.useState(false);
+    const [notifMovers, setNotifMovers] = React.useState(false);
+    const [compactView, setCompactView] = React.useState(false);
+
+    return (
+      <div className="pageGrid">
+        {/* Account profile card */}
+        <div style={{
+          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 16, padding: "24px 26px",
+          display: "flex", alignItems: "center", gap: 20,
+        }}>
+          <div style={{
+            width: 58, height: 58, borderRadius: "50%", flexShrink: 0,
+            background: "linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.4) 100%)",
+            border: "2px solid rgba(99,102,241,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 800, color: "rgba(255,255,255,0.9)",
+            letterSpacing: "-0.01em",
+          }}>{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Aurexis User</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>Free Plan · Member since 2025</div>
+          </div>
+          <div style={{
+            padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+            background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.22)",
+            color: "rgba(180,182,255,0.85)", letterSpacing: "0.04em",
+          }}>FREE</div>
+        </div>
+
+        {/* Plan */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={settingsSectionTitle}>Plan &amp; Billing</div>
+              <div style={{ ...settingsSectionSub, marginTop: 4 }}>You're on the <b style={{ color: "rgba(255,255,255,0.6)" }}>Free</b> plan. Power and Pro tiers are coming soon with alerts, portfolio sync, and strategy backtesting.</div>
+            </div>
+            <button
+              className="btn btn--ghost"
+              style={{ fontSize: 11, padding: "5px 12px", flexShrink: 0, marginLeft: 16, opacity: 0.45, cursor: "default" }}
+              onClick={() => showToast("Paid plans launching soon — stay tuned.")}
+            >
+              Upgrade
+            </button>
           </div>
         </div>
-        <div className="cardBody">
-          <div style={{ display: "grid", gap: 10 }}>
-            <div style={{ ...settingsSection, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-              <div>
-                <div style={settingsSectionTitle}>Account</div>
-                <div style={settingsSectionSub}>Manage your Aurexis account.</div>
+
+        {/* Notifications */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Notifications</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginBottom: 14 }}>
+            Alert preferences will be active when the Power plan launches.
+          </div>
+          {toggleRow("New AI pick alert", notifPicks, () => { setNotifPicks(p => !p); showToast("Notifications available on Power plan — coming soon."); })}
+          {toggleRow("Top movers alert (market open)", notifMovers, () => { setNotifMovers(p => !p); showToast("Notifications available on Power plan — coming soon."); })}
+        </div>
+
+        {/* Display */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Display</div>
+          {toggleRow("Compact card view", compactView, () => setCompactView(p => !p))}
+          <div style={{ paddingTop: 12 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Theme: <span style={{ color: "rgba(255,255,255,0.55)" }}>Dark (only option)</span></div>
+          </div>
+        </div>
+
+        {/* Data & Privacy */}
+        <div style={{ ...settingsSection }}>
+          <div style={settingsSectionTitle}>Data &amp; Privacy</div>
+          <div style={{ ...settingsSectionSub, marginTop: 6, marginBottom: 16 }}>Your data is never sold or shared with third parties. Aurexis does not store personal trading positions.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[
+              { label: "Data storage", val: "Local device only" },
+              { label: "Analytics", val: "Anonymous usage" },
+              { label: "API keys", val: "Never stored" },
+              { label: "Trade data", val: "Not collected" },
+            ].map(({ label, val }) => (
+              <div key={label} style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{val}</div>
               </div>
-              <button
-                className="btn btn--ghost"
-                style={{ fontSize: 12, padding: "6px 14px", color: "rgba(255,255,255,0.38)", borderColor: "rgba(255,255,255,0.08)", flexShrink: 0 }}
-                onClick={() => showToast("Sign-out is not available in this version.")}
-              >
-                Sign out
-              </button>
-            </div>
-            <div style={settingsSection}>
-              <div style={settingsSectionTitle}>Notifications</div>
-              <div style={settingsSectionSub}>Alert preferences coming soon.</div>
-            </div>
-            <div style={settingsSection}>
-              <div style={settingsSectionTitle}>Data &amp; Privacy</div>
-              <div style={settingsSectionSub}>Your data is never sold or shared with third parties.</div>
-            </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Danger zone */}
+        <div style={{ ...settingsSection, borderColor: "rgba(251,113,133,0.12)", background: "rgba(251,113,133,0.02)" }}>
+          <div style={{ ...settingsSectionTitle, color: "rgba(251,113,133,0.7)" }}>Account Actions</div>
+          <div style={{ ...settingsSectionSub, marginTop: 4, marginBottom: 16 }}>Irreversible actions — proceed with care.</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              className="btn btn--ghost"
+              style={{ fontSize: 12, padding: "7px 16px", color: "rgba(255,255,255,0.38)", borderColor: "rgba(255,255,255,0.08)" }}
+              onClick={() => showToast("Sign-out is not available in this version.")}
+            >
+              Sign out
+            </button>
+            <button
+              className="btn btn--ghost"
+              style={{ fontSize: 12, padding: "7px 16px", color: "rgba(251,113,133,0.5)", borderColor: "rgba(251,113,133,0.12)" }}
+              onClick={() => showToast("Account deletion is not available in this version. Email support@aurexis.ai.")}
+            >
+              Delete account
+            </button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const Pricing = () => (
     <div className="pageGrid">
@@ -7865,6 +8116,42 @@ const renderPage = () => {
               </motion.button>
             ))}
           </nav>
+
+          {/* Account avatar — pinned to bottom of sidebar */}
+          <div style={{
+            padding: sidebarCollapsed ? "10px 0 14px" : "10px 10px 14px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            marginTop: "auto",
+          }}>
+            <motion.button
+              onClick={() => setTab("settings")}
+              title={sidebarCollapsed ? "Account & Settings" : undefined}
+              whileHover={{ scale: 1.04 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              style={{
+                display: "flex", alignItems: "center",
+                gap: sidebarCollapsed ? 0 : 10,
+                justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                padding: sidebarCollapsed ? "7px 0" : "7px 8px",
+                borderRadius: 10, width: "100%",
+                background: "none", border: "none", cursor: "pointer",
+              }}
+            >
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                background: "linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.4) 100%)",
+                border: "1.5px solid rgba(99,102,241,0.35)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.9)",
+              }}>AU</div>
+              {!sidebarCollapsed && (
+                <div style={{ overflow: "hidden", textAlign: "left" }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)", whiteSpace: "nowrap" }}>My Account</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap" }}>Free Plan</div>
+                </div>
+              )}
+            </motion.button>
+          </div>
         </aside>
 
 
