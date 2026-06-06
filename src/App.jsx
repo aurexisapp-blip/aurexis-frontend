@@ -8119,7 +8119,7 @@ const renderPage = () => {
 
           {/* Account avatar — pinned to bottom of sidebar */}
           <div style={{
-            padding: sidebarCollapsed ? "10px 0 14px" : "10px 10px 14px",
+            padding: sidebarCollapsed ? "10px 0 42px" : "10px 10px 42px",
             borderTop: "1px solid rgba(255,255,255,0.06)",
             marginTop: "auto",
           }}>
