@@ -2110,6 +2110,23 @@ function AppInner() {
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
 
+  const THEMES = useMemo(() => [
+    { id: "terminal",  label: "Terminal",  rgb: "0, 180, 80",    hex: "#00b450" },
+    { id: "indigo",    label: "Indigo",    rgb: "99, 102, 241",  hex: "#6366f1" },
+    { id: "cyan",      label: "Cyan",      rgb: "6, 182, 212",   hex: "#06b6d4" },
+    { id: "amber",     label: "Amber",     rgb: "245, 158, 11",  hex: "#f59e0b" },
+    { id: "rose",      label: "Rose",      rgb: "244, 63, 94",   hex: "#f43f5e" },
+    { id: "slate",     label: "Slate",     rgb: "148, 163, 184", hex: "#94a3b8" },
+  ], []);
+
+  const [theme, setTheme] = useState(() => localStorage.getItem("aurexis_theme") || "terminal");
+
+  React.useEffect(() => {
+    const t = THEMES.find(t => t.id === theme) || THEMES[0];
+    document.documentElement.style.setProperty("--accent-rgb", t.rgb);
+    localStorage.setItem("aurexis_theme", theme);
+  }, [theme, THEMES]);
+
   const [tab, setTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const cmdInputRef = useRef(null);
@@ -7480,8 +7497,35 @@ async function loadWatchlistLive() {
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Display</div>
           {toggleRow("Compact card view", compactView, () => setCompactView(p => !p))}
-          <div style={{ paddingTop: 12 }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Theme: <span style={{ color: "rgba(255,255,255,0.55)" }}>Dark (only option)</span></div>
+          <div style={{ paddingTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Accent Color</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {THEMES.map(t => (
+                <button
+                  key={t.id}
+                  title={t.label}
+                  onClick={() => setTheme(t.id)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                  }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: "50%",
+                    background: t.hex,
+                    boxShadow: theme === t.id
+                      ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 12px ${t.hex}88`
+                      : "0 0 0 2px rgba(255,255,255,0.08)",
+                    transition: "box-shadow 0.18s",
+                  }} />
+                  <span style={{
+                    fontSize: 10, fontWeight: theme === t.id ? 700 : 400,
+                    color: theme === t.id ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)",
+                    transition: "color 0.18s",
+                  }}>{t.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
