@@ -2095,7 +2095,6 @@ function AppInner() {
       main: [
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
-        { key: "premovers", label: "Pre-Movers", icon: "⚡" },
         { key: "screener", label: "Screener", icon: "⊞" },
       ],
       trading: [
@@ -6082,234 +6081,6 @@ async function loadWatchlistLive() {
   };
 
 
-  // ---------------------------------------------------------------------------
-  // Pre-Movers: small-cap $1-$20 setups likely to jump 50-200% next session
-  // ---------------------------------------------------------------------------
-  const PreMovers = () => {
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [err, setErr] = useState("");
-    const [scanned, setScanned] = useState(0);
-    const [elapsed, setElapsed] = useState(null);
-    const [source, setSource] = useState("");
-    const [ts, setTs] = useState(null);
-    const [hotSectors, setHotSectors] = useState([]);
-
-    const load = async (refresh = false) => {
-      setLoading(true);
-      setErr("");
-      try {
-        const path = `/scan/pre_movers?max_results=25${refresh ? "&refresh=true" : ""}`;
-        const data = await safeApiCall(() => apiGet(path), { context: "pre_movers" });
-        setResults(Array.isArray(data?.results) ? data.results : []);
-        setScanned(data?.scanned || 0);
-        setElapsed(data?.elapsed || null);
-        setSource(data?.source || "");
-        setTs(data?.ts || null);
-        setHotSectors(Array.isArray(data?.hot_sectors) ? data.hot_sectors : []);
-      } catch (e) {
-        setErr(friendlyError(e, "pre_movers") || "Could not load pre-movers");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    useEffect(() => { load(false); }, []);
-
-    const scoreColor = (s) => {
-      const n = Number(s);
-      if (n >= 75) return "#4ade80";
-      if (n >= 55) return "#facc15";
-      return "rgba(255,255,255,0.55)";
-    };
-
-    const fmtTs = (t) => {
-      if (!t) return "";
-      try {
-        return new Date(Number(t) * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      } catch { return ""; }
-    };
-
-    const tagStyle = (tag) => {
-      if (tag === "penny") return { background: "rgba(167,139,250,0.18)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.35)" };
-      if (tag === "high_vol") return { background: "rgba(251,146,60,0.15)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.35)" };
-      if (tag === "coiled") return { background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.35)" };
-      if (tag === "breakout") return { background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.35)" };
-      if (tag === "news") return { background: "rgba(250,204,21,0.1)", color: "#facc15", border: "1px solid rgba(250,204,21,0.25)" };
-      if (tag === "squeeze") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.35)" };
-      if (tag === "low_float") return { background: "rgba(250,204,21,0.12)", color: "#facc15", border: "1px solid rgba(250,204,21,0.3)" };
-      if (tag === "8K_catalyst") return { background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" };
-      if (tag === "opt_sweep") return { background: "rgba(139,92,246,0.18)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.4)" };
-      if (tag === "viral") return { background: "rgba(251,146,60,0.18)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.4)" };
-      if (tag === "hot_borrow") return { background: "rgba(251,113,133,0.18)", color: "#fb7185", border: "1px solid rgba(251,113,133,0.4)" };
-      if (tag === "insider_buy") return { background: "rgba(74,222,128,0.18)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.4)" };
-      return { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" };
-    };
-
-    return (
-      <div className="pageGrid">
-        <div className="card">
-          <div className="cardHead">
-            <div>
-              <div className="cardTitle">Pre-Mover Scanner</div>
-              <div className="cardSub">
-                Small-caps $1–$20 — float rotation, squeeze setups, and 8-K catalysts.
-                {ts ? <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 11 }}>Updated {fmtTs(ts)}{source === "cache" ? " (cached)" : ""}</span> : null}
-              </div>
-            </div>
-            <div className="cardRight">
-              {loading ? <span className="btnSpinner" /> : null}
-              <button className="btn btn--ghost" onClick={() => load(false)} disabled={loading}>
-                {loading ? "Loading…" : "Refresh"}
-              </button>
-              <button className="btn btn--ghost" onClick={() => load(true)} disabled={loading}
-                title="Force a full rescan (~2-5 min)">
-                Full Scan
-              </button>
-            </div>
-          </div>
-
-          <div className="cardBody">
-            {hotSectors.length > 0 && (
-              <div style={{ marginBottom: 12, padding: "8px 12px", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 8, fontSize: 12 }}>
-                <span style={{ color: "#4ade80", fontWeight: 700 }}>⚡ Hot sector alert:</span>
-                <span style={{ color: "rgba(255,255,255,0.75)", marginLeft: 6 }}>
-                  {hotSectors.map(s => s.toUpperCase()).join(", ")} — multiple stocks in the same sector are coiling up simultaneously.
-                </span>
-              </div>
-            )}
-            {err ? (
-              <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <span>{err}</span>
-                <button className="btn btn--ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => load(false)}>Retry</button>
-              </div>
-            ) : results.length === 0 && !loading ? (
-              <div className="mutedSmall">
-                No results yet — the background scan runs every 2 hours. Hit <b>Full Scan</b> to run one now (takes ~2-5 min).
-              </div>
-            ) : results.length > 0 ? (
-              <>
-                {scanned > 0 ? (
-                  <div style={{ fontSize: 11, opacity: 0.45, marginBottom: 10 }}>
-                    Scanned {scanned} candidates{elapsed ? ` in ${elapsed}s` : ""}
-                  </div>
-                ) : null}
-                <div style={{ overflowX: "auto" }}>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Symbol</th>
-                      <th>Tags</th>
-                      <th>Price</th>
-                      <th>Score</th>
-                      <th>Float</th>
-                      <th>Short %</th>
-                      <th>Vol Surge</th>
-                      <th>Float Rotation</th>
-                      <th>ATR Squeeze</th>
-                      <th>Catalyst</th>
-                      <th>Options</th>
-                      <th>Reddit</th>
-                      <th>Borrow</th>
-                      <th>Entry Zone</th>
-                      <th>Invalidation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r) => {
-                      const sig = r?.signals || {};
-                      const volRatio = sig?.quiet_accumulation?.vol_ratio ?? sig?.vol_surge?.ratio;
-                      const atrRatio = sig?.atr_compression?.atr5_atr20;
-                      const floatRot = sig?.float_rotation?.rotation_pct;
-                      const catalyst = sig?.catalyst;
-                      const tags = Array.isArray(r?.tags) ? r.tags : [];
-                      return (
-                        <tr key={r.symbol} className="rowClickable" onClick={() => onSelectMover(r.symbol)} title="Click to analyze">
-                          <td><b style={{ fontSize: 13.5 }}>{r.symbol}</b></td>
-                          <td>
-                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                              {tags.map(tag => (
-                                <span key={tag} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.04em", ...tagStyle(tag) }}>
-                                  {tag === "penny" ? "PENNY" : tag === "high_vol" ? "🔥 HIGH VOL" : tag === "coiled" ? "COILED" : tag === "breakout" ? "BREAKOUT" : tag === "news" ? "NEWS" : tag === "squeeze" ? "SQUEEZE" : tag === "low_float" ? "LOW FLOAT" : tag === "8K_catalyst" ? "8-K" : tag === "opt_sweep" ? "⚡ OPT SWEEP" : tag === "viral" ? "🚀 VIRAL" : tag === "hot_borrow" ? "🔥 HOT BORROW" : tag === "insider_buy" ? "👔 INSIDER BUY" : tag.toUpperCase()}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td>{r.price != null ? money(r.price) : "—"}</td>
-                          <td>
-                            <span style={{ fontWeight: 800, color: scoreColor(r.score) }}>
-                              {r.score != null ? r.score : "—"}
-                            </span>
-                          </td>
-                          <td style={{ fontSize: 12 }}>
-                            {r.float_m != null ? `${r.float_m}M` : "—"}
-                          </td>
-                          <td style={{ color: r.short_pct != null && r.short_pct >= 20 ? "#fb7185" : undefined, fontSize: 12 }}>
-                            {r.short_pct != null ? `${r.short_pct}%` : "—"}
-                          </td>
-                          <td>{volRatio != null ? `${volRatio}x` : "—"}</td>
-                          <td style={{ color: floatRot != null && floatRot >= 30 ? "#4ade80" : floatRot != null && floatRot >= 10 ? "#facc15" : undefined, fontSize: 12 }}>
-                            {floatRot != null ? `${floatRot}%` : "—"}
-                          </td>
-                          <td style={{ color: atrRatio != null && atrRatio < 0.75 ? "#4ade80" : undefined }}>
-                            {atrRatio != null ? atrRatio.toFixed(2) : "—"}
-                          </td>
-                          <td style={{ color: catalyst?.type === "sec_8k" ? "#4ade80" : catalyst?.type === "news" ? "#facc15" : "rgba(255,255,255,0.3)", fontSize: 12 }}>
-                            {catalyst?.type === "sec_8k" ? "8-K" : catalyst?.type === "news" ? "News" : "—"}
-                          </td>
-                          <td style={{ fontSize: 11 }}>
-                            {r.options_flow?.unusual_calls
-                              ? <span style={{ color: "#a78bfa", fontWeight: 700 }}>⚡ SWEEP</span>
-                              : r.options_flow?.call_put_ratio != null
-                              ? <span style={{ color: r.options_flow.call_put_ratio > 2 ? "#4ade80" : "rgba(255,255,255,0.4)", fontSize: 11 }}>{r.options_flow.call_put_ratio}:1</span>
-                              : <span style={{ opacity: 0.3 }}>—</span>}
-                          </td>
-                          <td style={{ fontSize: 11 }}>
-                            {r.reddit_mentions != null
-                              ? <span style={{ color: r.reddit_mentions >= 10 ? "#fb923c" : "rgba(255,255,255,0.5)" }}>{r.reddit_mentions >= 10 ? `🚀 ${r.reddit_mentions}` : r.reddit_mentions}</span>
-                              : <span style={{ opacity: 0.3 }}>—</span>}
-                          </td>
-                          <td style={{ fontSize: 11 }}>
-                            {r.borrow_rate != null
-                              ? <span style={{ color: r.borrow_rate > 50 ? "#fb7185" : r.borrow_rate > 20 ? "#facc15" : "rgba(255,255,255,0.5)" }}>{r.borrow_rate}%</span>
-                              : <span style={{ opacity: 0.3 }}>—</span>}
-                          </td>
-                          <td style={{ fontSize: 12, opacity: 0.75 }}>{r.entry_zone || "—"}</td>
-                          <td style={{ fontSize: 12, color: "rgba(251,113,133,0.85)" }}>{r.invalidation || "—"}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                </div>
-              </>
-            ) : loading ? (
-              <div className="mutedSmall">Scanning small-cap universe…</div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="card" style={{ fontSize: 12, opacity: 0.6 }}>
-          <div className="cardBody" style={{ paddingTop: 12, paddingBottom: 12 }}>
-            <b>Scoring:</b> Quiet accumulation (25pts) + float rotation (30pts) + squeeze potential (20pts) + ATR compression (20pts) + catalyst (15pts) + other signals. Higher = stronger setup.
-            <b style={{ marginLeft: 6 }}>Tags:</b>
-            <span style={{ color: "#fb923c", marginLeft: 4 }}>🔥 HIGH VOL</span> = 20x+ normal volume.
-            <span style={{ color: "#818cf8", marginLeft: 4 }}>COILED</span> = ATR tightening, spring loaded.
-            <span style={{ color: "#22c55e", marginLeft: 4 }}>BREAKOUT</span> = within 3% of 20-day high.
-            <span style={{ color: "#facc15", marginLeft: 4 }}>NEWS</span> = recent coverage.
-            <span style={{ color: "#4ade80", marginLeft: 4 }}>8-K</span> = SEC filing.
-            <span style={{ color: "#fb7185", marginLeft: 4 }}>SQUEEZE</span> = high short + vol building.
-            <span style={{ color: "#a78bfa", marginLeft: 4 }}>PENNY</span> = sub-$1.
-            <span style={{ color: "#a78bfa", marginLeft: 4 }}>⚡ OPT SWEEP</span> = unusual call options activity.
-            <span style={{ color: "#fb923c", marginLeft: 4 }}>🚀 VIRAL</span> = 10+ Reddit mentions today.
-            <span style={{ color: "#fb7185", marginLeft: 4 }}>🔥 HOT BORROW</span> = 50%+ short borrow rate.
-            <span style={{ color: "#4ade80", marginLeft: 4 }}>👔 INSIDER BUY</span> = net insider purchases last 90 days.
-            These are setups, not guarantees — always verify before trading.
-          </div>
-        </div>
-      </div>
-    );
-  };
 
 
   const Watchlist = () => {
@@ -7458,7 +7229,7 @@ async function loadWatchlistLive() {
 
                 {(!data.signal_weights?.length && !data.recent_picks?.length) && (
                   <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, padding: 12 }}>
-                    The brain is brand new — no picks recorded yet. Run the Pre-Movers scanner and come back after a day or two to see it learning.
+                    The brain is brand new — no picks recorded yet. Use the Screener to analyze stocks and come back after a day or two to see it learning.
                   </div>
                 )}
               </div>
@@ -7928,7 +7699,6 @@ async function loadWatchlistLive() {
 const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
-  if (tab === "premovers") return <PreMovers />;
   if (tab === "screener") return <Screener />;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
