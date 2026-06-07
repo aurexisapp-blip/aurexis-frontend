@@ -131,6 +131,18 @@ export default function Auth({ defaultView = "login" }) {
             <span style={S.logoText}>AUREXIS</span>
           </a>
           <div style={M.tagline}>One AI pick. Every trading day.</div>
+          <div style={M.statsRow}>
+            {[
+              { val: "1,200+", label: "Scanned" },
+              { val: "1",      label: "Daily pick" },
+              { val: "3",      label: "Signals" },
+            ].map(({ val, label }) => (
+              <div key={label} style={M.stat}>
+                <div style={M.statVal}>{val}</div>
+                <div style={M.statLabel}>{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Form */}
@@ -219,6 +231,19 @@ export default function Auth({ defaultView = "login" }) {
           </div>
           <div style={S.leftSub}>
             The scanner analyzes 1,200+ stocks overnight and surfaces the single highest-conviction setup — with entry, stop, and targets ready at open.
+          </div>
+
+          <div style={S.stats}>
+            {[
+              { val: "1,200+", label: "Stocks scanned nightly" },
+              { val: "1",      label: "Pick per trading day"   },
+              { val: "3",      label: "Signals per pick"       },
+            ].map(({ val, label }) => (
+              <div key={label} style={S.stat}>
+                <div style={S.statVal}>{val}</div>
+                <div style={S.statLabel}>{label}</div>
+              </div>
+            ))}
           </div>
 
         </div>

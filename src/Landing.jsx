@@ -1086,7 +1086,7 @@ export default function Landing({ onGetStarted }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.88 }}
           >
-            AI-powered stock picks. One setup, every trading day. $9/month.
+One AI-curated setup, delivered before market open. Entry, stop, and target — ready to trade.
           </motion.p>
 
           {/* CTA */}
@@ -1119,6 +1119,15 @@ export default function Landing({ onGetStarted }) {
 
 
         <div style={S.divider} />
+
+        {/* ── Facts bar ── */}
+        <div style={S.statsBar} className="stats-bar">
+          <StatBarItem raw="1,200+" label="Stocks Scanned Nightly" delay={0} />
+          <div style={S.statsBarSep} className="stats-bar-sep" />
+          <StatBarItem raw="1" label="Pick Per Trading Day" delay={110} />
+          <div style={S.statsBarSep} className="stats-bar-sep" />
+          <StatBarItem raw="3" label="Signals Per Pick (Entry · Stop · Target)" delay={220} />
+        </div>
 
         <div style={S.divider} />
 
