@@ -7971,14 +7971,32 @@ async function loadWatchlistLive() {
             <button
               className="btn btn--ghost"
               style={{ fontSize: 12, padding: "7px 16px", color: darkMode ? "rgba(255,255,255,0.38)" : "rgba(8,10,22,0.40)", borderColor: darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.09)" }}
-              onClick={() => showToast("Sign-out is not available in this version.")}
+              onClick={() => {
+                localStorage.removeItem("aurexis_token");
+                localStorage.removeItem("aurexis_user_email");
+                localStorage.removeItem("aurexis_force_onboarding");
+                window.location.href = "/";
+              }}
             >
               Sign out
             </button>
             <button
               className="btn btn--ghost"
               style={{ fontSize: 12, padding: "7px 16px", color: "rgba(251,113,133,0.5)", borderColor: "rgba(251,113,133,0.12)" }}
-              onClick={() => showToast("Account deletion is not available in this version. Email support@aurexis.ai.")}
+              onClick={() => {
+                if (window.confirm("Are you sure? This cannot be undone.")) {
+                  const token = localStorage.getItem("aurexis_token");
+                  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+                  fetch(`${API}/auth/delete-account`, {
+                    method: "DELETE",
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  }).finally(() => {
+                    localStorage.removeItem("aurexis_token");
+                    localStorage.removeItem("aurexis_user_email");
+                    window.location.href = "/";
+                  });
+                }
+              }}
             >
               Delete account
             </button>
