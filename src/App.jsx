@@ -8794,35 +8794,61 @@ async function loadWatchlistLive() {
           </div>
           {toggleRow("Two-factor authentication", twoFaEnabled, handleToggle2FA)}
 
+          {twoFaStep === "sending" && (
+            <div style={{ marginTop: 14, fontSize: 13, color: darkMode ? "rgba(255,255,255,0.45)" : "rgba(8,10,22,0.50)" }}>
+              Sending code to <b>{userProfile?.email}</b>…
+            </div>
+          )}
+
           {twoFaStep === "verify" && (
-            <form onSubmit={handleConfirm2FA} style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.55)" }}>
-                Enter the 6-digit code we sent to <b>{userProfile?.email}</b>:
+            <form onSubmit={handleConfirm2FA} style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(8,10,22,0.55)", lineHeight: 1.5 }}>
+                We sent a 6-digit code to <b style={{ color: darkMode ? "rgba(255,255,255,0.8)" : "rgba(8,10,22,0.8)" }}>{userProfile?.email}</b>. Enter it below.
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="text" inputMode="numeric" maxLength={6}
-                  value={twoFaCode} onChange={e => setTwoFaCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000" autoFocus
-                  style={{
-                    flex: 1, background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-                    border: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.10)",
-                    borderRadius: 9, padding: "10px 14px", fontSize: 18, fontWeight: 800,
-                    letterSpacing: "0.2em", color: darkMode ? "#fff" : "#111",
-                    outline: "none", textAlign: "center", fontFamily: "inherit",
-                  }}
-                />
-                <button type="submit" disabled={twoFaCode.length < 6} style={{
-                  padding: "10px 18px", background: "#00b450", border: "none",
-                  borderRadius: 9, color: "#fff", fontWeight: 700, fontSize: 13,
-                  cursor: "pointer", fontFamily: "inherit", opacity: twoFaCode.length < 6 ? 0.5 : 1,
-                }}>Confirm</button>
-              </div>
-              {twoFaError && <div style={{ fontSize: 12, color: "#f87171" }}>{twoFaError}</div>}
-              <button type="button" onClick={() => { setTwoFaStep("idle"); setTwoFaCode(""); setTwoFaError(""); }}
-                style={{ background: "none", border: "none", color: darkMode ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.35)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: 0 }}>
-                Cancel
+              <input
+                type="text" inputMode="numeric" maxLength={6}
+                value={twoFaCode} onChange={e => setTwoFaCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter 6-digit code" autoFocus
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)",
+                  border: darkMode ? "1px solid rgba(255,255,255,0.14)" : "1px solid rgba(0,0,0,0.12)",
+                  borderRadius: 10, padding: "13px 16px", fontSize: 22, fontWeight: 800,
+                  letterSpacing: "0.25em", color: darkMode ? "#fff" : "#111",
+                  outline: "none", textAlign: "center", fontFamily: "inherit",
+                }}
+              />
+              {twoFaError && <div style={{ fontSize: 12, color: "#f87171", marginTop: -4 }}>{twoFaError}</div>}
+              <button
+                type="submit"
+                disabled={twoFaCode.length < 6}
+                style={{
+                  width: "100%", padding: "13px 0", borderRadius: 10, border: "none",
+                  background: twoFaCode.length < 6 ? (darkMode ? "rgba(0,180,80,0.35)" : "rgba(0,180,80,0.4)") : "#00b450",
+                  color: "#fff", fontWeight: 700, fontSize: 15,
+                  cursor: twoFaCode.length < 6 ? "default" : "pointer",
+                  fontFamily: "inherit", transition: "background 0.15s",
+                }}
+              >
+                {twoFaCode.length < 6 ? `Enter ${6 - twoFaCode.length} more digit${6 - twoFaCode.length !== 1 ? "s" : ""}` : "Confirm & Enable 2FA"}
               </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button type="button"
+                  onClick={async () => {
+                    setTwoFaCode(""); setTwoFaError(""); setTwoFaStep("sending");
+                    const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+                    const token = localStorage.getItem("aurexis_token");
+                    await fetch(`${API}/auth/2fa/send-setup-code`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } });
+                    setTwoFaStep("verify");
+                  }}
+                  style={{ background: "none", border: "none", color: darkMode ? "rgba(0,180,80,0.7)" : "rgba(0,140,60,0.7)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                  Resend code
+                </button>
+                <button type="button" onClick={() => { setTwoFaStep("idle"); setTwoFaCode(""); setTwoFaError(""); }}
+                  style={{ background: "none", border: "none", color: darkMode ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.32)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                  Cancel
+                </button>
+              </div>
             </form>
           )}
         </div>
