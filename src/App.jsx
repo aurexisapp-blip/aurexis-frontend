@@ -2253,6 +2253,96 @@ function analyzeRemaining(plan) {
   if (canAccess(plan, "starter")) return Infinity;
   return Math.max(0, ANALYZE_FREE_LIMIT - getAnalyzeUsedToday());
 }
+function StarterFakePreview() {
+  return (
+    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+        {[["WIN RATE","73%","#4ade80"],["AVG RETURN","+8.4%","#4ade80"],["TOTAL PICKS","47","#fff"]].map(([lbl,val,clr]) => (
+          <div key={lbl} style={{ flex: 1, padding: "12px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", marginBottom: 5, letterSpacing: "0.05em" }}>{lbl}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: clr }}>{val}</div>
+          </div>
+        ))}
+      </div>
+      {[["NVDA","LONG","+12.4%","Hit T1"],["AAPL","LONG","+6.2%","Hit T1"],["TSLA","LONG","+18.7%","Hit T2"],["META","LONG","+9.1%","Pending"]].map(([sym,dir,ret,st]) => (
+        <div key={sym} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 9, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, background: "rgba(0,180,80,0.12)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#4ade80" }}>{sym.slice(0,2)}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{dir}</div>
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{ret}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{st}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProFakePreview() {
+  const rows = [
+    { sym: "NVDA", price: "$875.20", rsi: 72, mom: "High", signal: "BUY" },
+    { sym: "AAPL", price: "$192.45", rsi: 58, mom: "Med",  signal: "WATCH" },
+    { sym: "TSLA", price: "$248.30", rsi: 65, mom: "High", signal: "BUY" },
+    { sym: "MSFT", price: "$415.80", rsi: 61, mom: "Med",  signal: "HOLD" },
+    { sym: "AMD",  price: "$162.40", rsi: 70, mom: "High", signal: "BUY" },
+    { sym: "GOOGL",price: "$171.90", rsi: 55, mom: "Low",  signal: "HOLD" },
+  ];
+  return (
+    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>SCREENER RESULTS · 21 matches</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 44px 50px 52px", gap: "0 8px", padding: "0 4px 8px", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: 6 }}>
+        {["SYMBOL","PRICE","RSI","MOM","SIGNAL"].map(h => (
+          <div key={h} style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontWeight: 700, letterSpacing: "0.06em", textAlign: h === "SYMBOL" ? "left" : "right" }}>{h}</div>
+        ))}
+      </div>
+      {rows.map(({ sym, price, rsi, mom, signal }) => (
+        <div key={sym} style={{ display: "grid", gridTemplateColumns: "1fr 70px 44px 50px 52px", gap: "0 8px", padding: "9px 4px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "right" }}>{price}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: rsi > 65 ? "#4ade80" : "rgba(255,255,255,0.5)", textAlign: "right" }}>{rsi}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "right" }}>{mom}</div>
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: signal === "BUY" ? "#4ade80" : signal === "HOLD" ? "rgba(255,255,255,0.35)" : "rgba(251,191,36,0.7)" }}>{signal}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EliteFakePreview() {
+  return (
+    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>OPTIONS FLOW · UNUSUAL ACTIVITY</div>
+      {[
+        { sym: "NVDA", type: "CALL", strike: "$900C", exp: "Jun 21", size: "$2.4M", sentiment: "Bullish" },
+        { sym: "SPY",  type: "PUT",  strike: "$520P", exp: "Jun 14", size: "$1.8M", sentiment: "Bearish" },
+        { sym: "TSLA", type: "CALL", strike: "$260C", exp: "Jun 28", size: "$890K", sentiment: "Bullish" },
+        { sym: "AAPL", type: "CALL", strike: "$200C", exp: "Jul 18", size: "$1.2M", sentiment: "Bullish" },
+      ].map(({ sym, type, strike, exp, size, sentiment }) => (
+        <div key={sym+strike} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 9, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ padding: "3px 8px", borderRadius: 6, background: type === "CALL" ? "rgba(0,180,80,0.15)" : "rgba(248,113,113,0.15)", fontSize: 10, fontWeight: 800, color: type === "CALL" ? "#4ade80" : "#f87171" }}>{type}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym} <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{strike}</span></div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Exp {exp}</div>
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{size}</div>
+            <div style={{ fontSize: 10, color: type === "CALL" ? "#4ade80" : "#f87171" }}>{sentiment}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PlanGate({ requires, userPlan, children, setTab }) {
   if (canAccess(userPlan, requires)) return children;
   const label = requires.charAt(0).toUpperCase() + requires.slice(1);
@@ -2262,13 +2352,14 @@ function PlanGate({ requires, userPlan, children, setTab }) {
     pro: "screener, portfolio tracker & advanced analytics",
     elite: "options flow, insider activity & elite signals",
   };
+  const fakePreview = requires === "pro" ? <ProFakePreview /> : requires === "elite" ? <EliteFakePreview /> : <StarterFakePreview />;
   return (
     <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none", opacity: 0.55 }}>{children}</div>
+      <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none", opacity: 0.6 }}>{fakePreview}</div>
       <div style={{
         position: "absolute", inset: 0, display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "flex-end", padding: "0 24px 32px",
-        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.6) 40%, rgba(7,9,16,0.94) 100%)",
+        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.55) 40%, rgba(7,9,16,0.95) 100%)",
       }}>
         <div style={{ textAlign: "center", maxWidth: 360 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.28)", borderRadius: 20, padding: "3px 12px", marginBottom: 10 }}>
@@ -5924,18 +6015,40 @@ async function loadWatchlistLive() {
             )}
 
             {activeTab === "summary" && !canAccess(userPlan, "starter") && (
-              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 120 }}>
-                <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {["Bullish catalyst in earnings revision cycle", "Institutional accumulation detected", "Short interest declining — covering pressure"].map((txt, i) => (
-                      <div key={i} style={{ padding: "10px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>● {txt}</div>
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
+                  <div style={{ padding: "8px 0 6px", marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 6 }}>OVERVIEW</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>Strong institutional accumulation noted across multiple sessions. Analyst upgrades driven by earnings revision momentum and improving forward guidance. Options flow skewing heavily bullish with large call sweeps at key strikes.</div>
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 6 }}>KEY DRIVERS</div>
+                    {["Bullish catalyst in earnings revision cycle", "Institutional accumulation across 3 consecutive sessions", "Short interest declining — covering pressure building", "Analyst upgrade: PT raised from $820 → $950", "Call/Put ratio at 2.4x — unusual bullish flow"].map((txt, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
+                        <span style={{ color: "#4ade80", fontSize: 11, marginTop: 1 }}>●</span>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{txt}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 6 }}>RISK FLAGS</div>
+                    {["Broad market macro headwinds — watch SPY", "Earnings report in 18 days — volatility likely"].map((txt, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
+                        <span style={{ color: "#f87171", fontSize: 11, marginTop: 1 }}>▲</span>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{txt}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(to bottom, rgba(7,9,16,0.2), rgba(7,9,16,0.88))" }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Unlock AI sentiment analysis</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 4, padding: "7px 18px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock AI news & sentiment analysis</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Catalysts, risk flags, and analyst sentiment — updated on every analysis.</div>
+                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(0,180,80,0.25)" }}>Upgrade to Starter →</button>
+                  </div>
                 </div>
               </div>
             )}
@@ -5981,24 +6094,51 @@ async function loadWatchlistLive() {
             )}
 
             {activeTab === "metrics" && !canAccess(userPlan, "starter") && (
-              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 120 }}>
-                <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {[["Momentum", 78], ["RSI", 62], ["Volume Strength", 84], ["Trend Score", 71]].map(([lbl, val]) => (
-                      <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 90, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{lbl}</div>
-                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
-                          <div style={{ width: `${val}%`, height: "100%", borderRadius: 3, background: "rgba(34,197,94,0.7)" }} />
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 8 }}>TECHNICAL SCORES</div>
+                    {[["Momentum", 78],["Trend", 71],["Volatility", 55],["Liquidity", 84],["Risk", 38]].map(([lbl, val]) => {
+                      const clr = val >= 70 ? "rgba(74,222,128,0.8)" : val >= 40 ? "rgba(251,191,36,0.7)" : "rgba(248,113,113,0.7)";
+                      return (
+                        <div key={lbl} style={{ display: "grid", gridTemplateColumns: "90px 1fr 28px", gap: 10, alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "capitalize" }}>{lbl}</div>
+                          <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.07)" }}>
+                            <div style={{ width: `${val}%`, height: "100%", borderRadius: 3, background: clr }} />
+                          </div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textAlign: "right" }}>{val}</div>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", width: 28, textAlign: "right" }}>{val}</div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 8 }}>EXECUTION PLAN</div>
+                    {[["Entry Zone","$868.40 – $874.00"],["Stop Loss","$851.20"],["Target 1","$912.50"],["Target 2","$954.80"],["R/R Ratio","2.4:1"]].map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{k}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)" }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    {[["AI SCORE","87","High Conviction"],["EXECUTION","79","Strong Setup"]].map(([lbl,sc,desc]) => (
+                      <div key={lbl} style={{ flex: 1, padding: "10px", background: "rgba(0,180,80,0.06)", borderRadius: 9, border: "1px solid rgba(0,180,80,0.12)", textAlign: "center" }}>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em" }}>{lbl}</div>
+                        <div style={{ fontSize: 26, fontWeight: 800, color: "#4ade80" }}>{sc}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{desc}</div>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(to bottom, rgba(7,9,16,0.2), rgba(7,9,16,0.88))" }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Unlock advanced technical metrics</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 4, padding: "7px 18px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock technical scores & execution plan</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Momentum, trend, volatility, R/R ratio, stop loss, and AI score rings.</div>
+                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(0,180,80,0.25)" }}>Upgrade to Starter →</button>
+                  </div>
                 </div>
               </div>
             )}
