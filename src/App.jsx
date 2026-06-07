@@ -27,6 +27,7 @@ import { normalizeAnalysis } from "./api/normalize";
 // ---------- API base ----------
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_BASE = API_BASE_URL;
+const API = API_BASE_URL;
 
 // ---------- RippleButton ----------
 function RippleButton({ children, onClick, className, style, disabled, type, ...rest }) {
@@ -2421,7 +2422,6 @@ function AppInner() {
 
   // Determine onboarding visibility based on per-user key from /auth/me
   React.useEffect(() => {
-    const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     const token = localStorage.getItem("aurexis_token");
     if (!token) return;
     fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
@@ -8593,7 +8593,6 @@ async function loadWatchlistLive() {
     const [twoFaError, setTwoFaError] = React.useState("");
 
     async function handleToggle2FA() {
-      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
       const token = localStorage.getItem("aurexis_token");
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
       if (twoFaEnabled) {
@@ -8610,7 +8609,6 @@ async function loadWatchlistLive() {
     async function handleConfirm2FA(e) {
       e.preventDefault();
       setTwoFaError("");
-      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
       const token = localStorage.getItem("aurexis_token");
       const res = await fetch(`${API}/auth/2fa/enable`, {
         method: "POST",
@@ -8836,7 +8834,6 @@ async function loadWatchlistLive() {
                 <button type="button"
                   onClick={async () => {
                     setTwoFaCode(""); setTwoFaError(""); setTwoFaStep("sending");
-                    const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
                     const token = localStorage.getItem("aurexis_token");
                     await fetch(`${API}/auth/2fa/send-setup-code`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } });
                     setTwoFaStep("verify");
@@ -8933,7 +8930,6 @@ async function loadWatchlistLive() {
               onClick={() => {
                 if (window.confirm("Are you sure? This cannot be undone.")) {
                   const token = localStorage.getItem("aurexis_token");
-                  const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
                   fetch(`${API}/auth/delete-account`, {
                     method: "DELETE",
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -9070,7 +9066,6 @@ async function loadWatchlistLive() {
       setUpgradeLoading(plan.id);
       try {
         const token = localStorage.getItem("aurexis_token");
-        const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
         const res = await fetch(`${API}/stripe/create-checkout-session`, {
           method: "POST",
           headers: {
