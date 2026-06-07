@@ -5509,11 +5509,13 @@ async function loadWatchlistLive() {
       const ticker = _BLOCKED.has(_rawTicker) ? "" : _rawTicker;
 
       // is_trade / no_trade_reason / trade_decision from best pick only
-      const isNoTrade = best0?.is_trade === false || bestPayload0?.is_trade === false;
-      const noTradeReason = String(best0?.no_trade_reason || bestPayload0?.no_trade_reason || "").trim();
       const tradeDec = String(
         best0?.trade_decision || bestPayload0?.trade_decision || ""
       ).toUpperCase();
+      // LOW_CONVICTION with a real ticker is still a surfaced pick — don't treat as no-trade
+      const isNoTrade = (best0?.is_trade === false || bestPayload0?.is_trade === false)
+        && tradeDec !== "LOW_CONVICTION";
+      const noTradeReason = String(best0?.no_trade_reason || bestPayload0?.no_trade_reason || "").trim();
 
       // edge_signals and position_size_pct from best pick only
       const edgeSignals = Array.isArray(best0?.edge_signals) ? best0.edge_signals
@@ -5609,11 +5611,12 @@ async function loadWatchlistLive() {
       );
 
       // Only show no-trade card when there is genuinely no actionable setup —
-      // i.e. no valid symbol OR no entry/stop values. A LOW_CONVICTION result with
-      // a real ticker and trade plan should still render the full pick card.
-      const NO_TRADE_DECISIONS = ["NO_TRADE", "MISSED_ENTRY", "LOW_CONVICTION"];
+      // i.e. no valid symbol OR entry/stop values missing.
+      // LOW_CONVICTION with a real ticker falls through to the full pick card below.
+      const NO_TRADE_DECISIONS = ["NO_TRADE", "MISSED_ENTRY"];
       const isNoTradeDecision = NO_TRADE_DECISIONS.includes(tradeDec);
-      if ((isNoTrade || isNoTradeDecision || !ticker) && !loadingBestPick) {
+      const isLowConvictionWithPick = tradeDec === "LOW_CONVICTION" && Boolean(ticker);
+      if ((isNoTrade || (isNoTradeDecision && !isLowConvictionWithPick) || !ticker) && !loadingBestPick) {
         const marketRegime = String(best0?.market_regime || bestPayload0?.market_regime || "").trim().toUpperCase();
         const noTradeEdgeSignals = Array.isArray(best0?.edge_signals) ? best0.edge_signals
           : Array.isArray(bestPayload0?.edge_signals) ? bestPayload0.edge_signals : [];
