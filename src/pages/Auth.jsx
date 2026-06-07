@@ -160,15 +160,13 @@ export default function Auth({ defaultView = "login" }) {
           <div style={M.formSub}>{isLogin ? "Sign in to your account." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.socialBtn} disabled title="Coming soon">
+            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect`; }}>
               <GoogleIcon />
               <span>Continue with Google</span>
-              <span style={S.comingSoon}>Soon</span>
             </button>
-            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} disabled title="Coming soon">
+            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} onClick={() => { window.location.href = `${API}/auth/apple/redirect`; }}>
               <AppleIcon />
               <span>Continue with Apple</span>
-              <span style={{ ...S.comingSoon, color: "rgba(0,0,0,0.35)", background: "rgba(0,0,0,0.08)" }}>Soon</span>
             </button>
           </div>
 
@@ -270,15 +268,13 @@ export default function Auth({ defaultView = "login" }) {
           <div style={S.formSub}>{isLogin ? "Sign in to access your AI picks." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.socialBtn} disabled title="Coming soon">
+            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect`; }}>
               <GoogleIcon />
               <span>Continue with Google</span>
-              <span style={S.comingSoon}>Soon</span>
             </button>
-            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} disabled title="Coming soon">
+            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} onClick={() => { window.location.href = `${API}/auth/apple/redirect`; }}>
               <AppleIcon />
               <span>Continue with Apple</span>
-              <span style={{ ...S.comingSoon, color: "rgba(0,0,0,0.35)", background: "rgba(0,0,0,0.08)" }}>Soon</span>
             </button>
           </div>
 
@@ -414,9 +410,8 @@ const S = {
     background: "rgba(255,255,255,0.05)",
     color: "rgba(255,255,255,0.75)",
     fontSize: 14, fontWeight: 600,
-    cursor: "not-allowed",
+    cursor: "pointer",
     fontFamily: "inherit", width: "100%",
-    opacity: 0.65, position: "relative",
   },
   appleBtn: {
     background: "rgba(255,255,255,0.92)",
