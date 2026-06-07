@@ -5338,7 +5338,7 @@ async function loadWatchlistLive() {
       }
 
       return (
-        <div className={`card heroCard heroCard--${convStyle.bgKey}`} style={{ minHeight: 280 }}>
+        <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
           <div className={`heroBg heroBg--${convStyle.bgKey}`} />
           <div className="heroBody">
             <div className="heroTop">
@@ -5350,7 +5350,7 @@ async function loadWatchlistLive() {
                   </div>
                 ) : (
                   <>
-                    <div className="heroTicker" style={{ fontSize: 56, lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 800, marginBottom: 6 }}>{ticker || "—"}</div>
+                    <div className="heroTicker">{ticker || "—"}</div>
                     <div className="heroPrice">
                       {Number.isFinite(livePrice) && livePrice > 0 ? (
                         <>
@@ -5424,36 +5424,36 @@ async function loadWatchlistLive() {
                   gridTemplateColumns: "1fr 1fr 1fr",
                   gap: "1px",
                   background: T.bg3,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   overflow: "hidden",
-                  margin: "18px 0 16px",
+                  margin: "4px 0 2px",
                 }}>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Entry</div>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
                       {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                     </div>
                   </div>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Stop</div>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Stop</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
                       {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
                     </div>
                   </div>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Target</div>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Target</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
                       {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", margin: "18px 0 16px" }}>
+                <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "4px 0 2px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(5px)", opacity: 0.3, pointerEvents: "none" }}>
                     {["Entry","Stop","Target"].map(lbl => (
-                      <div key={lbl} style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>{lbl}</div>
-                        <div style={{ fontSize: 26, fontWeight: 700, color: T.text }}>$—</div>
+                      <div key={lbl} style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>{lbl}</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>$—</div>
                       </div>
                     ))}
                   </div>
