@@ -8000,6 +8000,45 @@ async function loadWatchlistLive() {
     const [notifPicks, setNotifPicks] = React.useState(false);
     const [notifMovers, setNotifMovers] = React.useState(false);
     const [compactView, setCompactView] = React.useState(false);
+    const [twoFaEnabled, setTwoFaEnabled] = React.useState(userProfile?.two_fa_enabled || false);
+    const [twoFaStep, setTwoFaStep] = React.useState("idle"); // idle | sending | verify | done
+    const [twoFaCode, setTwoFaCode] = React.useState("");
+    const [twoFaError, setTwoFaError] = React.useState("");
+
+    async function handleToggle2FA() {
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const token = localStorage.getItem("aurexis_token");
+      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      if (twoFaEnabled) {
+        await fetch(`${API}/auth/2fa/disable`, { method: "POST", headers });
+        setTwoFaEnabled(false);
+        showToast("Two-factor authentication disabled.");
+      } else {
+        setTwoFaStep("sending");
+        await fetch(`${API}/auth/2fa/send-setup-code`, { method: "POST", headers });
+        setTwoFaStep("verify");
+      }
+    }
+
+    async function handleConfirm2FA(e) {
+      e.preventDefault();
+      setTwoFaError("");
+      const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const token = localStorage.getItem("aurexis_token");
+      const res = await fetch(`${API}/auth/2fa/enable`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code: twoFaCode }),
+      });
+      if (res.ok) {
+        setTwoFaEnabled(true);
+        setTwoFaStep("idle");
+        setTwoFaCode("");
+        showToast("Two-factor authentication enabled.");
+      } else {
+        setTwoFaError("Invalid or expired code. Try again.");
+      }
+    }
 
     return (
       <div className="pageGrid">
@@ -8056,6 +8095,47 @@ async function loadWatchlistLive() {
           </div>
           {toggleRow("New AI pick alert", notifPicks, () => { setNotifPicks(p => !p); showToast("Notifications available on Power plan — coming soon."); })}
           {toggleRow("Top movers alert (market open)", notifMovers, () => { setNotifMovers(p => !p); showToast("Notifications available on Power plan — coming soon."); })}
+        </div>
+
+        {/* Security */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ ...settingsSectionTitle, marginBottom: 4 }}>Security</div>
+          <div style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.40)", marginBottom: 14, lineHeight: 1.5 }}>
+            Two-factor authentication adds an extra layer of security. You'll receive a 6-digit code by email each time you sign in.
+          </div>
+          {toggleRow("Two-factor authentication", twoFaEnabled, handleToggle2FA)}
+
+          {twoFaStep === "verify" && (
+            <form onSubmit={handleConfirm2FA} style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.55)" }}>
+                Enter the 6-digit code we sent to <b>{userProfile?.email}</b>:
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text" inputMode="numeric" maxLength={6}
+                  value={twoFaCode} onChange={e => setTwoFaCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000" autoFocus
+                  style={{
+                    flex: 1, background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+                    border: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.10)",
+                    borderRadius: 9, padding: "10px 14px", fontSize: 18, fontWeight: 800,
+                    letterSpacing: "0.2em", color: darkMode ? "#fff" : "#111",
+                    outline: "none", textAlign: "center", fontFamily: "inherit",
+                  }}
+                />
+                <button type="submit" disabled={twoFaCode.length < 6} style={{
+                  padding: "10px 18px", background: "#00b450", border: "none",
+                  borderRadius: 9, color: "#fff", fontWeight: 700, fontSize: 13,
+                  cursor: "pointer", fontFamily: "inherit", opacity: twoFaCode.length < 6 ? 0.5 : 1,
+                }}>Confirm</button>
+              </div>
+              {twoFaError && <div style={{ fontSize: 12, color: "#f87171" }}>{twoFaError}</div>}
+              <button type="button" onClick={() => { setTwoFaStep("idle"); setTwoFaCode(""); setTwoFaError(""); }}
+                style={{ background: "none", border: "none", color: darkMode ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.35)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: 0 }}>
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Display */}

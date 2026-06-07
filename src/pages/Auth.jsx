@@ -55,12 +55,15 @@ export default function Auth({ defaultView = "login" }) {
   const [plan, setPlan] = useState(getInitialPlan);
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [otpView, setOtpView] = useState(false);
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [error, setError] = useState(() => {
     const e = new URLSearchParams(window.location.search).get("error") || "";
     return OAUTH_ERRORS[e] || "";
   });
 
-  function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); setTermsAccepted(false); }
+  function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); setTermsAccepted(false); setOtpView(false); setOtpCode(""); }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -73,15 +76,41 @@ export default function Auth({ defaultView = "login" }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data?.detail || data?.message || "Login failed. Check your credentials."); return; }
+
+      if (data?.requires_2fa) {
+        setOtpEmail(data.email);
+        setOtpView(true);
+        return;
+      }
+
       const token = data?.access_token || data?.token;
       if (token) {
-        // Detect account switch — clear onboarding flag if logging in as a different user
         const prevUser = localStorage.getItem("aurexis_user_email");
-        if (prevUser && prevUser !== email) {
-          localStorage.removeItem("aurexis_onboarding_complete");
-        }
+        if (prevUser && prevUser !== email) localStorage.removeItem("aurexis_onboarding_complete");
         localStorage.setItem("aurexis_token", token);
         localStorage.setItem("aurexis_user_email", email);
+      }
+      navigate("/app");
+    } catch {
+      setError("Network error — check your connection.");
+    } finally { setLoading(false); }
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: otpEmail, code: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data?.detail || "Invalid code. Try again."); return; }
+      const token = data?.access_token || data?.token;
+      if (token) {
+        localStorage.setItem("aurexis_token", token);
+        localStorage.setItem("aurexis_user_email", otpEmail);
       }
       navigate("/app");
     } catch {
@@ -135,6 +164,36 @@ export default function Auth({ defaultView = "login" }) {
   }
 
   const isLogin = view === "login";
+
+  // 2FA OTP screen
+  if (otpView) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#07090f", fontFamily: '"Inter", -apple-system, sans-serif' }}>
+        <div style={{ width: "100%", maxWidth: 380, padding: "0 24px", textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, rgba(0,180,80,0.20), rgba(0,180,80,0.05))", border: "1px solid rgba(0,180,80,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: 24 }}>🔐</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 8 }}>Check your email</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", marginBottom: 32, lineHeight: 1.6 }}>
+            We sent a 6-digit code to <span style={{ color: "rgba(255,255,255,0.65)", fontWeight: 600 }}>{otpEmail}</span>
+          </div>
+          <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <input
+              type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+              value={otpCode} onChange={e => setOtpCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="000000" autoFocus
+              style={{ ...S.input, textAlign: "center", fontSize: 28, fontWeight: 800, letterSpacing: "0.25em" }}
+            />
+            {error ? <div style={S.errorBox}>{error}</div> : null}
+            <button type="submit" style={{ ...S.submit, opacity: otpCode.length < 6 ? 0.5 : 1 }} disabled={loading || otpCode.length < 6}>
+              {loading ? "Verifying…" : "Verify & Sign In →"}
+            </button>
+          </form>
+          <button type="button" onClick={() => { setOtpView(false); setOtpCode(""); setError(""); }} style={{ marginTop: 20, background: "none", border: "none", color: "rgba(255,255,255,0.30)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+            ← Back to login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Mobile layout ── */
   if (isMobile) {
