@@ -2265,6 +2265,7 @@ function AppInner() {
       .then(r => r.ok ? r.json() : null)
       .then(me => {
         if (!me?.id) return;
+        setUserProfile(me);
         const key = `aurexis_onboarding_done_${me.id}`;
         const forceFlag = localStorage.getItem("aurexis_force_onboarding");
         if (!localStorage.getItem(key) || forceFlag === "1") {
@@ -2490,6 +2491,7 @@ function AppInner() {
   const [loadingNews, setLoadingNews] = useState(false); // kept
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingUserName, setOnboardingUserName] = useState("");
+  const [userProfile, setUserProfile] = useState(null);
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
 
   const [analyzeStatus, setAnalyzeStatus] = useState("");
@@ -7911,7 +7913,23 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
-    const initials = "AU";
+    const firstName = userProfile?.first_name || "";
+    const lastName = userProfile?.last_name || "";
+    const email = userProfile?.email || "";
+    const plan = userProfile?.plan || "free";
+    const memberSince = userProfile?.created_at
+      ? new Date(userProfile.created_at).getFullYear()
+      : new Date().getFullYear();
+    const displayName = firstName || lastName
+      ? `${firstName} ${lastName}`.trim()
+      : email || "Aurexis User";
+    const initials = firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : firstName
+        ? firstName.slice(0, 2).toUpperCase()
+        : email
+          ? email.slice(0, 2).toUpperCase()
+          : "AU";
     const toggleRow = (label, enabled, onChange) => (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: darkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
         <span style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.65)" : "rgba(8,10,22,0.62)" }}>{label}</span>
@@ -7956,14 +7974,14 @@ async function loadWatchlistLive() {
             letterSpacing: "-0.01em",
           }}>{initials}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: darkMode ? "#fff" : "rgba(8,10,22,0.90)", letterSpacing: "-0.02em" }}>Aurexis User</div>
-            <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.40)", marginTop: 3 }}>Free Plan · Member since 2025</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: darkMode ? "#fff" : "rgba(8,10,22,0.90)", letterSpacing: "-0.02em" }}>{displayName}</div>
+            <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.40)", marginTop: 3 }}>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan · Member since {memberSince}</div>
           </div>
           <div style={{
             padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700,
             background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)",
             color: "rgba(0,180,80,0.90)", letterSpacing: "0.04em",
-          }}>FREE</div>
+          }}>{plan.toUpperCase()}</div>
         </div>
 
         {/* Plan */}
