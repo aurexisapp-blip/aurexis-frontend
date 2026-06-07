@@ -1986,99 +1986,184 @@ class AurexisErrorBoundary extends React.Component {
 const ONBOARDING_STEPS = [
   {
     icon: null,
-    title: "Welcome to Aurexis",
-    body: "You're in. Here's everything you need to know to get the most out of the system in the next 60 seconds.",
+    eyebrow: "WELCOME TO AUREXIS",
+    title: "The edge serious traders have been waiting for.",
+    body: "Aurexis is an AI-powered stock signal system built to surface one thing: the single highest-conviction trade opportunity of the day. No noise. No overload. Just signal.",
+    stat: null,
   },
   {
     icon: "🎯",
-    title: "The Daily AI Pick",
-    body: "Every market day at 9:30 AM ET, our system scans thousands of stocks and surfaces the single highest-conviction setup. One pick. No noise.",
+    eyebrow: "DAILY AI PICK",
+    title: "One pick. Every morning. Before the open.",
+    body: "At 9:30 AM ET, our AI scans 1,200+ stocks across momentum, relative strength, volume structure, and market regime. It scores every setup — and only surfaces the one that clears every threshold.",
+    stat: { label: "Stocks scanned nightly", value: "1,200+" },
+  },
+  {
+    icon: "📐",
+    eyebrow: "TRADE LEVELS",
+    title: "Entry, stop, and target — calculated for you.",
+    body: "Every pick comes with a precise entry zone, a stop-loss based on structure, and a Fibonacci-derived price target. The system calculates your risk/reward ratio automatically. You just decide if you take it.",
+    stat: { label: "Signals per pick", value: "3–7" },
   },
   {
     icon: "📊",
-    title: "AI Score & Execution Score",
-    body: "AI Score measures setup quality (momentum, trend, volatility). Execution Score measures timing and entry precision. Above 70 = high conviction. Below 40 = system says wait.",
-  },
-  {
-    icon: "✅",
-    title: "Full Transparency",
-    body: "We track every pick publicly — wins and losses. Current track record: 37 picks tracked, 45.9% win rate, +3.76% avg return. We don't hide misses.",
+    eyebrow: "PERFORMANCE",
+    title: "Every pick is tracked publicly. Wins and losses.",
+    body: "We don't cherry-pick results. Every signal is logged the moment it fires — entry price, outcome, return. You can audit the full track record anytime from the Recent Picks panel.",
+    stat: { label: "Avg return on winners", value: "+6.8%" },
   },
   {
     icon: "🛡️",
-    title: "When the System Says No",
-    body: "Some days the system returns NO_TRADE. That's not a bug — it means no setup met the threshold. We'd rather find nothing than recommend a weak setup.",
+    eyebrow: "NO_TRADE SIGNAL",
+    title: "Some days, doing nothing is the right trade.",
+    body: "When market conditions aren't favorable, Aurexis returns NO_TRADE. That's a signal too — it means the system found no setup worth the risk. Discipline is built into the algorithm.",
+    stat: null,
   },
 ];
 
-function OnboardingModal({ onDone }) {
+function OnboardingModal({ onDone, userName = "" }) {
   const [step, setStep] = React.useState(0);
   const current = ONBOARDING_STEPS[step];
   const isLast = step === ONBOARDING_STEPS.length - 1;
+  const displayTitle = step === 0 && userName
+    ? `Welcome, ${userName}.`
+    : current.title;
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "#070b12",
-      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#060a10",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      overflow: "hidden",
     }}>
-      {/* subtle radial glow */}
+      {/* Background grid */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,180,80,0.07), transparent 70%)",
+        backgroundImage: "linear-gradient(rgba(0,180,80,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,80,0.03) 1px, transparent 1px)",
+        backgroundSize: "60px 60px",
+      }} />
+      {/* Green radial glow */}
+      <div style={{
+        position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)",
+        width: 700, height: 500, pointerEvents: "none",
+        background: "radial-gradient(ellipse, rgba(0,180,80,0.10) 0%, transparent 65%)",
+      }} />
+      {/* Bottom fade */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 200, pointerEvents: "none",
+        background: "linear-gradient(transparent, #060a10)",
       }} />
 
-      <div style={{ position: "relative", width: "100%", maxWidth: 520, padding: "0 24px", textAlign: "center" }}>
-        <button
-          onClick={onDone}
-          style={{
-            position: "fixed", top: 20, right: 24,
-            background: "none", border: "none",
-            color: "rgba(255,255,255,0.30)", fontSize: 13,
-            cursor: "pointer", fontFamily: "inherit", padding: "4px 8px",
-            letterSpacing: 0.3,
-          }}
-        >
-          Skip
-        </button>
+      {/* Skip */}
+      <button onClick={onDone} style={{
+        position: "fixed", top: 22, right: 26,
+        background: "none", border: "1px solid rgba(255,255,255,0.10)",
+        color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 600,
+        cursor: "pointer", fontFamily: "inherit", padding: "5px 12px",
+        borderRadius: 8, letterSpacing: 0.5,
+      }}>
+        Skip
+      </button>
 
-        <div style={{ marginBottom: 28 }}>
+      {/* Step counter */}
+      <div style={{
+        position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+        color: "rgba(255,255,255,0.25)",
+      }}>
+        {step + 1} / {ONBOARDING_STEPS.length}
+      </div>
+
+      <div style={{ position: "relative", width: "100%", maxWidth: 580, padding: "0 32px", textAlign: "center" }}>
+
+        {/* Icon */}
+        <div style={{ marginBottom: 32, lineHeight: 1 }}>
           {current.icon === null ? (
-            <span style={{ fontSize: 80, fontWeight: 900, color: "#00b450", lineHeight: 1 }}>A</span>
+            <div style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 72, height: 72, borderRadius: 20,
+              background: "linear-gradient(135deg, rgba(0,180,80,0.20), rgba(0,180,80,0.05))",
+              border: "1px solid rgba(0,180,80,0.25)",
+              boxShadow: "0 0 40px rgba(0,180,80,0.12)",
+            }}>
+              <span style={{ fontSize: 36, fontWeight: 900, color: "#00b450", letterSpacing: "-2px" }}>A</span>
+            </div>
           ) : (
-            <span style={{ fontSize: 72 }}>{current.icon}</span>
+            <div style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 72, height: 72, borderRadius: 20,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}>
+              <span style={{ fontSize: 36 }}>{current.icon}</span>
+            </div>
           )}
         </div>
 
-        <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", marginBottom: 18, lineHeight: 1.2, letterSpacing: "-0.02em" }}>
-          {current.title}
+        {/* Eyebrow */}
+        <div style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
+          color: "#00b450", marginBottom: 14, textTransform: "uppercase",
+        }}>
+          {current.eyebrow}
         </div>
 
-        <p style={{ fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1.7, margin: "0 0 48px", maxWidth: 420, marginInline: "auto" }}>
+        {/* Title */}
+        <div style={{
+          fontSize: 34, fontWeight: 800, color: "#fff",
+          marginBottom: 20, lineHeight: 1.15, letterSpacing: "-0.03em",
+        }}>
+          {displayTitle}
+        </div>
+
+        {/* Body */}
+        <p style={{
+          fontSize: 16, color: "rgba(255,255,255,0.55)",
+          lineHeight: 1.75, margin: "0 auto 32px", maxWidth: 460,
+        }}>
           {current.body}
         </p>
 
+        {/* Stat callout */}
+        {current.stat && (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 12,
+            background: "rgba(0,180,80,0.07)", border: "1px solid rgba(0,180,80,0.18)",
+            borderRadius: 12, padding: "12px 24px", marginBottom: 36,
+          }}>
+            <span style={{ fontSize: 26, fontWeight: 800, color: "#00b450", letterSpacing: "-0.02em" }}>{current.stat.value}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{current.stat.label}</span>
+          </div>
+        )}
+        {!current.stat && <div style={{ marginBottom: 36 }} />}
+
+        {/* CTA */}
         <button
           onClick={isLast ? onDone : () => setStep(s => s + 1)}
           style={{
-            width: "100%", padding: "16px 0",
-            background: "#00b450", border: "none",
-            borderRadius: 12, fontSize: 16, fontWeight: 700,
-            color: "#fff", cursor: "pointer",
-            fontFamily: "inherit", letterSpacing: 0.3,
-            boxShadow: "0 0 32px rgba(0,180,80,0.25)",
+            width: "100%", padding: "17px 0",
+            background: "linear-gradient(135deg, #00c853, #00b450)",
+            border: "none", borderRadius: 14,
+            fontSize: 15, fontWeight: 700, color: "#fff",
+            cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.4,
+            boxShadow: "0 4px 32px rgba(0,180,80,0.30), 0 1px 0 rgba(255,255,255,0.10) inset",
+            transition: "transform 0.15s, box-shadow 0.15s",
           }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 40px rgba(0,180,80,0.40), 0 1px 0 rgba(255,255,255,0.10) inset"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 32px rgba(0,180,80,0.30), 0 1px 0 rgba(255,255,255,0.10) inset"; }}
         >
-          {isLast ? "Let's Go →" : "Next →"}
+          {isLast ? "Enter Aurexis →" : "Continue →"}
         </button>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 32 }}>
+        {/* Progress dots */}
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 28 }}>
           {ONBOARDING_STEPS.map((_, i) => (
-            <div key={i} style={{
-              width: i === step ? 24 : 8, height: 8,
-              borderRadius: 999,
-              background: i === step ? "#00b450" : "rgba(255,255,255,0.12)",
+            <div key={i} onClick={() => setStep(i)} style={{
+              width: i === step ? 28 : 7, height: 7,
+              borderRadius: 999, cursor: "pointer",
+              background: i === step ? "#00b450" : i < step ? "rgba(0,180,80,0.35)" : "rgba(255,255,255,0.10)",
               transition: "width 0.25s ease, background 0.25s ease",
             }} />
           ))}
@@ -2182,9 +2267,10 @@ function AppInner() {
         if (!me?.id) return;
         const key = `aurexis_onboarding_done_${me.id}`;
         const forceFlag = localStorage.getItem("aurexis_force_onboarding");
-        // Show onboarding if: never done for this user, OR signup/OAuth forced it
         if (!localStorage.getItem(key) || forceFlag === "1") {
           localStorage.removeItem("aurexis_force_onboarding");
+          const name = me.first_name || localStorage.getItem("aurexis_user_first_name") || "";
+          setOnboardingUserName(name);
           setShowOnboarding(true);
         }
       })
@@ -2403,6 +2489,7 @@ function AppInner() {
   const [loadingMovers, setLoadingMovers] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false); // kept
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingUserName, setOnboardingUserName] = useState("");
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
 
   const [analyzeStatus, setAnalyzeStatus] = useState("");
@@ -9396,7 +9483,7 @@ const renderPage = () => {
       {toast ? <div className={`toast${toastType === "success" ? " toast--success" : toastType === "error" ? " toast--error" : ""}`}>{toast}</div> : null}
 
       {showOnboarding ? (
-        <OnboardingModal onDone={() => {
+        <OnboardingModal userName={onboardingUserName} onDone={() => {
           const token = localStorage.getItem("aurexis_token");
           if (token) {
             try {

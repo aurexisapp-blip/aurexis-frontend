@@ -48,6 +48,8 @@ export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
   const isMobile = useMobile();
   const [view, setView] = useState(defaultView);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [plan, setPlan] = useState(getInitialPlan);
@@ -57,7 +59,7 @@ export default function Auth({ defaultView = "login" }) {
     return OAUTH_ERRORS[e] || "";
   });
 
-  function switchView(v) { setView(v); setEmail(""); setPassword(""); setError(""); }
+  function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -93,7 +95,7 @@ export default function Auth({ defaultView = "login" }) {
       const signupRes = await fetch(`${API}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, plan }),
+        body: JSON.stringify({ email, password, plan, first_name: firstName.trim(), last_name: lastName.trim() }),
       });
       const signupData = await signupRes.json();
       if (!signupRes.ok) { setError(signupData?.detail || signupData?.message || "Signup failed."); return; }
@@ -103,6 +105,7 @@ export default function Auth({ defaultView = "login" }) {
         localStorage.setItem("aurexis_force_onboarding", "1");
         localStorage.setItem("aurexis_token", newToken);
         localStorage.setItem("aurexis_user_email", email);
+        if (signupData?.first_name) localStorage.setItem("aurexis_user_first_name", signupData.first_name);
       }
 
       if (plan === "free") { navigate("/app"); return; }
@@ -176,6 +179,20 @@ export default function Auth({ defaultView = "login" }) {
           </div>
 
           <form onSubmit={isLogin ? handleLogin : handleSignup} style={S.fields} noValidate>
+            {!isLogin && (
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                  required autoComplete="given-name" placeholder="First name"
+                  style={{ ...S.input, flex: 1 }}
+                />
+                <input
+                  type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                  required autoComplete="family-name" placeholder="Last name"
+                  style={{ ...S.input, flex: 1 }}
+                />
+              </div>
+            )}
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required autoComplete="email" placeholder="Email address" style={S.input}
@@ -183,7 +200,7 @@ export default function Auth({ defaultView = "login" }) {
             <input
               type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               required autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder="Password" style={S.input}
+              placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
             />
 
             {!isLogin && (
@@ -281,6 +298,20 @@ export default function Auth({ defaultView = "login" }) {
           </div>
 
           <form onSubmit={isLogin ? handleLogin : handleSignup} style={S.fields} noValidate>
+            {!isLogin && (
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                  required autoComplete="given-name" placeholder="First name"
+                  style={{ ...S.input, flex: 1 }}
+                />
+                <input
+                  type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                  required autoComplete="family-name" placeholder="Last name"
+                  style={{ ...S.input, flex: 1 }}
+                />
+              </div>
+            )}
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required autoComplete="email" placeholder="Email address" style={S.input}
@@ -288,7 +319,7 @@ export default function Auth({ defaultView = "login" }) {
             <input
               type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               required autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder="Password" style={S.input}
+              placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
             />
 
             {!isLogin && (
