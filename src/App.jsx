@@ -7792,8 +7792,8 @@ async function loadWatchlistLive() {
             </div>
             <button
               className="btn btn--ghost"
-              style={{ fontSize: 11, padding: "5px 12px", flexShrink: 0, marginLeft: 16, opacity: 0.45, cursor: "default" }}
-              onClick={() => showToast("Paid plans launching soon — stay tuned.")}
+              style={{ fontSize: 11, padding: "5px 12px", flexShrink: 0, marginLeft: 16 }}
+              onClick={() => setTab("pricing")}
             >
               Upgrade
             </button>
@@ -7892,43 +7892,154 @@ async function loadWatchlistLive() {
     );
   };
 
-  const Pricing = () => (
-    <div className="pageGrid">
-      <div className="card">
-        <div className="cardHead">
-          <div>
-            <div className="cardTitle">Pricing</div>
-            <div className="cardSub">Plans and pricing — coming soon.</div>
-          </div>
+  const Pricing = () => {
+    const plans = [
+      {
+        name: "FREE",
+        price: "$0",
+        period: "forever",
+        badge: null,
+        accent: T.borderStrong,
+        features: [
+          "Yesterday's AI pick",
+          "Top movers dashboard",
+          "1 stock analysis per day",
+          "Today's pick (delayed 24h)",
+          "Entry / stop / target levels",
+        ],
+      },
+      {
+        name: "STARTER",
+        price: "$9",
+        period: "per month",
+        badge: "MOST POPULAR",
+        badgeColor: "#00b450",
+        accent: "rgba(0,180,80,0.55)",
+        features: [
+          "Today's AI pick, live",
+          "Full entry, stop & target",
+          "AI analysis & reasoning",
+          "Trade journal",
+        ],
+      },
+      {
+        name: "PRO",
+        price: "$29",
+        period: "per month",
+        badge: null,
+        accent: "rgba(99,102,241,0.55)",
+        features: [
+          "Everything in Starter",
+          "Priority pick alerts",
+          "Sector momentum alerts",
+          "Portfolio-aware analysis",
+          "Priority support",
+        ],
+      },
+      {
+        name: "ELITE",
+        price: "$99",
+        period: "per month",
+        badge: "FOR SERIOUS TRADERS",
+        badgeColor: "#f59e0b",
+        accent: "rgba(245,158,11,0.55)",
+        features: [
+          "Everything in Pro",
+          "Advanced sector scans",
+          "Direct founder access",
+          "Early feature access",
+          "Custom sector scans",
+          "Portfolio risk analysis",
+        ],
+      },
+    ];
+
+    return (
+      <div style={{ padding: "28px 28px 40px", maxWidth: 960, margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ marginBottom: 32, textAlign: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>PRICING</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>Simple, transparent pricing.</div>
+          <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
         </div>
-        <div className="cardBody">
-          <div className="stats3">
-            <div className="stat">
-              <div className="statLabel">Free</div>
-              <div className="statValue">Now</div>
-              <div className="mutedSmall" style={{ marginTop: 8 }}>
-                Analyze • Movers • Watchlist
+
+        {/* Plan grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          {plans.map((plan) => (
+            <div key={plan.name} style={{
+              borderRadius: 16,
+              border: `1px solid ${plan.accent}`,
+              background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.98)",
+              padding: "24px 20px 22px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
+              position: "relative",
+              boxShadow: plan.badge === "MOST POPULAR" ? `0 0 0 1px ${plan.accent}, 0 4px 24px rgba(0,180,80,0.10)` : "none",
+            }}>
+              {/* Badge */}
+              {plan.badge && (
+                <div style={{
+                  position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)",
+                  background: plan.badgeColor, color: "#fff",
+                  fontSize: 9, fontWeight: 800, letterSpacing: "0.10em",
+                  padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap",
+                }}>
+                  {plan.badge}
+                </div>
+              )}
+
+              {/* Plan name */}
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.textFaint, marginBottom: 10 }}>{plan.name}</div>
+
+              {/* Price */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: T.text, lineHeight: 1 }}>{plan.price}</span>
               </div>
-            </div>
-            <div className="stat">
-              <div className="statLabel">Power</div>
-              <div className="statValue">Coming soon</div>
-              <div className="mutedSmall" style={{ marginTop: 8 }}>
-                Position sizing • risk per trade • alerts
+              <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 20 }}>{plan.period}</div>
+
+              {/* Features */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
+                {plan.features.map((f) => (
+                  <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <span style={{ color: "#00b450", fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
+                    <span style={{ fontSize: 12.5, color: T.textSec, lineHeight: 1.45 }}>{f}</span>
+                  </div>
+                ))}
               </div>
+
+              {/* CTA */}
+              <a
+                href="https://useaurexis.com/#waitlist"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "block",
+                  marginTop: 22,
+                  padding: "10px 0",
+                  borderRadius: 10,
+                  textAlign: "center",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  background: plan.badge === "MOST POPULAR"
+                    ? "#00b450"
+                    : darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+                  color: plan.badge === "MOST POPULAR" ? "#fff" : T.text,
+                  border: plan.badge === "MOST POPULAR" ? "none" : `1px solid ${T.border2}`,
+                  transition: "opacity 0.15s",
+                }}
+              >
+                Join the Waitlist
+              </a>
+              <div style={{ fontSize: 10, color: T.textGhost, textAlign: "center", marginTop: 8 }}>Cancel anytime</div>
             </div>
-            <div className="stat">
-              <div className="statLabel">Pro</div>
-              <div className="statValue">Coming soon</div>
-              <div className="mutedSmall" style={{ marginTop: 8 }}>
-                Portfolio-aware analysis • strategy modes
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
 
   const Launch = () => {
