@@ -4227,7 +4227,7 @@ async function loadWatchlistLive() {
                 ? (t1 - entryNum) / (entryNum - stopNum) : null;
               const rrDisplay = computedRR !== null ? computedRR
                 : (Number.isFinite(rrNum) && rrNum > 0 ? rrNum : null);
-              const rrColor = rrDisplay === null ? "rgba(255,255,255,0.55)"
+              const rrColor = rrDisplay === null ? T.textMuted
                 : rrDisplay >= 2.0 ? "rgba(74,222,128,0.85)"
                 : rrDisplay >= 1.5 ? "rgba(250,204,21,0.85)"
                 : "rgba(248,113,113,0.75)";
@@ -4521,7 +4521,7 @@ async function loadWatchlistLive() {
           background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: 16, overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
           display: "flex", flexDirection: "column",
           height: "100%",
         }}>
@@ -4908,7 +4908,7 @@ async function loadWatchlistLive() {
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
           height: "100%", display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
@@ -4994,7 +4994,7 @@ async function loadWatchlistLive() {
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
         }}>
           {/* Header */}
           <div style={{
@@ -5244,8 +5244,8 @@ async function loadWatchlistLive() {
         WAIT: {
           color: T.textFaint,
           glow: "none",
-          bg: "rgba(255,255,255,0.04)",
-          border: "rgba(255,255,255,0.09)",
+          bg: T.bg2,
+          border: T.border,
           label: "AWAITING ANALYSIS",
           bgKey: "wait",
         },
@@ -5292,13 +5292,13 @@ async function loadWatchlistLive() {
 
         return (
           <div style={{
-            background: "linear-gradient(145deg, rgba(10,13,20,0.98) 0%, rgba(12,16,26,0.98) 100%)",
+            background: darkMode ? "linear-gradient(145deg, rgba(10,13,20,0.98) 0%, rgba(12,16,26,0.98) 100%)" : "#ffffff",
             border: `1px solid ${T.border}`,
             borderRadius: 16,
             padding: "28px 28px 24px",
             position: "relative",
             overflow: "hidden",
-            boxShadow: "0 4px 32px rgba(0,0,0,0.45)",
+            boxShadow: darkMode ? "0 4px 32px rgba(0,0,0,0.45)" : "0 2px 12px rgba(0,0,0,0.06)",
           }}>
             {/* Subtle grid texture overlay */}
             <div style={{
@@ -5605,7 +5605,7 @@ async function loadWatchlistLive() {
                 <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "4px 0 2px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(5px)", opacity: 0.3, pointerEvents: "none" }}>
                     {["Entry","Stop","Target"].map(lbl => (
-                      <div key={lbl} style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
+                      <div key={lbl} style={{ background: darkMode ? "rgba(10,14,26,0.85)" : "rgba(240,242,248,0.90)", padding: "10px 14px" }}>
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>{lbl}</div>
                         <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>$—</div>
                       </div>
@@ -5769,11 +5769,11 @@ async function loadWatchlistLive() {
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-          border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : "rgba(255,255,255,0.07)"}`,
+          border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
           borderRadius: 16, overflow: "hidden",
-          boxShadow: _advIsWarn && activeTab === "metrics"
-            ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)"
-            : "0 8px 40px rgba(0,0,0,0.5)",
+          boxShadow: darkMode
+            ? (_advIsWarn && activeTab === "metrics" ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)" : "0 8px 40px rgba(0,0,0,0.5)")
+            : "0 2px 12px rgba(0,0,0,0.06)",
           display: "flex", flexDirection: "column",
           height: "100%",
         }}>
