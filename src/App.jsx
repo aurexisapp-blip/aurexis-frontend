@@ -2159,6 +2159,18 @@ function AppInner() {
 
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("aurexis_darkMode") !== "false");
 
+  // Capture ?token= from OAuth redirect (Google/Apple callback lands here)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthToken = params.get("token");
+    if (oauthToken) {
+      localStorage.setItem("aurexis_token", oauthToken);
+      // Clean the token out of the URL bar without a reload
+      const clean = window.location.pathname;
+      window.history.replaceState({}, "", clean);
+    }
+  }, []);
+
   React.useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? "dark" : "light";
     document.documentElement.style.setProperty("--accent-rgb", "0, 180, 80");

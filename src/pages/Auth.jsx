@@ -46,6 +46,13 @@ function AppleIcon() {
   );
 }
 
+const OAUTH_ERRORS = {
+  google_denied: "Google sign-in was cancelled.",
+  google_failed: "Google sign-in failed. Please try email instead.",
+  apple_denied:  "Apple sign-in was cancelled.",
+  apple_failed:  "Apple sign-in failed. Please try email instead.",
+};
+
 export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
   const isMobile = useMobile();
@@ -54,7 +61,10 @@ export default function Auth({ defaultView = "login" }) {
   const [password, setPassword] = useState("");
   const [plan, setPlan] = useState(getInitialPlan);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    const e = new URLSearchParams(window.location.search).get("error") || "";
+    return OAUTH_ERRORS[e] || "";
+  });
 
   function switchView(v) { setView(v); setEmail(""); setPassword(""); setError(""); }
 
