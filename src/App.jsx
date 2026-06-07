@@ -138,8 +138,8 @@ function SkeletonCard({ title }) {
           style={{
             width: "min(520px, 100%)",
             textAlign: "center",
-            background: "rgba(255,255,255,0.06)",
-            borderColor: "rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.025)",
+            borderColor: "rgba(255,255,255,0.25)",
           }}
         >
           <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 10 }}>Pro feature</div>
@@ -2038,7 +2038,7 @@ function OnboardingModal({ onDone }) {
           style={{
             position: "absolute", top: 16, right: 18,
             background: "none", border: "none",
-            color: "rgba(255,255,255,0.3)", fontSize: 13,
+            color: "rgba(255,255,255,0.38)", fontSize: 13,
             cursor: "pointer", fontFamily: "inherit", padding: "4px 6px",
           }}
         >
@@ -2053,11 +2053,11 @@ function OnboardingModal({ onDone }) {
           )}
         </div>
 
-        <div style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginBottom: 14, lineHeight: 1.25 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 14, lineHeight: 1.25 }}>
           {current.title}
         </div>
 
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.60)", lineHeight: 1.65, margin: "0 0 36px" }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", lineHeight: 1.65, margin: "0 0 36px" }}>
           {current.body}
         </p>
 
@@ -2110,25 +2110,69 @@ function AppInner() {
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
 
-  const THEMES = useMemo(() => [
-    { id: "terminal",  label: "Terminal",  rgb: "0, 180, 80",    hex: "#00b450" },
-    { id: "indigo",    label: "Indigo",    rgb: "99, 102, 241",  hex: "#6366f1" },
-    { id: "cyan",      label: "Cyan",      rgb: "6, 182, 212",   hex: "#06b6d4" },
-    { id: "amber",     label: "Amber",     rgb: "245, 158, 11",  hex: "#f59e0b" },
-    { id: "rose",      label: "Rose",      rgb: "244, 63, 94",   hex: "#f43f5e" },
-    { id: "slate",     label: "Slate",     rgb: "148, 163, 184", hex: "#94a3b8" },
-  ], []);
-
-  const [theme, setTheme] = useState(() => localStorage.getItem("aurexis_theme") || "terminal");
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("aurexis_darkMode") !== "false");
 
   React.useEffect(() => {
-    const t = THEMES.find(t => t.id === theme) || THEMES[0];
-    document.documentElement.style.setProperty("--accent-rgb", t.rgb);
-    localStorage.setItem("aurexis_theme", theme);
-  }, [theme, THEMES]);
+    document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+    document.documentElement.style.setProperty("--accent-rgb", "0, 180, 80");
+    localStorage.setItem("aurexis_darkMode", String(darkMode));
+  }, [darkMode]);
+
+  // Theme color palette — use these in inline styles so they flip with dark/light mode
+  const T = React.useMemo(() => darkMode ? {
+    // Text
+    text:       "rgba(255,255,255,0.92)",
+    textSec:    "rgba(255,255,255,0.75)",
+    textMuted:  "rgba(255,255,255,0.55)",
+    textFaint:  "rgba(255,255,255,0.38)",
+    textGhost:  "rgba(255,255,255,0.25)",
+    textHint:   "rgba(255,255,255,0.18)",
+    // Borders
+    border:     "rgba(255,255,255,0.06)",
+    border2:    "rgba(255,255,255,0.10)",
+    borderStrong: "rgba(255,255,255,0.14)",
+    // Backgrounds / surfaces
+    bg:         "rgba(255,255,255,0.02)",
+    bg2:        "rgba(255,255,255,0.04)",
+    bg3:        "rgba(255,255,255,0.025)",
+    surface:    "rgba(10,12,16,0.82)",
+    surfaceCard:"rgba(10,13,22,0.98)",
+    surfaceDeep:"rgba(0,0,0,0.18)",
+    overlay:    "rgba(0,0,0,0.60)",
+    inputBg:    "rgba(0,0,0,0.18)",
+  } : {
+    // Text
+    text:       "rgba(8,10,22,0.90)",
+    textSec:    "rgba(8,10,22,0.72)",
+    textMuted:  "rgba(8,10,22,0.52)",
+    textFaint:  "rgba(8,10,22,0.40)",
+    textGhost:  "rgba(8,10,22,0.30)",
+    textHint:   "rgba(8,10,22,0.22)",
+    // Borders
+    border:     "rgba(0,0,0,0.07)",
+    border2:    "rgba(0,0,0,0.10)",
+    borderStrong: "rgba(0,0,0,0.13)",
+    // Backgrounds / surfaces
+    bg:         "rgba(255,255,255,0.65)",
+    bg2:        "rgba(255,255,255,0.75)",
+    bg3:        "rgba(0,0,0,0.03)",
+    surface:    "rgba(232,236,244,0.75)",
+    surfaceCard:"rgba(248,250,252,0.98)",
+    surfaceDeep:"rgba(0,0,0,0.04)",
+    overlay:    "rgba(0,0,0,0.35)",
+    inputBg:    "rgba(0,0,0,0.04)",
+  }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    { role: "assistant", content: "Hey! I'm your StackIQ AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatMessagesRef = useRef(null);
+  const chatInputRef = useRef(null);
   const cmdInputRef = useRef(null);
 
   const [symbol, setSymbol] = useState("NVDA");
@@ -2267,7 +2311,7 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debugEnabled]);
 
-  const [loadingBestPick, setLoadingBestPick] = useState(false);
+  const [loadingBestPick, setLoadingBestPick] = useState(true);
   const [errBestPick, setErrBestPick] = useState("");
   const [bestPickTimedOut, setBestPickTimedOut] = useState(false);
 
@@ -2365,6 +2409,260 @@ function AppInner() {
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => { setToast(""); setToastType(""); }, 3500);
   };
+
+  const buildChatReply = React.useCallback((msg) => {
+    const q = msg.toLowerCase().trim();
+    const has = (...kws) => kws.some(k => q.includes(k));
+
+    // ── live data helpers ─────────────────────────────────────────────────
+    const bestPayload = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
+    const best = (bestPayload?.pick && typeof bestPayload.pick === "object" ? bestPayload.pick : null)
+      || (bestPayload?.best_pick && typeof bestPayload.best_pick === "object" ? bestPayload.best_pick : null)
+      || bestPayload;
+    const bestSym = normalizeSymbol(best?.symbol || best?.ticker || "");
+    const isNoTrade = best?.is_trade === false || bestPayload?.is_trade === false
+      || ["NO_TRADE","MISSED_ENTRY","LOW_CONVICTION"].includes(String(best?.trade_decision || bestPayload?.trade_decision || "").toUpperCase());
+    const tp = best?.trade_plan && typeof best.trade_plan === "object" ? best.trade_plan : null;
+    const toScore = (v) => { const n = Number(v); return Number.isFinite(n) ? (n <= 10 ? Math.round(n * 10) : Math.round(n)) : null; };
+    const ai100 = toScore(best?.ai_score_0_10 ?? best?.ai_score);
+    const exec100 = toScore(best?.execution_score_0_10 ?? best?.execution_score);
+    const conf100 = toScore(best?.confidence_0_10 ?? best?.confidence);
+    const regime = String(best?.market_regime || bestPayload?.market_regime || "").trim().toUpperCase();
+    const edgeSignals = Array.isArray(best?.edge_signals) ? best.edge_signals : Array.isArray(bestPayload?.edge_signals) ? bestPayload.edge_signals : [];
+    const perfData = typeof performanceData === "object" && performanceData ? performanceData : null;
+    const winRate = perfData?.win_rate != null ? Number(perfData.win_rate) : null;
+    const totalPicks = Number(perfData?.total_picks ?? perfData?.totalPicks ?? 0) || 0;
+    const avgReturn = perfData?.avg_return != null ? Number(perfData.avg_return) : null;
+    const topMovers5 = Array.isArray(movers) ? movers.slice(0, 5).map(m => `${m.symbol} (${Number(m.pct_change) >= 0 ? "+" : ""}${Number(m.pct_change).toFixed(1)}%)`).join(", ") : null;
+    const recentSyms = Array.isArray(recentPicksData) ? [...new Set(recentPicksData.slice(0, 6).map(p => normalizeSymbol(p?.symbol || p?.ticker || "")).filter(Boolean))] : [];
+
+    // ── SPECIFIC FEATURE EXPLANATIONS (checked before generic) ───────────
+
+    // Best Pick / Hero Card
+    if (has("best pick card", "hero card", "best pick card", "pick card") ||
+        (has("best pick") && has("explain", "what is", "tell me", "how does", "what does", "describe", "works", "work", "show", "mean")) ||
+        (has("best pick") && !has("what is the best pick", "today") && has("card", "section", "panel", "dashboard"))) {
+      return "The Best Pick card is the main attraction on the dashboard — it shows the AI scanner's single highest-conviction trade for the day. It displays the ticker symbol, AI score (0–100), execution score, confidence level, entry price, stop loss, and price targets. The color (green = high conviction, yellow = moderate, red = no trade) tells you the system's overall confidence. If the card shows NO_TRADE, it means no setup cleared the quality gates today — that's intentional risk management, not a bug.";
+    }
+
+    // Performance Card
+    if (has("performance card", "performance panel", "performance section") ||
+        (has("performance") && has("explain", "what is", "tell me", "how does", "what does", "describe", "card"))) {
+      return "The Performance card tracks every pick the AI has made. It shows your all-time win rate (% of resolved picks that hit their target before stop), total pick count, and average return per trade. The three stats — Win Rate, Picks, and Avg Return — update as picks resolve. Green means the trade hit target, red means it hit stop. This is your live track record, not simulated or backtested data.";
+    }
+
+    // Recent Picks Card
+    if (has("recent picks card", "recent picks panel") ||
+        (has("recent picks") && has("explain", "what is", "tell me", "how does", "card"))) {
+      return "The Recent Picks card lists the AI's last decisions — each row shows the ticker, date, the signal tags that triggered the pick (like BREAKOUT_STRUCTURE, RS_LEADER, SQUEEZE_POTENTIAL), and the outcome (pending or resolved return). Click any row to pull up the full analysis for that symbol. This is how you track what the system has been doing and verify its reasoning.";
+    }
+
+    // Analysis / AnalysisCard
+    if (has("analysis card", "analysis panel", "analyze card", "why this trade", "ai summary", "advanced metrics") ||
+        (has("analysis") && has("explain", "what is", "tell me", "how does", "what does", "card", "section"))) {
+      return "The Analysis panel appears on the dashboard after you run an analysis on a ticker. It has three tabs: Why This Trade (the AI's full reasoning — setup thesis, what confirms it, what breaks it), AI Summary (news sentiment, catalysts, risk flags), and Advanced Metrics (technical indicators — momentum, RSI, volume strength, trend). Use it to go deeper on any symbol, not just the daily pick.";
+    }
+
+    // Screener
+    if (has("screener") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use", "using")) {
+      return "The Screener lets you analyze multiple tickers at once. Type a comma-separated list of symbols (e.g. AAPL, NVDA, TSLA) and click Screen. The AI runs its full signal model on each one and returns a ranked table with scores, momentum indicators, signal tags, and trade setups. Use it when you have a shortlist of candidates and want to see which one the system likes best.";
+    }
+
+    // Watchlist
+    if (has("watchlist") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use", "using")) {
+      return "The Watchlist is the system's list of tickers that almost made the cut — setups the scanner detected as interesting but not yet high-conviction enough to trade. These are stocks building momentum that are worth monitoring. The scanner updates this daily. When a watchlist candidate crosses the conviction threshold on a future scan, it may become the daily pick.";
+    }
+
+    // Trade Journal
+    if (has("trade journal", "journal") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use")) {
+      return "The Trade Journal is where you manually log your own trades to track performance. Click '+ Add Trade Manually', fill in the symbol, entry, exit, and date. The journal calculates your P&L and builds a record of your actual trading decisions — separate from the AI's picks. Use it to see whether you're executing the AI's recommendations correctly or deviating.";
+    }
+
+    // Top Movers
+    if ((has("top mover", "movers tab", "movers page", "movers card", "movers section") ||
+         (has("mover") && has("explain", "what is", "tell me", "how does", "card", "tab"))) &&
+        !has("what's moving", "what is moving", "today")) {
+      return "The Top Movers tab shows the day's biggest percentage gainers and losers — updated from live market data. Click any row to instantly analyze that ticker. The columns show symbol, last price, % change, and volume. It's useful for finding momentum plays that the scanner might not have ranked yet, or for understanding what's driving market activity on a given day.";
+    }
+
+    // Sidebar / Navigation
+    if (has("sidebar", "navigation", "nav", "left panel", "menu") && has("explain", "what is", "tell me", "how does", "how do")) {
+      return "The left sidebar is your main navigation. The icons (top to bottom) are: Dashboard (home), Top Movers, Screener, Watchlist, Trade Journal, Settings, and Support. Click the arrow at the top to collapse it to icons-only mode for more screen space. The bottom shows your account avatar. The collapse state is saved, so it persists between sessions.";
+    }
+
+    // Settings
+    if (has("settings") && has("explain", "what is", "tell me", "how does", "what can", "how do")) {
+      return "Settings lets you configure the app's appearance and account preferences. The Display section has a Dark/Light mode toggle and compact card view option. Notifications shows alert preferences (active on the Power plan). Data & Privacy explains how data is stored (local device only, anonymous usage analytics). You can also manage your account from here.";
+    }
+
+    // Analyze / Command bar
+    if ((has("analyze", "analysis") && has("how do", "how does", "how to", "what does", "command bar", "top bar", "search bar")) ||
+        (has("command bar", "top bar", "analyze button") && has("explain", "what is", "tell me", "how"))) {
+      return "The command bar at the top lets you analyze any stock ticker. Type a symbol (e.g. NVDA) and click Analyze or press Enter. The AI runs its full signal model on that ticker — checking momentum, technical structure, news sentiment, and market context — and populates the Analysis panel on the dashboard with the full breakdown. The analysis takes 10–30 seconds.";
+    }
+
+    // AI score / scores
+    if (has("ai score", "execution score", "confidence score", "score mean", "score work", "what is a score", "scores mean", "score out of")) {
+      return "There are three scores, each out of 100: AI Score measures the overall quality of the setup (technical pattern strength, momentum alignment, historical similarity). Execution Score measures how clean the entry conditions are right now — timing precision, buy zone clarity, volume confirmation. Confidence Score reflects how certain the model is about the prediction given current market data. All three need to be high (70+) for a HIGH CONVICTION rating.";
+    }
+
+    // Edge signals / signal tags
+    if ((has("edge signal", "signal tag", "signal mean", "what are signal", "what do signal", "tag mean", "breakout", "rs_leader", "squeeze", "momentum_expansion", "float_rotation", "quiet_accumulation")) &&
+        has("explain", "what is", "what are", "what does", "mean", "tell me", "how")) {
+      return "Edge signals are the specific patterns the scanner detected for a setup. Common ones: BREAKOUT_STRUCTURE (price breaking above a key level with volume), RS_LEADER (outperforming the broader market — relative strength), SQUEEZE_POTENTIAL (price coiling in a tight range before a move), QUIET_ACCUMULATION (unusual buying volume without price spike — institutional accumulation), MOMENTUM_EXPANSION (accelerating price and volume), FLOAT_ROTATION (small float stock with heavy volume relative to shares available). Multiple signals together = higher conviction.";
+    }
+
+    // Market regime
+    if ((has("market regime") || (has("regime") && has("explain", "what is", "tell me", "mean", "how"))) && !has("what is the market regime")) {
+      return "Market regime is the AI's classification of the current macro environment: BULL means the broader market has momentum and risk-on setups have an edge, BEAR means defensive positioning is preferred and the system tightens its conviction thresholds, NEUTRAL/TRANSITIONAL means mixed signals. The regime affects how many picks the scanner surfaces and how aggressive the position sizing recommendations are. It's recalculated daily.";
+    }
+
+    // Trade plan / levels
+    if ((has("trade plan") || has("stop loss", "stop-loss") || (has("entry") && has("what is", "explain", "how")) || (has("target") && has("what is", "explain", "how"))) &&
+        has("explain", "what is", "tell me", "mean", "how does", "how do")) {
+      return "A trade plan has three components: Entry — the price zone to buy in (usually near current price or at a breakout level), Stop Loss — the price where you exit if wrong (limits your downside), and Targets (T1, T2, T3) — the price levels to take profit. The distance from entry to stop vs entry to target gives you the Risk/Reward ratio. Aurexis only takes setups with R/R of at least 2:1, meaning the potential gain is at least twice the potential loss.";
+    }
+
+    // Risk/reward
+    if (has("risk reward", "risk/reward", "r/r", "rr ratio") && has("explain", "what is", "tell me", "mean", "how")) {
+      return "Risk/Reward ratio (R/R) compares how much you stand to gain vs lose on a trade. A 2:1 R/R means if your stop is $1 away from entry, your target is $2 away. Aurexis filters out setups with R/R below 2:1 — only trades with favorable risk profiles make the cut. The AI score and R/R together determine position sizing recommendations.";
+    }
+
+    // No trade / wait mode
+    if ((has("no trade", "no pick", "wait mode", "wait state", "no setup", "low conviction") && has("explain", "what", "why", "mean")) ||
+        (has("why") && has("no trade", "no pick", "waiting", "wait"))) {
+      return "When the system shows NO_TRADE or LOW_CONVICTION, it means no setup cleared all quality gates that day. This is intentional — the AI has specific thresholds for AI score (70+), confidence (65+), and execution timing. It would rather miss a trade than take a low-quality one. Historically, being selective improves win rate significantly. Check back the next morning after the scanner runs.";
+    }
+
+    // Scanner / how scanner works
+    if ((has("scanner") && has("explain", "what is", "tell me", "how does", "how do", "how it work", "what does")) ||
+        has("how does the ai", "how does the scan", "how does aurexis pick", "how does the system")) {
+      return "The scanner runs every morning before market open (9:30 AM ET). It pulls data on thousands of stocks, applies technical pattern recognition, checks relative strength vs the market, analyzes volume profiles, reads recent news sentiment, and scores each setup. The top-scoring setup — if it clears all conviction thresholds — becomes the daily pick. If nothing clears, the system waits. The entire process is automated and produces one high-quality pick per day.";
+    }
+
+    // Position sizing
+    if (has("position size", "how much", "how many shares", "how big") && has("buy", "trade", "invest", "put", "position")) {
+      return "Position sizing in Aurexis is based on your budget (set in the Analyze command bar) and the trade's stop distance. The formula: position size = budget × risk% ÷ (entry - stop). By default it risks 1–2% of your budget per trade. You can see the estimated share count in the Best Pick card. Never risk more than you can afford to lose on a single trade.";
+    }
+
+    // ── LIVE DATA QUERIES ─────────────────────────────────────────────────
+
+    // Today's pick
+    if (has("top pick", "best pick", "what should i buy", "what to buy", "today's pick", "todays pick", "what pick", "recommend", "suggestion") ||
+        (has("what") && has("pick", "buying", "trade today", "trade now"))) {
+      if (!bestPayload) return "The scanner hasn't loaded yet — refresh the page or click Refresh on the Best Pick card.";
+      if (isNoTrade) return `No high-conviction trade today.${regime ? ` Market regime: ${regime}.` : ""} The system is in wait mode — setups didn't clear quality thresholds. Check back tomorrow morning after the 9:30 AM scan.`;
+      if (!bestSym) return "No pick data available right now. Try refreshing the Best Pick card on the dashboard.";
+      let r = `Today's top pick is ${bestSym}`;
+      if (ai100 !== null) r += ` — AI score ${ai100}/100`;
+      if (conf100 !== null) r += `, confidence ${conf100}/100`;
+      if (exec100 !== null) r += `, execution ${exec100}/100`;
+      if (tp?.entry) r += `. Entry near $${Number(tp.entry).toFixed(2)}`;
+      if (tp?.stop) r += `, stop $${Number(tp.stop).toFixed(2)}`;
+      const tgts = Array.isArray(tp?.targets) ? tp.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
+      if (tgts[0]) r += `, T1 $${tgts[0].toFixed(2)}`;
+      r += ".";
+      if (edgeSignals.length) r += ` Signals: ${edgeSignals.slice(0, 3).join(", ")}.`;
+      return r;
+    }
+
+    // Win rate / performance query
+    if (has("win rate", "accuracy", "track record", "results", "how good", "how well") ||
+        (has("performance") && !has("performance card", "performance section")) ||
+        has("how are you doing", "how have you done")) {
+      if (winRate === null && totalPicks === 0) return "Performance data hasn't loaded yet. It should appear in the Performance card on the dashboard — try refreshing.";
+      let r = winRate !== null ? `Win rate: ${winRate.toFixed(1)}%` : "";
+      if (totalPicks > 0) r += ` across ${totalPicks} picks`;
+      if (avgReturn !== null) r += `, avg return ${avgReturn >= 0 ? "+" : ""}${avgReturn.toFixed(1)}% per trade`;
+      return r || "No performance data loaded yet.";
+    }
+
+    // Market regime query
+    if (has("what is the market regime", "what's the market regime") ||
+        (has("market regime") && !has("explain", "what is market regime")) ||
+        has("market today", "market right now", "how is the market", "market condition")) {
+      if (!regime) return topMovers5 ? `No explicit regime signal right now. Top movers: ${topMovers5}.` : "No market regime data loaded yet.";
+      const desc = regime === "BULL" ? "bullish — momentum setups have edge" : regime === "BEAR" ? "bearish — defensive positioning preferred" : `${regime.toLowerCase()} — mixed signals`;
+      return `Market regime: ${regime} (${desc}).${topMovers5 ? ` Top movers: ${topMovers5}.` : ""}`;
+    }
+
+    // Edge signals query (for current pick)
+    if ((has("signal", "edge signal") && !has("explain", "what are signal", "what is signal", "what do signal")) ||
+        has("what signals", "any signal")) {
+      if (!edgeSignals.length) return bestSym ? `No specific edge signals listed for ${bestSym} right now.` : "No signal data loaded yet — check the Best Pick card.";
+      return `Edge signals for ${bestSym || "today's pick"}: ${edgeSignals.join(", ")}. These are the pattern combinations that triggered the AI's conviction.`;
+    }
+
+    // Recent picks query
+    if (has("recent pick", "past pick", "previous pick", "last pick", "what did you pick", "history of picks")) {
+      if (!recentSyms.length) return "No recent picks loaded yet. The Recent Picks card on the dashboard should show them.";
+      return `Recent picks: ${recentSyms.join(", ")}. Full details with signal tags and returns are on the Recent Picks card on the dashboard.`;
+    }
+
+    // Entry/stop/target for current pick
+    if (has("entry", "stop", "stop loss", "target", "price level", "trade level") && !has("explain", "what is", "how")) {
+      if (!bestSym) return "No active pick loaded — refresh the Best Pick card first.";
+      if (!tp) return `No trade plan data for ${bestSym} right now.`;
+      let r = `${bestSym}: entry $${Number(tp.entry).toFixed(2)}, stop $${Number(tp.stop).toFixed(2)}`;
+      const tgts = Array.isArray(tp.targets) ? tp.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
+      tgts.slice(0, 3).forEach((t, i) => { r += `, T${i+1} $${t.toFixed(2)}`; });
+      if (tp.risk_reward) r += `. R/R: ${Number(tp.risk_reward).toFixed(1)}x`;
+      return r + ".";
+    }
+
+    // Movers query
+    if ((has("mover", "what's moving", "what is moving", "biggest mover", "top gainer") && !has("explain", "what is the top mover", "what are movers")) ||
+        has("gainer today", "gainers today", "loser today", "losers today")) {
+      if (!topMovers5) return "Movers data hasn't loaded yet — check the Top Movers card on the dashboard.";
+      return `Today's top movers: ${topMovers5}. Click any row in the Top Movers card to run a full analysis.`;
+    }
+
+    // ── GENERAL / GREETING ────────────────────────────────────────────────
+
+    if (has("hello", "hi there", "hey there", "good morning", "good afternoon") || q === "hi" || q === "hey" || q === "sup" || q === "yo") {
+      return `Hey! I have live data loaded.${bestSym && !isNoTrade ? ` Today's pick: ${bestSym}${ai100 !== null ? ` (AI ${ai100}/100)` : ""}.` : " No active pick today."}${winRate !== null ? ` Win rate: ${winRate.toFixed(1)}%.` : ""} Ask me anything about the app, picks, or trading concepts.`;
+    }
+
+    if (has("thank", "nice", "perfect", "great job", "good job", "awesome", "love it")) {
+      return "Anytime. Ask me about picks, signals, performance, or how any part of the app works.";
+    }
+
+    if (has("what can you", "what do you know", "what can i ask", "help", "capabilities", "what are you")) {
+      return "I can tell you: today's top pick with full trade plan, win rate and performance stats, market regime and top movers, edge signals and what they mean, how to use any feature (Best Pick card, Screener, Watchlist, Trade Journal, Analyze command), trading concepts (stop loss, R/R, position sizing, market regime), or anything else about how Aurexis works. Just ask naturally.";
+    }
+
+    // ── GENERAL APP OVERVIEW (only if question is truly general) ─────────
+    if (has("how does this app work", "how does aurexis work", "how does stackiq work", "what is aurexis", "what is stackiq", "what is this app", "overview", "introduce yourself")) {
+      return "Aurexis is an AI stock signal platform. The scanner runs every morning, ranks thousands of setups, and surfaces the single highest-conviction trade for the day. On the dashboard you'll see the Best Pick card (today's top idea), Performance (win rate and track record), Recent Picks (past decisions), and an Analysis panel for deep-diving any ticker. Use the top command bar to analyze any stock, the Screener to compare a list, and the Watchlist to monitor candidates. Ask me anything — I have live context on all of it.";
+    }
+
+    if (has("explain") || has("how does") || has("how do i") || has("how to") || has("what is") || has("what are") || has("tell me about") || has("describe")) {
+      // Extract what they're asking about
+      const topic = q.replace(/^(can you |please |just |)?(explain|describe|tell me about|what is|what are|how does|how do|how to|how do i)\s*/i, "").trim();
+      if (topic.length > 2) {
+        return `I don't have a specific entry for "${topic}" yet — but I know the app's main features: Best Pick card, Performance, Screener, Watchlist, Trade Journal, Analysis panel, edge signals, market regime, trade plans, and AI scores. Try asking about one of those specifically and I'll give you a full breakdown.`;
+      }
+    }
+
+    return `I didn't quite catch that. I can answer questions about today's pick, trade levels, win rate, market regime, edge signals, recent picks, top movers, or how any feature of the app works. What would you like to know?`;
+  }, [bestPickData, performanceData, movers, recentPicksData]);
+
+  const sendChatMessage = React.useCallback(async () => {
+    const msg = chatInput.trim();
+    if (!msg || chatLoading) return;
+    const userMsg = { role: "user", content: msg };
+    const newHistory = [...chatHistory, userMsg];
+    setChatHistory(newHistory);
+    setChatInput("");
+    setChatLoading(true);
+    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+    // short delay to feel natural
+    await new Promise(r => setTimeout(r, 420 + Math.random() * 300));
+    const reply = buildChatReply(msg);
+    setChatHistory(h => [...h, { role: "assistant", content: reply }]);
+    setChatLoading(false);
+    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+  }, [chatInput, chatHistory, chatLoading, buildChatReply]);
 
   const lastLiveDataToastRef = useRef(0);
   const lastSuccessfulDataFetchAtRef = useRef(0);
@@ -2753,7 +3051,20 @@ async function loadBestPick() {
       (payload?.result && typeof payload.result === "object" ? payload.result : null) ||
       (payload?.payload && typeof payload.payload === "object" ? payload.payload : null) ||
       payload;
-    setBestPickData(next);
+
+    // Block known garbage/test symbols that the backend occasionally emits
+    const BLOCKED_BEST_PICK_SYMS = new Set(["APPL", "ZVZ", "ZVZZT", "TEST", "FAKE", "DUMMY", "XXXX"]);
+    const _pickedSym = normalizeSymbol(
+      next?.symbol || next?.ticker ||
+      next?.pick?.symbol || next?.pick?.ticker ||
+      next?.best_pick?.symbol || next?.best_pick?.ticker || ""
+    );
+    if (_pickedSym && BLOCKED_BEST_PICK_SYMS.has(_pickedSym)) {
+      console.warn(`Best pick returned blocked symbol "${_pickedSym}" — discarding`);
+      setBestPickData({ ...next, is_trade: false, trade_decision: "NO_TRADE", no_trade_reason: "No valid pick available" });
+    } else {
+      setBestPickData(next);
+    }
     setErrBestPick("");
     markDataFetchSuccess();
   } catch (e) {
@@ -3265,7 +3576,7 @@ async function loadWatchlistLive() {
     };
 
     return (
-      <div className="card" style={{ border: "1px solid rgba(255,255,255,0.14)", opacity: 1 }}>
+      <div className="card" style={{ border: `1px solid ${T.borderStrong}`, opacity: 1 }}>
         <div className="cardHead">
           <div>
             <div className="cardTitle">Best Pick</div>
@@ -3320,7 +3631,7 @@ async function loadWatchlistLive() {
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.01)" }}>
+                <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, padding: 12, background: T.bg }}>
                   <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Trade Levels</div>
                   <div className="kv" style={{ marginTop: 0 }}>
                     <div className="kvRow"><div className="kvKey">Entry</div><div className="kvVal">{entryText}</div></div>
@@ -3563,8 +3874,8 @@ async function loadWatchlistLive() {
           </div>
           <div className="cardBody">
             {lastAnalyzedSymbol ? (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 6, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>
-                Currently analyzing: <span style={{ color: "rgba(255,255,255,0.95)", marginLeft: 4 }}>{lastAnalyzedSymbol}</span>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 6, background: T.bg3, border: `1px solid ${T.border2}`, marginBottom: 10, fontSize: 12, fontWeight: 700, color: T.textSec }}>
+                Currently analyzing: <span style={{ color: T.text, marginLeft: 4 }}>{lastAnalyzedSymbol}</span>
               </div>
             ) : null}
 
@@ -3610,7 +3921,7 @@ async function loadWatchlistLive() {
                     ) : null}
                   </div>
                   {/* Row 2: subtitle */}
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: reasons.length > 0 ? 6 : 0 }}>
+                  <div style={{ fontSize: 12, color: T.textFaint, marginBottom: reasons.length > 0 ? 6 : 0 }}>
                     {subtitle}
                   </div>
                   {/* Row 3: reasons — plain English */}
@@ -3668,7 +3979,7 @@ async function loadWatchlistLive() {
               Best Pick card uses the latest /best_pick_v2 snapshot. Ticker Analysis uses /analyze for the currently analyzed symbol.
             </div>
 
-            <div style={{ height: 1, width: "100%", background: "rgba(255,255,255,0.06)", margin: "10px 0" }} />
+            <div style={{ height: 1, width: "100%", background: T.bg3, margin: "10px 0" }} />
 
             {/* ── Trade Levels ─────────────────────────────── */}
             {(() => {
@@ -3719,12 +4030,12 @@ async function loadWatchlistLive() {
               const anyLevelFlagged = stopBad || targetUnrealistic;
 
               const cellStyle = {
-                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+                background: T.bg, border: `1px solid ${T.border}`,
                 borderRadius: 10, padding: "12px 14px",
               };
               const labelStyle = {
                 fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-                textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 4,
+                textTransform: "uppercase", color: T.textFaint, marginBottom: 4,
               };
               const numStyle = { fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em" };
 
@@ -3746,7 +4057,7 @@ async function loadWatchlistLive() {
                     ) : null}
                   </div>
                   {isRefOnly ? (
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginBottom: 10, fontStyle: "italic" }}>
+                    <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 10, fontStyle: "italic" }}>
                       These are the levels the system would use if this passed the conviction threshold. Aurexis does not recommend taking this trade.
                     </div>
                   ) : null}
@@ -3756,7 +4067,7 @@ async function loadWatchlistLive() {
                     {/* Entry */}
                     <div style={cellStyle}>
                       <div style={labelStyle}>Entry</div>
-                      <div style={{ ...numStyle, color: "rgba(255,255,255,0.88)" }}>
+                      <div style={{ ...numStyle, color: T.text }}>
                         {Number.isFinite(entryNum) && entryNum > 0 ? `$${entryNum.toFixed(2)}` : "—"}
                       </div>
                     </div>
@@ -3765,8 +4076,8 @@ async function loadWatchlistLive() {
                       <div style={labelStyle}>Stop Loss</div>
                       {stopBad ? (
                         <>
-                          <div style={{ ...numStyle, color: "rgba(255,255,255,0.30)" }}>—</div>
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 2, fontStyle: "italic" }}>(invalid — system error)</div>
+                          <div style={{ ...numStyle, color: T.textFaint }}>—</div>
+                          <div style={{ fontSize: 11, color: T.textFaint, marginTop: 2, fontStyle: "italic" }}>(invalid — system error)</div>
                         </>
                       ) : (
                         <>
@@ -3801,7 +4112,7 @@ async function loadWatchlistLive() {
                         {rrDisplay !== null ? `${rrDisplay.toFixed(2)}x` : "—"}
                       </div>
                       {(t2 != null || t3 != null) ? (
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", marginTop: 4 }}>
+                        <div style={{ fontSize: 11, color: T.textFaint, marginTop: 4 }}>
                           {t2 != null ? `T2 $${t2.toFixed(2)}` : null}
                           {t2 != null && t3 != null ? " · " : null}
                           {t3 != null ? `T3 $${t3.toFixed(2)}` : null}
@@ -3812,7 +4123,7 @@ async function loadWatchlistLive() {
 
                   {/* Entry method note */}
                   {entryMethod && String(entryMethod).trim() && String(entryMethod) !== "—" ? (
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontStyle: "italic" }}>
+                    <div style={{ fontSize: 11, color: T.textFaint, fontStyle: "italic" }}>
                       Entry method: {String(entryMethod)}
                     </div>
                   ) : null}
@@ -3877,7 +4188,7 @@ async function loadWatchlistLive() {
         return (
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 36px", gap: 10, alignItems: "center", marginBottom: 10 }}>
             <div className="mutedSmall" style={{ fontWeight: 800 }}>{label}</div>
-            <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: 10, borderRadius: 999, background: T.bg3, overflow: "hidden" }}>
               <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, ...(v === null ? {} : barFillStyleForScoreLocal(v)) }} />
             </div>
             <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800 }}>{v === null ? "—" : String(Math.round(v))}</div>
@@ -3991,8 +4302,8 @@ async function loadWatchlistLive() {
       });
       return (
         <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          border: `1px solid ${T.border}`,
           borderRadius: 16, overflow: "hidden",
           boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
           display: "flex", flexDirection: "column",
@@ -4001,11 +4312,11 @@ async function loadWatchlistLive() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "14px 18px 12px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: `1px solid ${T.border}`,
           }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Top Movers</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Market leaders by movement.</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Top Movers</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Market leaders by movement.</div>
             </div>
             <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
           </div>
@@ -4153,7 +4464,7 @@ async function loadWatchlistLive() {
       return (
         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 36px", gap: 10, alignItems: "center", marginBottom: 10 }}>
           <div className="mutedSmall" style={{ fontWeight: 800 }}>{label}</div>
-          <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+          <div style={{ height: 10, borderRadius: 999, background: T.bg3, overflow: "hidden" }}>
             <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, ...(v === null ? {} : barFillStyleForScore(v)) }} />
           </div>
           <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800 }}>{v === null ? "—" : String(Math.round(v))}</div>
@@ -4321,16 +4632,16 @@ async function loadWatchlistLive() {
                 </div>
               </div>
               <div className="dashSplit" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 12, background: "rgba(255,255,255,0.01)" }}>
+                <div style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: 12, background: T.bg }}>
                   <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Stop loss</div>
                   <div className="mutedSmall">{stopText}</div>
                 </div>
-                <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 12, background: "rgba(255,255,255,0.01)" }}>
+                <div style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: 12, background: T.bg }}>
                   <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Risk/Reward</div>
                   <div className="mutedSmall">{rrText}</div>
                 </div>
               </div>
-              <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 12, background: "rgba(255,255,255,0.01)" }}>
+              <div style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: 12, background: T.bg }}>
                 <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Targets</div>
                 <div className="mutedSmall">{targetsText}</div>
               </div>
@@ -4377,8 +4688,8 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
           boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
@@ -4388,12 +4699,12 @@ async function loadWatchlistLive() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "14px 18px 12px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: `1px solid ${T.border}`,
           }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Performance</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Performance</div>
               {totalPicks > 0 ? (
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>
+                <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>
                   {totalPicks} pick{totalPicks !== 1 ? "s" : ""}{pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
                 </div>
               ) : null}
@@ -4412,35 +4723,35 @@ async function loadWatchlistLive() {
           {/* Stats */}
           <div style={{ padding: "16px 18px" }}>
             {!hasAnyData ? (
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>
+              <div style={{ fontSize: 12, color: T.textFaint }}>
                 Performance tracking just started — results will appear after first trades.
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: "rgba(255,255,255,0.05)", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: T.bg3, borderRadius: 12, overflow: "hidden" }}>
                 {[
                   {
                     label: "Win Rate",
                     value: allTimeWinRate !== null ? `${allTimeWinRate.toFixed(1)}%` : "—",
                     sub: (wonAllTime > 0 || lostAllTime > 0) ? `${wonAllTime}W / ${lostAllTime}L` : null,
-                    color: allTimeWinRate !== null ? (allTimeWinRate >= 50 ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.60)",
+                    color: allTimeWinRate !== null ? (allTimeWinRate >= 50 ? "#4ade80" : "#f87171") : T.textMuted,
                   },
                   {
                     label: "Picks",
                     value: totalPicks > 0 ? String(totalPicks) : "—",
                     sub: resolvedCount > 0 ? `${resolvedCount} resolved` : pendingCount > 0 ? `${pendingCount} pending` : null,
-                    color: "rgba(255,255,255,0.88)",
+                    color: T.text,
                   },
                   {
                     label: "Avg Return",
                     value: allTimeAvgReturn !== null ? `${allTimeAvgReturn >= 0 ? "+" : ""}${allTimeAvgReturn.toFixed(1)}%` : "—",
                     sub: null,
-                    color: allTimeAvgReturn !== null ? (allTimeAvgReturn >= 0 ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.60)",
+                    color: allTimeAvgReturn !== null ? (allTimeAvgReturn >= 0 ? "#4ade80" : "#f87171") : T.textMuted,
                   },
                 ].map(({ label, value, sub, color }) => (
-                  <div key={label} style={{ background: "rgba(9,12,22,0.90)", padding: "14px 16px" }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 8 }}>{label}</div>
+                  <div key={label} style={{ background: darkMode ? "rgba(9,12,22,0.90)" : "rgba(0,0,0,0.04)", padding: "14px 16px" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 8 }}>{label}</div>
                     <div style={{ fontSize: 22, fontWeight: 700, color, letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</div>
-                    {sub ? <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 5 }}>{sub}</div> : null}
+                    {sub ? <div style={{ fontSize: 10, color: T.textFaint, marginTop: 5 }}>{sub}</div> : null}
                   </div>
                 ))}
               </div>
@@ -4463,8 +4774,8 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
           boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
@@ -4473,17 +4784,17 @@ async function loadWatchlistLive() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "14px 18px 12px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: `1px solid ${T.border}`,
           }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Recent Picks</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Last AI trade decisions</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Recent Picks</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Last AI trade decisions</div>
             </div>
             {recentPicksData.length > 0 ? (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em",
+                background: T.bg3, border: `1px solid ${T.border2}`,
+                color: T.textFaint, letterSpacing: "0.04em",
               }}>{recentPicksData.length} picks</span>
             ) : null}
           </div>
@@ -4493,22 +4804,22 @@ async function loadWatchlistLive() {
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 60px 72px",
               padding: "7px 18px", gap: 8,
-              borderBottom: "1px solid rgba(255,255,255,0.04)",
+              borderBottom: `1px solid ${T.border}`,
             }}>
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)" }}>Symbol</span>
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)", textAlign: "right" }}>Return</span>
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.22)", textAlign: "right" }}>Outcome</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textGhost }}>Symbol</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textGhost, textAlign: "right" }}>Return</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textGhost, textAlign: "right" }}>Outcome</span>
             </div>
           ) : null}
 
           {/* Rows */}
           <div style={{ overflowY: "auto", maxHeight: 260 }}>
             {errRecentPicks && !recentPicksData.length ? (
-              <div style={{ padding: "16px 18px", fontSize: 12, color: "rgba(255,255,255,0.30)" }}>{errRecentPicks}</div>
+              <div style={{ padding: "16px 18px", fontSize: 12, color: T.textFaint }}>{errRecentPicks}</div>
             ) : !recentPicksData.length ? (
               <div style={{ padding: "24px 18px", textAlign: "center" }}>
                 <div style={{ fontSize: 22, opacity: 0.08, marginBottom: 8 }}>◎</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>No recent picks available.</div>
+                <div style={{ fontSize: 12, color: T.textFaint }}>No recent picks available.</div>
               </div>
             ) : recentPicksData.map((pick, i) => {
               const sym = normalizeSymbol(pick?.symbol || pick?.ticker || "");
@@ -4552,11 +4863,11 @@ async function loadWatchlistLive() {
                   {/* Symbol + date + signals */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
                         {displaySym || "—"}
                       </span>
                       {isOldPending ? <span style={{ fontSize: 11, opacity: 0.45 }} title="Pending — evaluation window may have expired">⏳</span> : null}
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{pickDate ?? "—"}</span>
+                      <span style={{ fontSize: 10, color: T.textGhost }}>{pickDate ?? "—"}</span>
                     </div>
                     {signals.length > 0 ? (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -4623,8 +4934,10 @@ async function loadWatchlistLive() {
         (bestPayload0?.best_pick && typeof bestPayload0.best_pick === "object" ? bestPayload0.best_pick : null) ||
         bestPayload0;
 
-      // ticker is ONLY from bestPickData
-      const ticker = normalizeSymbol(best0?.symbol || best0?.ticker || "");
+      // ticker is ONLY from bestPickData — blocked symbols are treated as no pick
+      const _rawTicker = normalizeSymbol(best0?.symbol || best0?.ticker || "");
+      const _BLOCKED = new Set(["APPL", "ZVZ", "ZVZZT", "TEST", "FAKE", "DUMMY", "XXXX"]);
+      const ticker = _BLOCKED.has(_rawTicker) ? "" : _rawTicker;
 
       // is_trade / no_trade_reason / trade_decision from best pick only
       const isNoTrade = best0?.is_trade === false || bestPayload0?.is_trade === false;
@@ -4713,7 +5026,7 @@ async function loadWatchlistLive() {
           bgKey: "notrade",
         },
         WAIT: {
-          color: "rgba(255,255,255,0.40)",
+          color: T.textFaint,
           glow: "none",
           bg: "rgba(255,255,255,0.04)",
           border: "rgba(255,255,255,0.09)",
@@ -4764,7 +5077,7 @@ async function loadWatchlistLive() {
         return (
           <div style={{
             background: "linear-gradient(145deg, rgba(10,13,20,0.98) 0%, rgba(12,16,26,0.98) 100%)",
-            border: "1px solid rgba(255,255,255,0.07)",
+            border: `1px solid ${T.border}`,
             borderRadius: 16,
             padding: "28px 28px 24px",
             position: "relative",
@@ -4783,15 +5096,15 @@ async function loadWatchlistLive() {
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: 10,
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  background: T.bg2, border: `1px solid ${T.border2}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 18, color: "rgba(255,255,255,0.22)", flexShrink: 0,
+                  fontSize: 18, color: T.textGhost, flexShrink: 0,
                 }}>⊘</div>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em", color: "rgba(255,255,255,0.90)", lineHeight: 1.2 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em", color: T.text, lineHeight: 1.2 }}>
                     System Decision: {tradeDec || "NO_TRADE"}
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3, letterSpacing: "0.01em" }}>
+                  <div style={{ fontSize: 12, color: T.textFaint, marginTop: 3, letterSpacing: "0.01em" }}>
                     Watchlist candidate only — Aurexis does not recommend trading this setup
                   </div>
                 </div>
@@ -4816,12 +5129,12 @@ async function loadWatchlistLive() {
             {(conf100 != null || rejectionReason) ? (
               <div style={{ marginBottom: 16, paddingLeft: 52, display: "flex", flexDirection: "column", gap: 4 }}>
                 {conf100 != null ? (
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.30)" }}>
+                  <div style={{ fontSize: 12, color: T.textFaint }}>
                     Confidence {conf100}/100 (required ≥ 65)
                   </div>
                 ) : null}
                 {rejectionReason ? (
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+                  <div style={{ fontSize: 12, color: T.textGhost }}>
                     {rejectionReason}
                   </div>
                 ) : null}
@@ -4829,12 +5142,12 @@ async function loadWatchlistLive() {
             ) : null}
 
             {/* ── Divider ────────────────────────────────────── */}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 20 }} />
+            <div style={{ height: 1, background: T.bg3, marginBottom: 20 }} />
 
             {/* ── Top Watchlist Candidate ────────────────────── */}
             {showCandidate ? (
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 12 }}>
                   Top Watchlist Candidate
                 </div>
                 <div style={{
@@ -4843,9 +5156,9 @@ async function loadWatchlistLive() {
                 }}>
                   {/* Symbol + price + AI score row */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.92)" }}>{candidateSym}</span>
+                    <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: T.text }}>{candidateSym}</span>
                     {candidatePrice != null ? (
-                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
+                      <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>
                         Near ${candidatePrice.toFixed(2)}
                       </span>
                     ) : null}
@@ -4871,7 +5184,7 @@ async function loadWatchlistLive() {
                   ) : null}
                   {/* Action row */}
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", fontStyle: "italic" }}>
+                    <span style={{ fontSize: 11, color: T.textFaint, fontStyle: "italic" }}>
                       Did not pass conviction threshold — monitoring for confirmation
                     </span>
                   </div>
@@ -4882,7 +5195,7 @@ async function loadWatchlistLive() {
             {/* ── Edge Signals (only when no candidate card shown) ── */}
             {noTradeEdgeSignals.length > 0 && !showCandidate ? (
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>
                   Edge Signals Detected
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
@@ -4898,19 +5211,19 @@ async function loadWatchlistLive() {
             ) : null}
 
             {/* ── Footer row ─────────────────────────────────── */}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 16 }} />
+            <div style={{ height: 1, background: T.bg3, marginBottom: 16 }} />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)" }}>⏱</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", letterSpacing: "0.02em" }}>
-                  Next scan in <span style={{ color: "rgba(255,255,255,0.50)", fontWeight: 600 }}>{hoursUntilOpen}h</span>
+                <span style={{ fontSize: 10, color: T.textGhost }}>⏱</span>
+                <span style={{ fontSize: 12, color: T.textFaint, letterSpacing: "0.02em" }}>
+                  Next scan in <span style={{ color: T.textMuted, fontWeight: 600 }}>{hoursUntilOpen}h</span>
                   {" · "}
-                  <span style={{ color: "rgba(255,255,255,0.42)", fontWeight: 600 }}>{etToLocal(9, 30)}</span>
-                  <span style={{ color: "rgba(255,255,255,0.22)" }}> your time</span>
-                  <span style={{ color: "rgba(255,255,255,0.18)" }}> · 9:30 AM ET</span>
+                  <span style={{ color: T.textFaint, fontWeight: 600 }}>{etToLocal(9, 30)}</span>
+                  <span style={{ color: T.textGhost }}> your time</span>
+                  <span style={{ color: T.textGhost }}> · 9:30 AM ET</span>
                 </span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.14)", margin: "0 4px" }}>·</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", fontStyle: "italic" }}>
+                <span style={{ fontSize: 11, color: T.textGhost, margin: "0 4px" }}>·</span>
+                <span style={{ fontSize: 12, color: T.textGhost, fontStyle: "italic" }}>
                   {isNoTrade ? "Next opportunity likely within 1–3 days" : "Use Analyze to evaluate a specific ticker"}
                 </span>
               </div>
@@ -4970,7 +5283,7 @@ async function loadWatchlistLive() {
               <div className="heroLeft">
                 <div className="aiPickLabel">{isLowConviction ? "LOW CONVICTION ENVIRONMENT" : "Today's AI Pick"}</div>
                 {isLowConviction ? (
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.50)", marginTop: 8, maxWidth: 340, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 14, color: T.textMuted, marginTop: 8, maxWidth: 340, lineHeight: 1.5 }}>
                     {lowConvictionNote || "Low-conviction environment — defensive positioning preferred."}
                   </div>
                 ) : (
@@ -5006,10 +5319,10 @@ async function loadWatchlistLive() {
                   <div
                     className="heroConvictionBadge"
                     style={{
-                      color: "rgba(255,255,255,0.40)",
+                      color: T.textFaint,
                       boxShadow: "none",
-                      background: "rgba(255,255,255,0.04)",
-                      borderColor: "rgba(255,255,255,0.10)",
+                      background: T.bg2,
+                      borderColor: T.textHint,
                       fontSize: 11,
                       letterSpacing: "0.08em",
                       padding: "6px 14px",
@@ -5036,7 +5349,7 @@ async function loadWatchlistLive() {
                 {loadingBestPick ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, opacity: 0.5, marginTop: 6 }}>
                     <span className="btnSpinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
-                    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.3, color: "rgba(255,255,255,0.55)" }}>Refreshing</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.3, color: T.textMuted }}>Refreshing</span>
                   </div>
                 ) : null}
               </div>
@@ -5047,25 +5360,25 @@ async function loadWatchlistLive() {
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr 1fr",
                 gap: "1px",
-                background: "rgba(255,255,255,0.07)",
+                background: T.bg3,
                 borderRadius: 12,
                 overflow: "hidden",
                 margin: "18px 0 16px",
               }}>
                 <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Entry</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Entry</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
                     {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                   </div>
                 </div>
                 <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Stop</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Stop</div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
                     {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
                   </div>
                 </div>
                 <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>Target</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Target</div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
                     {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
                   </div>
@@ -5076,20 +5389,20 @@ async function loadWatchlistLive() {
             <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
               {!isLowConviction && ai100 !== null ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.38)" }}>AI Score</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{Math.round(ai100)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>AI Score</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{Math.round(ai100)}</span>
                 </div>
               ) : null}
               {Number.isFinite(rrN) && rrN > 0 ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.38)" }}>R/R</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{rrN.toFixed(2)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{rrN.toFixed(2)}</span>
                 </div>
               ) : null}
               {positionSizePct !== null && Number.isFinite(Number(positionSizePct)) ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.38)" }}>Size</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{Number(positionSizePct).toFixed(1)}%</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>Size</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{Number(positionSizePct).toFixed(1)}%</span>
                 </div>
               ) : null}
             </div>
@@ -5221,7 +5534,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
+          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : "rgba(255,255,255,0.07)"}`,
           borderRadius: 16, overflow: "hidden",
           boxShadow: _advIsWarn && activeTab === "metrics"
@@ -5232,13 +5545,13 @@ async function loadWatchlistLive() {
         }}>
           <div style={{ padding: "14px 18px 0" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Analysis</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analysis</div>
               {activeTab === "summary" && summaryHasContent ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)", marginTop: 1 }}>Setup reasoning, market context, and technical metrics.</div>
+            <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Setup reasoning, market context, and technical metrics.</div>
           </div>
 
-          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingLeft: 20, paddingRight: 20, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }}>
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -5372,7 +5685,7 @@ async function loadWatchlistLive() {
                   {ta ? (
                     <div>
                       <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 12 }}>Technical Scores</div>
-                      <div className="mutedSmall" style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
+                      <div className="mutedSmall" style={{ fontSize: 11, color: T.textFaint, marginBottom: 10 }}>
                         0–39 weak · 40–69 mixed · 70–100 strong
                       </div>
                       {["momentum", "trend", "volatility", "liquidity", "risk"].map((k) => {
@@ -5380,7 +5693,7 @@ async function loadWatchlistLive() {
                         return (
                           <div key={k} style={{ display: "grid", gridTemplateColumns: "100px 1fr 30px", gap: 10, alignItems: "center", marginBottom: 9 }}>
                             <div className="mutedSmall" style={{ fontWeight: 700, textTransform: "capitalize", fontSize: 12 }}>{k}</div>
-                            <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                            <div style={{ height: 7, borderRadius: 999, background: T.bg3, overflow: "hidden" }}>
                               <div style={{ width: `${v === null ? 0 : v}%`, height: "100%", borderRadius: 999, background: barColor(v), transition: "width 600ms ease" }} />
                             </div>
                             <div className="mutedSmall" style={{ textAlign: "right", fontWeight: 800, fontSize: 11 }}>{v === null ? "—" : Math.round(v)}</div>
@@ -5402,7 +5715,7 @@ async function loadWatchlistLive() {
                             <div className="kvKey">Stop Loss</div>
                             <div className="kvVal">
                               {_advStopInvalid ? (
-                                <span style={{ color: "rgba(255,255,255,0.35)" }}>— <span style={{ fontSize: 11, fontStyle: "italic" }}>(invalid)</span></span>
+                                <span style={{ color: T.textFaint }}>— <span style={{ fontSize: 11, fontStyle: "italic" }}>(invalid)</span></span>
                               ) : (
                                 <span style={{ color: "rgba(248,113,113,0.80)" }}>${_advStop.toFixed(2)}</span>
                               )}
@@ -5466,7 +5779,7 @@ async function loadWatchlistLive() {
       const confText = Number.isFinite(confNum) ? String(confRaw) : fmt(confRaw);
 
       return (
-        <div className="card" style={{ border: "1px solid rgba(255,255,255,0.14)" }}>
+        <div className="card" style={{ border: `1px solid ${T.borderStrong}` }}>
           <div className="cardHead">
             <div>
               <div className="cardTitle">Best Pick</div>
@@ -6205,13 +6518,13 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: "rgba(255,255,255,0.022)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: T.bg2,
+          border: `1px solid ${T.border}`,
           borderRadius: 12,
           padding: "16px 18px",
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.90)", lineHeight: 1 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: T.text, lineHeight: 1 }}>
               {sym}
             </div>
             <div style={{
@@ -6225,26 +6538,26 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 14, lineHeight: 1.5 }}>
-            <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 11 }}>Edge signals: </span>
+          <div style={{ fontSize: 12, color: T.textFaint, marginBottom: 14, lineHeight: 1.5 }}>
+            <span style={{ color: T.textGhost, fontSize: 11 }}>Edge signals: </span>
             <span style={{ color: "rgba(147,210,255,0.62)" }}>{signalText}</span>
           </div>
 
           {score !== null ? (
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: "0.02em" }}>Conviction progress</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", letterSpacing: "-0.01em" }}>
+                <span style={{ fontSize: 11, color: T.textGhost, letterSpacing: "0.02em" }}>Conviction progress</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.textSec, letterSpacing: "-0.01em" }}>
                   Score: {score.toFixed(1)} / {AI_SCORE_THRESHOLD.toFixed(1)} needed
                 </span>
               </div>
-              <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ height: 5, background: T.bg3, borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ width: `${progress}%`, height: "100%", background: progressColor, borderRadius: 3, transition: "width 0.6s ease" }} />
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.20)", marginTop: 4 }}>{progress}% of threshold</div>
+              <div style={{ fontSize: 10, color: T.textGhost, marginTop: 4 }}>{progress}% of threshold</div>
             </div>
           ) : (
-            <div style={{ marginBottom: 14, fontSize: 12, color: "rgba(255,255,255,0.22)" }}>Score pending scan</div>
+            <div style={{ marginBottom: 14, fontSize: 12, color: T.textGhost }}>Score pending scan</div>
           )}
 
           <div style={{ display: "flex", gap: 8 }}>
@@ -6252,8 +6565,8 @@ async function loadWatchlistLive() {
               onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
               style={{
                 padding: "6px 14px", borderRadius: 7,
-                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.11)",
-                color: "rgba(255,255,255,0.60)", fontSize: 11, fontWeight: 600,
+                background: T.bg3, border: `1px solid ${T.border2}`,
+                color: T.textSec, fontSize: 11, fontWeight: 600,
                 cursor: "pointer", letterSpacing: "0.03em",
               }}
             >Analyze →</button>
@@ -6262,8 +6575,8 @@ async function loadWatchlistLive() {
               disabled={addingWatchlist}
               style={{
                 padding: "6px 14px", borderRadius: 7,
-                background: "transparent", border: "1px solid rgba(255,255,255,0.07)",
-                color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 600,
+                background: "transparent", border: `1px solid ${T.border}`,
+                color: T.textFaint, fontSize: 11, fontWeight: 600,
                 cursor: "pointer", letterSpacing: "0.03em",
               }}
             >+ Watch</button>
@@ -6281,10 +6594,10 @@ async function loadWatchlistLive() {
           <div style={{ padding: "20px 22px 18px" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.015em", lineHeight: 1.3 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.text, letterSpacing: "-0.015em", lineHeight: 1.3 }}>
                   System Watchlist — Stocks Building Momentum
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", marginTop: 5, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, color: T.textFaint, marginTop: 5, lineHeight: 1.5 }}>
                   These setups are close but haven't cleared our conviction threshold yet
                 </div>
               </div>
@@ -6293,7 +6606,7 @@ async function loadWatchlistLive() {
                 disabled={loadingCandidates}
                 style={{
                   background: "none", border: "none",
-                  color: "rgba(255,255,255,0.22)", fontSize: 12,
+                  color: T.textGhost, fontSize: 12,
                   cursor: "pointer", padding: "4px 0", flexShrink: 0,
                 }}
               >
@@ -6301,14 +6614,14 @@ async function loadWatchlistLive() {
               </button>
             </div>
           </div>
-          <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
+          <div style={{ height: 1, background: T.bg3 }} />
 
           {/* Body */}
           {loadingCandidates ? (
             <div style={{ padding: "36px 22px", textAlign: "center" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                 <span className="btnSpinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} />
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.30)" }}>Scanning market for close candidates…</span>
+                <span style={{ fontSize: 13, color: T.textFaint }}>Scanning market for close candidates…</span>
               </div>
             </div>
           ) : candidatesError ? (
@@ -6318,8 +6631,8 @@ async function loadWatchlistLive() {
                 onClick={loadSystemCandidates}
                 style={{
                   padding: "7px 18px", borderRadius: 8,
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-                  color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  background: T.bg2, border: `1px solid ${T.border2}`,
+                  color: T.textMuted, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 }}
               >
                 Retry scan
@@ -6328,10 +6641,10 @@ async function loadWatchlistLive() {
           ) : systemCandidates.length === 0 ? (
             <div style={{ padding: "40px 22px", textAlign: "center" }}>
               <div style={{ fontSize: 24, opacity: 0.10, marginBottom: 14 }}>◈</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.textFaint, marginBottom: 6 }}>
                 No close candidates right now
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", maxWidth: 260, margin: "0 auto" }}>
+              <div style={{ fontSize: 12, color: T.textGhost, maxWidth: 260, margin: "0 auto" }}>
                 The system will populate this list when stocks build enough momentum to be near-threshold.
               </div>
             </div>
@@ -6485,7 +6798,7 @@ async function loadWatchlistLive() {
     const dirStyle = (dir) =>
       dir === "BULLISH" ? { color: "#4ade80", bg: "rgba(74,222,128,0.09)",    border: "rgba(74,222,128,0.22)" }
       : dir === "BEARISH" ? { color: "#f87171", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)" }
-      : { color: "rgba(255,255,255,0.40)", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.10)" };
+      : { color: T.textFaint, bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.10)" };
 
     const COL_HEADERS = [
       { key: "symbol",     label: "Symbol" },
@@ -6505,7 +6818,7 @@ async function loadWatchlistLive() {
       cursor: "pointer",
       whiteSpace: "nowrap",
       userSelect: "none",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      borderBottom: `1px solid ${T.border}`,
       background: "rgba(8,12,22,0.70)",
       transition: "color 0.12s",
     };
@@ -6517,22 +6830,22 @@ async function loadWatchlistLive() {
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
 
           {/* Header + Search */}
-          <div style={{ padding: "20px 22px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ padding: "20px 22px 18px", borderBottom: `1px solid ${T.border}` }}>
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.015em", marginBottom: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, letterSpacing: "-0.015em", marginBottom: 4 }}>
                 Screener
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.30)" }}>
+              <div style={{ fontSize: 12, color: T.textFaint }}>
                 Enter symbols separated by commas. Click any column header to sort.
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <div style={{
                 flex: 1, display: "flex", alignItems: "center",
-                background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)",
+                background: T.bg2, border: `1px solid ${T.border2}`,
                 borderRadius: 9, padding: "0 14px", gap: 8,
               }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", flexShrink: 0 }}>⊞</span>
+                <span style={{ fontSize: 12, color: T.textGhost, flexShrink: 0 }}>⊞</span>
                 <input
                   ref={screenerInputRef}
                   defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
@@ -6540,7 +6853,7 @@ async function loadWatchlistLive() {
                   placeholder="AAPL, NVDA, MSFT, TSLA…"
                   style={{
                     flex: 1, background: "none", border: "none", outline: "none",
-                    color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 500,
+                    color: T.text, fontSize: 13, fontWeight: 500,
                     padding: "12px 0", fontFamily: "inherit", letterSpacing: "0.02em",
                   }}
                 />
@@ -6566,7 +6879,7 @@ async function loadWatchlistLive() {
             <div style={{ padding: "52px 22px", textAlign: "center" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                 <span className="btnSpinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} />
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.32)" }}>
+                <span style={{ fontSize: 13, color: T.textFaint }}>
                   Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…
                 </span>
               </div>
@@ -6574,7 +6887,7 @@ async function loadWatchlistLive() {
           ) : !hasScreened || results.length === 0 ? (
             <div style={{ padding: "52px 22px", textAlign: "center" }}>
               <div style={{ fontSize: 28, opacity: 0.08, marginBottom: 14 }}>⊞</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)" }}>Add tickers above and click Screen</div>
+              <div style={{ fontSize: 13, color: T.textFaint }}>Add tickers above and click Screen</div>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
@@ -6632,10 +6945,10 @@ async function loadWatchlistLive() {
                         {/* AI Score */}
                         <td style={{ padding: "14px 16px" }}>
                           {row.error || row.aiScore === null ? (
-                            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 13 }}>—</span>
+                            <span style={{ color: T.textGhost, fontSize: 13 }}>—</span>
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                              <div style={{ width: 48, height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2, flexShrink: 0 }}>
+                              <div style={{ width: 48, height: 4, background: T.bg3, borderRadius: 2, flexShrink: 0 }}>
                                 <div style={{ width: `${row.aiScore}%`, height: "100%", background: scoreColor(row.aiScore), borderRadius: 2 }} />
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(row.aiScore), minWidth: 26 }}>{row.aiScore}</span>
@@ -6646,10 +6959,10 @@ async function loadWatchlistLive() {
                         {/* Momentum */}
                         <td style={{ padding: "14px 16px" }}>
                           {row.error || row.momentum === null ? (
-                            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 13 }}>—</span>
+                            <span style={{ color: T.textGhost, fontSize: 13 }}>—</span>
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                              <div style={{ width: 48, height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2, flexShrink: 0 }}>
+                              <div style={{ width: 48, height: 4, background: T.bg3, borderRadius: 2, flexShrink: 0 }}>
                                 <div style={{ width: `${row.momentum}%`, height: "100%", background: scoreColor(row.momentum), borderRadius: 2 }} />
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(row.momentum), minWidth: 26 }}>{row.momentum}</span>
@@ -6660,10 +6973,10 @@ async function loadWatchlistLive() {
                         {/* Trend */}
                         <td style={{ padding: "14px 16px" }}>
                           {row.error || row.trend === null ? (
-                            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 13 }}>—</span>
+                            <span style={{ color: T.textGhost, fontSize: 13 }}>—</span>
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                              <div style={{ width: 48, height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2, flexShrink: 0 }}>
+                              <div style={{ width: 48, height: 4, background: T.bg3, borderRadius: 2, flexShrink: 0 }}>
                                 <div style={{ width: `${row.trend}%`, height: "100%", background: scoreColor(row.trend), borderRadius: 2 }} />
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(row.trend), minWidth: 26 }}>{row.trend}</span>
@@ -6674,7 +6987,7 @@ async function loadWatchlistLive() {
                         {/* Confidence */}
                         <td style={{ padding: "14px 16px" }}>
                           {row.error || row.confidence === null ? (
-                            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 13 }}>—</span>
+                            <span style={{ color: T.textGhost, fontSize: 13 }}>—</span>
                           ) : (
                             <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(row.confidence * 10) }}>
                               {row.confidence.toFixed(1)}
@@ -6685,7 +6998,7 @@ async function loadWatchlistLive() {
                         {/* Bias badge */}
                         <td style={{ padding: "14px 16px" }}>
                           {row.error ? (
-                            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 13 }}>—</span>
+                            <span style={{ color: T.textGhost, fontSize: 13 }}>—</span>
                           ) : (
                             <span style={{
                               display: "inline-flex", alignItems: "center", gap: 5,
@@ -6710,8 +7023,8 @@ async function loadWatchlistLive() {
                               }}
                               style={{
                                 padding: "5px 12px", borderRadius: 7,
-                                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)",
-                                color: "rgba(255,255,255,0.50)", fontSize: 11, fontWeight: 600,
+                                background: T.bg3, border: `1px solid ${T.border2}`,
+                                color: T.textMuted, fontSize: 11, fontWeight: 600,
                                 cursor: "pointer", letterSpacing: "0.02em", whiteSpace: "nowrap",
                               }}
                             >
@@ -6840,8 +7153,8 @@ async function loadWatchlistLive() {
       Number.isFinite(n) ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 
     const inp = {
-      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-      borderRadius: 6, color: "rgba(255,255,255,0.88)", fontSize: 13,
+      background: T.bg2, border: `1px solid ${T.border2}`,
+      borderRadius: 6, color: T.text, fontSize: 13,
       padding: "7px 10px", outline: "none", fontFamily: "inherit",
     };
 
@@ -6860,10 +7173,10 @@ async function loadWatchlistLive() {
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.07)",
-                background: "rgba(10,12,16,0.7)",
+                border: `1px solid ${T.border}`,
+                background: darkMode ? "rgba(10,12,16,0.7)" : "rgba(0,0,0,0.04)",
               }}>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.34)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 7 }}>{label}</div>
+                <div style={{ fontSize: 10, color: T.textFaint, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 7 }}>{label}</div>
                 <div style={{
                   fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em",
                   color: colored !== null && colored !== undefined
@@ -6899,11 +7212,11 @@ async function loadWatchlistLive() {
           {journalAddOpen && (
             <div style={{
               padding: "18px 20px 16px",
-              background: "rgba(255,255,255,0.015)",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: T.bg,
+              borderTop: `1px solid ${T.border}`,
+              borderBottom: `1px solid ${T.border}`,
             }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>New Trade</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.textFaint, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>New Trade</div>
               <div style={{ display: "grid", gridTemplateColumns: "120px 110px 110px 110px 1fr", gap: 8, marginBottom: 10 }}>
                 {/* Symbol — uncontrolled, onBlur triggers auto-fill */}
                 <div style={{ position: "relative" }}>
@@ -6951,8 +7264,8 @@ async function loadWatchlistLive() {
             {journalTrades.length === 0 ? (
               <div style={{ padding: "48px 20px", textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 14, opacity: 0.15 }}>▤</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.38)", marginBottom: 6 }}>No trades logged yet</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.22)" }}>Click "+ Add Trade Manually" above to log your first entry.</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.textFaint, marginBottom: 6 }}>No trades logged yet</div>
+                <div style={{ fontSize: 12, color: T.textGhost }}>Click "+ Add Trade Manually" above to log your first entry.</div>
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
@@ -6977,7 +7290,7 @@ async function loadWatchlistLive() {
                         : trade.status === "lost" ? "pill--bad" : "pill--neutral";
                       return (
                         <tr key={trade.id}>
-                          <td style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", whiteSpace: "nowrap" }}>{fmtD(trade.enteredAt)}</td>
+                          <td style={{ fontSize: 11, color: T.textFaint, whiteSpace: "nowrap" }}>{fmtD(trade.enteredAt)}</td>
                           <td style={{ fontWeight: 700, letterSpacing: "0.05em", fontSize: 13 }}>{trade.symbol}</td>
                           <td style={{ fontFamily: "monospace", fontSize: 12 }}>{fmtP(trade.entryPrice)}</td>
                           <td style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(248,113,113,0.75)" }}>{fmtP(trade.stopPrice)}</td>
@@ -7025,7 +7338,7 @@ async function loadWatchlistLive() {
                                   >✓</button>
                                   <button
                                     title="Cancel"
-                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "rgba(255,255,255,0.35)", fontSize: 14, lineHeight: 1 }}
+                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: T.textFaint, fontSize: 14, lineHeight: 1 }}
                                     onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
                                   >✕</button>
                                 </div>
@@ -7039,13 +7352,13 @@ async function loadWatchlistLive() {
                                 </RippleButton>
                               )
                             ) : (
-                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap" }}>
+                              <span style={{ fontSize: 11, color: T.textGhost, whiteSpace: "nowrap" }}>
                                 Closed {fmtD(trade.exitedAt)}
                               </span>
                             )}
                             <button
                               title="Delete trade"
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.15)", fontSize: 13, padding: "2px 5px", marginLeft: 4, verticalAlign: "middle" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 13, padding: "2px 5px", marginLeft: 4, verticalAlign: "middle" }}
                               onClick={() => deleteTrade(trade.id)}
                             >⌫</button>
                           </td>
@@ -7057,7 +7370,7 @@ async function loadWatchlistLive() {
               </div>
             )}
             {journalCloseErr && (
-              <div style={{ padding: "8px 20px", fontSize: 12, color: "#f87171", borderTop: "1px solid rgba(255,255,255,0.05)" }}>{journalCloseErr}</div>
+              <div style={{ padding: "8px 20px", fontSize: 12, color: "#f87171", borderTop: `1px solid ${T.border}` }}>{journalCloseErr}</div>
             )}
           </div>
         </div>
@@ -7068,19 +7381,19 @@ async function loadWatchlistLive() {
   const settingsSection = {
     padding: "20px 22px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(255,255,255,0.02)",
+    border: darkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
+    background: darkMode ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.65)",
   };
   const settingsSectionTitle = {
     fontSize: 13,
     fontWeight: 700,
-    color: "rgba(255,255,255,0.75)",
+    color: darkMode ? "rgba(255,255,255,0.75)" : "rgba(8,10,22,0.80)",
     marginBottom: 4,
     letterSpacing: "-0.01em",
   };
   const settingsSectionSub = {
     fontSize: 13,
-    color: "rgba(255,255,255,0.35)",
+    color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.44)",
     lineHeight: 1.55,
   };
 
@@ -7134,7 +7447,7 @@ async function loadWatchlistLive() {
           }}>◌</div>
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 4 }}>Support Center</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.5 }}>
               Questions, feedback, or something broken? We've got you.
             </div>
           </div>
@@ -7164,16 +7477,16 @@ async function loadWatchlistLive() {
                     alignItems: "center", gap: 16, textAlign: "left",
                   }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.82)" }}>{faq.q}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{faq.q}</span>
                   <span style={{
-                    fontSize: 16, color: "rgba(255,255,255,0.3)", flexShrink: 0,
+                    fontSize: 16, color: T.textFaint, flexShrink: 0,
                     transform: openFaq === i ? "rotate(45deg)" : "none",
                     transition: "transform 0.18s",
                     display: "inline-block",
                   }}>+</span>
                 </button>
                 {openFaq === i && (
-                  <div style={{ padding: "0 22px 18px", fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                  <div style={{ padding: "0 22px 18px", fontSize: 13, color: T.textMuted, lineHeight: 1.65 }}>
                     {faq.a}
                   </div>
                 )}
@@ -7249,10 +7562,10 @@ async function loadWatchlistLive() {
             {["Price alerts", "Mobile app", "Portfolio sync", "Options flow feed", "Strategy backtesting", "Multi-account support"].map(item => (
               <div key={item} style={{
                 padding: "8px 12px", borderRadius: 8, fontSize: 12,
-                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 7,
+                background: T.bg2, border: `1px solid ${T.border}`,
+                color: T.textMuted, display: "flex", alignItems: "center", gap: 7,
               }}>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)" }}>▸</span>
+                <span style={{ fontSize: 9, color: T.textGhost }}>▸</span>
                 {item}
               </div>
             ))}
@@ -7260,9 +7573,9 @@ async function loadWatchlistLive() {
         </div>
 
         {/* Disclaimer */}
-        <div style={{ ...settingsSection, background: "rgba(255,255,255,0.012)", borderColor: "rgba(255,255,255,0.04)" }}>
-          <div style={{ ...settingsSectionTitle, color: "rgba(255,255,255,0.35)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>Disclaimer</div>
-          <div style={{ ...settingsSectionSub, color: "rgba(255,255,255,0.25)", marginTop: 6, fontSize: 12 }}>
+        <div style={{ ...settingsSection, background: T.bg, borderColor: T.textHint }}>
+          <div style={{ ...settingsSectionTitle, color: T.textFaint, fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>Disclaimer</div>
+          <div style={{ ...settingsSectionSub, color: T.textGhost, marginTop: 6, fontSize: 12 }}>
             Aurexis is for educational and informational purposes only. Nothing on this platform constitutes investment advice or a recommendation to buy or sell any security. Past performance does not guarantee future results. Always do your own research and consult a licensed financial advisor before making any investment decisions.
           </div>
         </div>
@@ -7301,7 +7614,7 @@ async function loadWatchlistLive() {
             </div>
           </div>
           <div className="cardBody">
-            {loading && <div style={{ color: "rgba(255,255,255,0.4)", padding: 20 }}>Loading brain stats…</div>}
+            {loading && <div style={{ color: T.textFaint, padding: 20 }}>Loading brain stats…</div>}
             {!loading && !data && <div style={{ color: "#fb7185", padding: 20 }}>Could not load brain data.</div>}
             {data && (
               <div style={{ display: "grid", gap: 20 }}>
@@ -7314,8 +7627,8 @@ async function loadWatchlistLive() {
                     { label: "Win Rate", val: data.overall_win_rate_pct != null ? `${data.overall_win_rate_pct}%` : "—" },
                     { label: "Best Pick", val: data.best_ever ? `${data.best_ever.symbol} +${data.best_ever.change_pct}%` : "—" },
                   ].map(({ label, val }) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "12px 18px", minWidth: 130 }}>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{label}</div>
+                    <div key={label} style={{ background: T.bg2, borderRadius: 8, padding: "12px 18px", minWidth: 130 }}>
+                      <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 4 }}>{label}</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{val}</div>
                     </div>
                   ))}
@@ -7324,13 +7637,13 @@ async function loadWatchlistLive() {
                 {/* Signal weight table */}
                 {data.signal_weights?.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8, letterSpacing: "0.06em" }}>LEARNED SIGNAL WEIGHTS</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.06em" }}>LEARNED SIGNAL WEIGHTS</div>
+                    <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 12 }}>
                       Multipliers update automatically as outcomes come in. Green = this signal predicts wins. Red = unreliable.
                     </div>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
-                        <tr style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+                        <tr style={{ color: T.textFaint, fontSize: 11 }}>
                           <th style={{ textAlign: "left", padding: "4px 8px" }}>Signal</th>
                           <th style={{ textAlign: "right", padding: "4px 8px" }}>Appearances</th>
                           <th style={{ textAlign: "right", padding: "4px 8px" }}>Win Rate</th>
@@ -7340,10 +7653,10 @@ async function loadWatchlistLive() {
                       </thead>
                       <tbody>
                         {data.signal_weights.map(s => (
-                          <tr key={s.signal} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                            <td style={{ padding: "6px 8px", fontFamily: "monospace", color: "rgba(255,255,255,0.75)" }}>{s.signal}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.45)" }}>{s.appearances}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.6)" }}>{s.win_rate_pct}%</td>
+                          <tr key={s.signal} style={{ borderTop: `1px solid ${T.border}` }}>
+                            <td style={{ padding: "6px 8px", fontFamily: "monospace", color: T.textSec }}>{s.signal}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{s.appearances}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: T.textSec }}>{s.win_rate_pct}%</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: multColor(s.multiplier) }}>{s.multiplier}x</td>
                             <td style={{ padding: "6px 8px" }}>
                               <span style={{
@@ -7362,10 +7675,10 @@ async function loadWatchlistLive() {
                 {/* Recent picks with outcomes */}
                 {data.recent_picks?.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8, letterSpacing: "0.06em" }}>RECENT PICKS & OUTCOMES</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.06em" }}>RECENT PICKS & OUTCOMES</div>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
-                        <tr style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+                        <tr style={{ color: T.textFaint, fontSize: 11 }}>
                           <th style={{ textAlign: "left", padding: "4px 8px" }}>Symbol</th>
                           <th style={{ textAlign: "right", padding: "4px 8px" }}>Score</th>
                           <th style={{ textAlign: "right", padding: "4px 8px" }}>Entry</th>
@@ -7376,17 +7689,17 @@ async function loadWatchlistLive() {
                       </thead>
                       <tbody>
                         {data.recent_picks.map((p, i) => (
-                          <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                          <tr key={i} style={{ borderTop: `1px solid ${T.border}` }}>
                             <td style={{ padding: "6px 8px", fontWeight: 700, color: "#fff" }}>{p.symbol}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.5)" }}>{p.score}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.5)" }}>{p.entry != null ? `$${p.entry}` : "—"}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.score}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.entry != null ? `$${p.entry}` : "—"}</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#4ade80" : p.change_pct < 0 ? "#fb7185" : "rgba(255,255,255,0.4)" }}>
                               {p.change_pct != null ? `${p.change_pct > 0 ? "+" : ""}${p.change_pct}%` : "pending"}
                             </td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", color: "rgba(255,255,255,0.35)" }}>{p.days != null ? `${p.days}d` : "—"}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: T.textFaint }}>{p.days != null ? `${p.days}d` : "—"}</td>
                             <td style={{ padding: "6px 8px" }}>
                               {p.won == null
-                                ? <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>PENDING</span>
+                                ? <span style={{ color: T.textFaint, fontSize: 11 }}>PENDING</span>
                                 : p.won
                                   ? <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 11 }}>WIN</span>
                                   : <span style={{ color: "#fb7185", fontWeight: 700, fontSize: 11 }}>MISS</span>
@@ -7400,7 +7713,7 @@ async function loadWatchlistLive() {
                 )}
 
                 {(!data.signal_weights?.length && !data.recent_picks?.length) && (
-                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, padding: 12 }}>
+                  <div style={{ color: T.textFaint, fontSize: 13, padding: 12 }}>
                     The brain is brand new — no picks recorded yet. Use the Screener to analyze stocks and come back after a day or two to see it learning.
                   </div>
                 )}
@@ -7415,13 +7728,13 @@ async function loadWatchlistLive() {
   const Settings = () => {
     const initials = "AU";
     const toggleRow = (label, enabled, onChange) => (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{label}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: darkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
+        <span style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.65)" : "rgba(8,10,22,0.62)" }}>{label}</span>
         <button
           onClick={onChange}
           style={{
             width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer",
-            background: enabled ? "rgba(99,102,241,0.75)" : "rgba(255,255,255,0.1)",
+            background: enabled ? "rgba(0,180,80,0.75)" : darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.10)",
             position: "relative", transition: "background 0.2s", flexShrink: 0,
           }}
         >
@@ -7442,27 +7755,29 @@ async function loadWatchlistLive() {
       <div className="pageGrid">
         {/* Account profile card */}
         <div style={{
-          background: "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: darkMode
+            ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)"
+            : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          border: darkMode ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
           borderRadius: 16, padding: "24px 26px",
           display: "flex", alignItems: "center", gap: 20,
         }}>
           <div style={{
             width: 58, height: 58, borderRadius: "50%", flexShrink: 0,
-            background: "linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.4) 100%)",
-            border: "2px solid rgba(99,102,241,0.35)",
+            background: "linear-gradient(135deg, rgba(0,180,80,0.3) 0%, rgba(0,140,60,0.25) 100%)",
+            border: "2px solid rgba(0,180,80,0.30)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 800, color: "rgba(255,255,255,0.9)",
+            fontSize: 20, fontWeight: 800, color: darkMode ? "rgba(255,255,255,0.9)" : "rgba(8,10,22,0.85)",
             letterSpacing: "-0.01em",
           }}>{initials}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Aurexis User</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>Free Plan · Member since 2025</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: darkMode ? "#fff" : "rgba(8,10,22,0.90)", letterSpacing: "-0.02em" }}>Aurexis User</div>
+            <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.40)", marginTop: 3 }}>Free Plan · Member since 2025</div>
           </div>
           <div style={{
             padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-            background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.22)",
-            color: "rgba(180,182,255,0.85)", letterSpacing: "0.04em",
+            background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)",
+            color: "rgba(0,180,80,0.90)", letterSpacing: "0.04em",
           }}>FREE</div>
         </div>
 
@@ -7471,7 +7786,7 @@ async function loadWatchlistLive() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={settingsSectionTitle}>Plan &amp; Billing</div>
-              <div style={{ ...settingsSectionSub, marginTop: 4 }}>You're on the <b style={{ color: "rgba(255,255,255,0.6)" }}>Free</b> plan. Power and Pro tiers are coming soon with alerts, portfolio sync, and strategy backtesting.</div>
+              <div style={{ ...settingsSectionSub, marginTop: 4 }}>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>Free</b> plan. Power and Pro tiers are coming soon with alerts, portfolio sync, and strategy backtesting.</div>
             </div>
             <button
               className="btn btn--ghost"
@@ -7486,7 +7801,7 @@ async function loadWatchlistLive() {
         {/* Notifications */}
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Notifications</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.35)", marginBottom: 14 }}>
             Alert preferences will be active when the Power plan launches.
           </div>
           {toggleRow("New AI pick alert", notifPicks, () => { setNotifPicks(p => !p); showToast("Notifications available on Power plan — coming soon."); })}
@@ -7498,31 +7813,33 @@ async function loadWatchlistLive() {
           <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Display</div>
           {toggleRow("Compact card view", compactView, () => setCompactView(p => !p))}
           <div style={{ paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Accent Color</div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {THEMES.map(t => (
+            <div style={{ fontSize: 11, fontWeight: 700, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Appearance</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { id: true,  label: "Dark",  icon: "🌙" },
+                { id: false, label: "Light", icon: "☀️" },
+              ].map(({ id, label, icon }) => (
                 <button
-                  key={t.id}
-                  title={t.label}
-                  onClick={() => setTheme(t.id)}
+                  key={String(id)}
+                  onClick={() => setDarkMode(id)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "10px 16px", borderRadius: 10, cursor: "pointer",
+                    fontWeight: 700, fontSize: 13,
+                    background: darkMode === id
+                      ? "rgba(0,180,80,0.12)"
+                      : darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
+                    border: darkMode === id
+                      ? "1px solid rgba(0,180,80,0.28)"
+                      : darkMode ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
+                    color: darkMode === id
+                      ? "rgba(0,180,80,0.95)"
+                      : darkMode ? "rgba(255,255,255,0.45)" : "rgba(8,10,22,0.45)",
+                    transition: "background 0.18s, border 0.18s, color 0.18s",
                   }}
                 >
-                  <div style={{
-                    width: 32, height: 32, borderRadius: "50%",
-                    background: t.hex,
-                    boxShadow: theme === t.id
-                      ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 12px ${t.hex}88`
-                      : "0 0 0 2px rgba(255,255,255,0.08)",
-                    transition: "box-shadow 0.18s",
-                  }} />
-                  <span style={{
-                    fontSize: 10, fontWeight: theme === t.id ? 700 : 400,
-                    color: theme === t.id ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)",
-                    transition: "color 0.18s",
-                  }}>{t.label}</span>
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+                  {label}
                 </button>
               ))}
             </div>
@@ -7540,9 +7857,9 @@ async function loadWatchlistLive() {
               { label: "API keys", val: "Never stored" },
               { label: "Trade data", val: "Not collected" },
             ].map(({ label, val }) => (
-              <div key={label} style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{val}</div>
+              <div key={label} style={{ padding: "10px 14px", borderRadius: 8, background: darkMode ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.03)", border: darkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.07)" }}>
+                <div style={{ fontSize: 11, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.38)", marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>{val}</div>
               </div>
             ))}
           </div>
@@ -7555,7 +7872,7 @@ async function loadWatchlistLive() {
           <div style={{ display: "flex", gap: 10 }}>
             <button
               className="btn btn--ghost"
-              style={{ fontSize: 12, padding: "7px 16px", color: "rgba(255,255,255,0.38)", borderColor: "rgba(255,255,255,0.08)" }}
+              style={{ fontSize: 12, padding: "7px 16px", color: darkMode ? "rgba(255,255,255,0.38)" : "rgba(8,10,22,0.40)", borderColor: darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.09)" }}
               onClick={() => showToast("Sign-out is not available in this version.")}
             >
               Sign out
@@ -8048,7 +8365,7 @@ const renderPage = () => {
               </div>
             )}
             {sidebarCollapsed && (
-              <div style={{ display: "flex", justifyContent: "center", fontSize: 16, fontWeight: 900, letterSpacing: "0.08em", color: "rgba(255,255,255,0.85)" }}>A</div>
+              <div style={{ display: "flex", justifyContent: "center", fontSize: 16, fontWeight: 900, letterSpacing: "0.08em", color: T.text }}>A</div>
             )}
           </div>
 
@@ -8062,13 +8379,13 @@ const renderPage = () => {
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "rgba(255,255,255,0.3)",
+              color: T.textFaint,
               fontSize: 12,
               marginBottom: 6,
               transition: "color 0.15s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = T.textSec)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = T.textFaint)}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? "›" : "‹"}
@@ -8076,7 +8393,7 @@ const renderPage = () => {
 
           <nav className="sideNav" style={{ flex: 1, padding: "0 6px", overflow: "hidden" }}>
             {!sidebarCollapsed && (
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", padding: "0 8px 5px", marginTop: 4 }}>Main</div>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px", marginTop: 4 }}>Main</div>
             )}
             {NAV.main.map((n) => (
               <motion.button
@@ -8102,10 +8419,10 @@ const renderPage = () => {
               </motion.button>
             ))}
 
-            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "8px 0" }} />
+            <div style={{ height: 1, background: T.bg3, margin: "8px 0" }} />
 
             {!sidebarCollapsed && (
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", padding: "0 8px 5px" }}>Trading</div>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px" }}>Trading</div>
             )}
             {NAV.trading.map((n) => (
               <motion.button
@@ -8131,10 +8448,10 @@ const renderPage = () => {
               </motion.button>
             ))}
 
-            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "8px 0" }} />
+            <div style={{ height: 1, background: T.bg3, margin: "8px 0" }} />
 
             {!sidebarCollapsed && (
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", padding: "0 8px 5px" }}>Account</div>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px" }}>Account</div>
             )}
             {NAV.account.map((n) => (
               <motion.button
@@ -8164,7 +8481,7 @@ const renderPage = () => {
           {/* Account avatar — pinned to bottom of sidebar */}
           <div style={{
             padding: sidebarCollapsed ? "10px 0 42px" : "10px 10px 42px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: `1px solid ${T.border}`,
             marginTop: "auto",
           }}>
             <motion.button
@@ -8186,12 +8503,12 @@ const renderPage = () => {
                 background: "linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.4) 100%)",
                 border: "1.5px solid rgba(99,102,241,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.9)",
+                fontSize: 11, fontWeight: 800, color: T.text,
               }}>AU</div>
               {!sidebarCollapsed && (
                 <div style={{ overflow: "hidden", textAlign: "left" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)", whiteSpace: "nowrap" }}>My Account</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap" }}>Free Plan</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.textSec, whiteSpace: "nowrap" }}>My Account</div>
+                  <div style={{ fontSize: 10, color: T.textFaint, whiteSpace: "nowrap" }}>Free Plan</div>
                 </div>
               )}
             </motion.button>
@@ -8217,7 +8534,7 @@ const renderPage = () => {
                 zIndex: 9999,
                 padding: 12,
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: `1px solid ${T.border2}`,
                 background: "rgba(15, 16, 20, 0.92)",
                 backdropFilter: "blur(10px)",
               }}
@@ -8267,8 +8584,8 @@ const renderPage = () => {
                   gap: 8,
                   padding: "5px 12px",
                   borderRadius: 8,
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  background: "rgba(255,255,255,0.025)",
+                  border: `1px solid ${T.border}`,
+                  background: T.bg2,
                 }}
               >
                 <span style={{
@@ -8280,10 +8597,10 @@ const renderPage = () => {
                   flexShrink: 0,
                 }} />
                 <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", color: T.textMuted, whiteSpace: "nowrap" }}>
                     {marketSession === "OPEN" ? "Market Open" : "Market Closed"}
                   </span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+                  <span style={{ fontSize: 10, color: T.textFaint, whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
                     {marketSession === "OPEN"
                       ? `Closes 4:00 PM ET · ${etToLocal(16, 0)} local`
                       : `Opens 9:30 AM ET · ${etToLocal(9, 30)} local`}
@@ -8339,10 +8656,225 @@ const renderPage = () => {
             )}
           </div>
         </main>
+
+        {/* ── end main ─────────────────────────────────────────────────── */}
+
       </div>
       <div className="persistentRiskFooter">
         For educational and paper-trading use only. Not investment advice. Verify all trades independently.
       </div>
+
+      {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
+      {/* FAB toggle button */}
+      <button
+        onClick={() => { setChatOpen(o => !o); setTimeout(() => chatInputRef.current?.focus(), 80); }}
+        title={chatOpen ? "Close AI chat" : "Ask AI"}
+        style={{
+          position: "fixed",
+          bottom: 52,
+          right: 20,
+          width: 46,
+          height: 46,
+          borderRadius: "50%",
+          background: chatOpen
+            ? (darkMode ? "rgba(99,102,241,0.20)" : "rgba(99,102,241,0.14)")
+            : "linear-gradient(135deg, #6366f1, #7c3aed)",
+          border: chatOpen ? "1px solid rgba(99,102,241,0.40)" : "none",
+          boxShadow: chatOpen ? "none" : "0 4px 20px rgba(99,102,241,0.45)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1200,
+          transition: "all 0.2s ease",
+          flexShrink: 0,
+          color: chatOpen ? "rgba(99,102,241,0.85)" : "white",
+          fontSize: chatOpen ? 18 : 19,
+        }}
+      >
+        {chatOpen ? "✕" : "✦"}
+      </button>
+
+      {/* Chat panel */}
+      {chatOpen && (
+        <div style={{
+          position: "fixed",
+          bottom: 108,
+          right: 20,
+          width: 340,
+          maxWidth: "calc(100vw - 40px)",
+          height: "min(520px, calc(100vh - 160px))",
+          borderRadius: 16,
+          background: darkMode ? "rgba(14,17,28,0.97)" : "rgba(248,250,252,0.98)",
+          backdropFilter: "blur(20px)",
+          border: `1px solid ${T.border2}`,
+          boxShadow: darkMode
+            ? "0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.12)"
+            : "0 8px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(99,102,241,0.10)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          zIndex: 1199,
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: "12px 14px 11px",
+            borderBottom: `1px solid ${T.border}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexShrink: 0,
+            background: darkMode ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)",
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 15, color: "white", fontWeight: 700,
+            }}>✦</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>StackIQ AI</div>
+              <div style={{ fontSize: 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 4px #22c55e" }} />
+                Live market context
+              </div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div
+            ref={chatMessagesRef}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "14px 12px 8px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {chatHistory.map((m, i) => (
+              <div key={i} style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: m.role === "user" ? "flex-end" : "flex-start",
+              }}>
+                <div style={{
+                  padding: "8px 12px",
+                  borderRadius: m.role === "user" ? "14px 14px 3px 14px" : "4px 14px 14px 14px",
+                  fontSize: 12.5,
+                  lineHeight: 1.55,
+                  maxWidth: "84%",
+                  wordBreak: "break-word",
+                  background: m.role === "user"
+                    ? "linear-gradient(135deg, #6366f1, #7c3aed)"
+                    : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+                  color: m.role === "user" ? "#f1f5f9" : T.text,
+                  border: m.role === "user" ? "none" : `1px solid ${T.border}`,
+                }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                padding: "9px 13px",
+                background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+                border: `1px solid ${T.border}`,
+                borderRadius: "4px 14px 14px 14px",
+                alignSelf: "flex-start",
+              }}>
+                {[0, 1, 2].map(d => (
+                  <div key={d} style={{
+                    width: 5, height: 5, borderRadius: "50%", background: "#6366f1",
+                    animation: "sqBounce 1.1s infinite ease-in-out",
+                    animationDelay: `${d * 0.18}s`,
+                  }} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick chips — only before first message */}
+          {chatHistory.length <= 1 && (
+            <div style={{ padding: "0 12px 8px", display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {["Top pick?", "Win rate?", "Best signal?", "Market regime?"].map(s => (
+                <button
+                  key={s}
+                  onClick={async () => {
+                    if (chatLoading) return;
+                    const newHistory = [...chatHistory, { role: "user", content: s }];
+                    setChatHistory(newHistory);
+                    setChatLoading(true);
+                    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+                    await new Promise(r => setTimeout(r, 420 + Math.random() * 280));
+                    const reply = buildChatReply(s);
+                    setChatHistory(h => [...h, { role: "assistant", content: reply }]);
+                    setChatLoading(false);
+                    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+                  }}
+                  style={{
+                    background: darkMode ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.08)",
+                    color: "#818cf8",
+                    border: "1px solid rgba(99,102,241,0.22)",
+                    borderRadius: 20,
+                    padding: "4px 10px", fontSize: 11.5, cursor: "pointer",
+                    transition: "background 0.15s",
+                    fontFamily: "inherit",
+                  }}
+                >{s}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Input row */}
+          <div style={{
+            padding: "8px 12px 12px",
+            borderTop: `1px solid ${T.border}`,
+            display: "flex",
+            gap: 7,
+            alignItems: "flex-end",
+            flexShrink: 0,
+          }}>
+            <textarea
+              ref={chatInputRef}
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+              placeholder="Ask about picks, signals…"
+              rows={1}
+              disabled={chatLoading}
+              style={{
+                flex: 1, resize: "none",
+                background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                border: `1px solid ${T.border2}`,
+                borderRadius: 10,
+                color: T.text, fontSize: 12.5, padding: "8px 11px",
+                fontFamily: "inherit", lineHeight: 1.45, outline: "none",
+                maxHeight: 80, overflow: "auto",
+                transition: "border-color 0.15s",
+              }}
+            />
+            <button
+              onClick={sendChatMessage}
+              disabled={chatLoading || !chatInput.trim()}
+              style={{
+                width: 36, height: 36,
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                border: "none", borderRadius: 10, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+                opacity: (chatLoading || !chatInput.trim()) ? 0.35 : 1,
+                transition: "opacity 0.15s",
+                fontSize: 13, color: "white",
+              }}
+            >➤</button>
+          </div>
+        </div>
+      )}
+      {/* ── end floating chat ─────────────────────────────────────────────── */}
+
       {showAnalyzeModal ? (
         <div className="modalOverlay" onClick={() => setShowAnalyzeModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -8509,7 +9041,7 @@ const renderPage = () => {
                     <div style={{ fontWeight: 700, fontSize: 16, color: "rgba(248,113,113,0.9)" }}>{maxLoss != null ? fmt2(maxLoss) : "—"}</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 16 }}>
                   Based on 2% account risk of {fmt2(acctNum)} account value.
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
