@@ -5524,7 +5524,7 @@ async function loadWatchlistLive() {
 
       const marketRegime = String(best0?.market_regime || bestPayload0?.market_regime || "").trim().toUpperCase();
 
-      const isLowConviction = Boolean(best0?.low_conviction || bestPayload0?.low_conviction);
+      const isLowConviction = Boolean(best0?.low_conviction || bestPayload0?.low_conviction) || tradeDec === "LOW_CONVICTION";
       const lowConvictionNote = String(best0?.low_conviction_note || bestPayload0?.low_conviction_note || "").trim();
 
       // Scores — ONLY from bestPickData
@@ -5716,51 +5716,48 @@ async function loadWatchlistLive() {
             {/* ── Divider ────────────────────────────────────── */}
             <div style={{ height: 1, background: T.bg3, marginBottom: 20 }} />
 
-            {/* ── Top Watchlist Candidate ────────────────────── */}
+            {/* ── Top Watchlist Candidate (starter+ only) ────── */}
             {showCandidate ? (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 12 }}>
                   Top Watchlist Candidate
                 </div>
-                <div style={{
-                  background: "rgba(99,179,237,0.04)", border: "1px solid rgba(99,179,237,0.12)",
-                  borderRadius: 12, padding: "16px 18px",
-                }}>
-                  {/* Symbol + price + AI score row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: T.text }}>{candidateSym}</span>
-                    {candidatePrice != null ? (
-                      <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>
-                        Near ${candidatePrice.toFixed(2)}
-                      </span>
-                    ) : null}
-                    {conf100 != null ? (
-                      <span style={{
-                        fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5,
-                        background: "rgba(99,179,237,0.10)", border: "1px solid rgba(99,179,237,0.20)",
-                        color: "rgba(147,210,255,0.80)", letterSpacing: "0.04em", marginLeft: "auto",
-                      }}>AI {conf100}/100</span>
-                    ) : null}
-                  </div>
-                  {/* Signal pills */}
-                  {noTradeEdgeSignals.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-                      {noTradeEdgeSignals.slice(0, 5).map((sig, i) => (
-                        <span key={`csig_${i}`} style={{
-                          padding: "3px 9px", borderRadius: 5, fontSize: 11, fontWeight: 600,
-                          background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.16)",
-                          color: "rgba(147,210,255,0.65)", letterSpacing: "0.03em", whiteSpace: "nowrap",
-                        }}>{fmt(sig)}</span>
-                      ))}
+                <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}>
+                  <div style={{
+                    background: "rgba(99,179,237,0.04)", border: "1px solid rgba(99,179,237,0.12)",
+                    borderRadius: 12, padding: "16px 18px",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: T.text }}>{candidateSym}</span>
+                      {candidatePrice != null ? (
+                        <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>Near ${candidatePrice.toFixed(2)}</span>
+                      ) : null}
+                      {conf100 != null ? (
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 5,
+                          background: "rgba(99,179,237,0.10)", border: "1px solid rgba(99,179,237,0.20)",
+                          color: "rgba(147,210,255,0.80)", letterSpacing: "0.04em", marginLeft: "auto",
+                        }}>AI {conf100}/100</span>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {/* Action row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, color: T.textFaint, fontStyle: "italic" }}>
-                      Did not pass conviction threshold — monitoring for confirmation
-                    </span>
+                    {noTradeEdgeSignals.length > 0 ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                        {noTradeEdgeSignals.slice(0, 5).map((sig, i) => (
+                          <span key={`csig_${i}`} style={{
+                            padding: "3px 9px", borderRadius: 5, fontSize: 11, fontWeight: 600,
+                            background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.16)",
+                            color: "rgba(147,210,255,0.65)", letterSpacing: "0.03em", whiteSpace: "nowrap",
+                          }}>{fmt(sig)}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, color: T.textFaint, fontStyle: "italic" }}>
+                        Monitoring for conviction confirmation — upgrade to see full details
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </PlanGate>
               </div>
             ) : null}
 
@@ -5853,12 +5850,19 @@ async function loadWatchlistLive() {
           <div className="heroBody">
             <div className="heroTop">
               <div className="heroLeft">
-                <div className="aiPickLabel">{isLowConviction ? "LOW CONVICTION ENVIRONMENT" : "Today's AI Pick"}</div>
-                {isLowConviction ? (
-                  <div style={{ fontSize: 14, color: T.textMuted, marginTop: 8, maxWidth: 340, lineHeight: 1.5 }}>
-                    {lowConvictionNote || "Low-conviction environment — defensive positioning preferred."}
-                  </div>
-                ) : (
+                <div className="aiPickLabel">
+                  {isLowConviction ? "Today's AI Pick" : "Today's AI Pick"}
+                  {isLowConviction && (
+                    <span style={{
+                      display: "inline-block", marginLeft: 10,
+                      fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+                      padding: "2px 7px", borderRadius: 4,
+                      background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.30)",
+                      color: "rgba(251,191,36,0.85)", verticalAlign: "middle",
+                    }}>MODERATE</span>
+                  )}
+                </div>
+                {false ? null : (
                   <>
                     <div className="heroTicker">{ticker || "—"}</div>
                     <div className="heroPrice">
@@ -5891,16 +5895,16 @@ async function loadWatchlistLive() {
                   <div
                     className="heroConvictionBadge"
                     style={{
-                      color: T.textFaint,
-                      boxShadow: "none",
-                      background: T.bg2,
-                      borderColor: T.textHint,
+                      color: "rgba(251,191,36,0.9)",
+                      boxShadow: "0 0 16px rgba(251,191,36,0.15)",
+                      background: "rgba(251,191,36,0.08)",
+                      borderColor: "rgba(251,191,36,0.25)",
                       fontSize: 11,
                       letterSpacing: "0.08em",
                       padding: "6px 14px",
                     }}
                   >
-                    DEFENSIVE
+                    MODERATE
                   </div>
                 ) : marketRegime ? (
                   <div
