@@ -16,28 +16,64 @@ function MobileBlock() {
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      background: "#07090f", padding: "32px 24px", textAlign: "center",
+      background: "#07090f", padding: "40px 24px", textAlign: "center",
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      position: "relative", overflow: "hidden",
     }}>
+      {/* Subtle glow */}
       <div style={{
-        width: 52, height: 52, borderRadius: 14, background: "#00b450",
+        position: "absolute", top: "30%", left: "50%", transform: "translate(-50%, -50%)",
+        width: 320, height: 320, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(0,180,80,0.07) 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Logo */}
+      <div style={{
+        width: 56, height: 56, borderRadius: 16, background: "#00b450",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 26, fontWeight: 900, color: "#fff", marginBottom: 28,
+        fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 24,
+        boxShadow: "0 4px 24px rgba(0,180,80,0.30)",
       }}>A</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 12 }}>
-        Aurexis is built for desktop
+
+      {/* Wordmark */}
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.18em", color: "rgba(255,255,255,0.30)", marginBottom: 20, textTransform: "uppercase" }}>
+        Aurexis
       </div>
-      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, maxWidth: 300, marginBottom: 32 }}>
-        The trading dashboard requires a larger screen to use properly. Open it on your laptop or desktop computer for the full experience.
+
+      {/* Headline */}
+      <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.25, marginBottom: 12, maxWidth: 280 }}>
+        Open this on your computer
       </div>
+
+      {/* Subtext */}
+      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", lineHeight: 1.65, maxWidth: 270, marginBottom: 36 }}>
+        The Aurexis trading dashboard is designed for desktop. Head to your laptop or computer to get the full experience.
+      </div>
+
+      {/* URL card */}
       <div style={{
-        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 12, padding: "16px 20px", fontSize: 13,
-        color: "rgba(255,255,255,0.35)", lineHeight: 1.5, maxWidth: 280,
+        background: "rgba(0,180,80,0.06)", border: "1px solid rgba(0,180,80,0.18)",
+        borderRadius: 14, padding: "14px 22px", marginBottom: 32,
       }}>
-        <span style={{ color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>On your computer,</span>
-        {" "}visit{" "}
-        <span style={{ color: "#4ade80", fontWeight: 600 }}>useaurexis.com/app</span>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 6 }}>
+          Visit on desktop
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#4ade80", letterSpacing: "-0.01em" }}>
+          useaurexis.com/app
+        </div>
+      </div>
+
+      {/* Mobile app coming soon pill */}
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 7,
+        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 99, padding: "8px 16px",
+      }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15" }} />
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
+          Mobile app coming soon
+        </span>
       </div>
     </div>
   );
