@@ -2244,24 +2244,49 @@ function usePlan() {
 function canAccess(userPlan, minPlan) {
   return (PLAN_RANK[userPlan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
 }
+
+const ANALYZE_FREE_LIMIT = 3;
+function _analyzeUsageKey() { return `aurexis_analyze_${new Date().toISOString().slice(0,10)}`; }
+function getAnalyzeUsedToday() { return parseInt(localStorage.getItem(_analyzeUsageKey()) || "0", 10); }
+function incrementAnalyzeUsage() { localStorage.setItem(_analyzeUsageKey(), String(getAnalyzeUsedToday() + 1)); }
+function analyzeRemaining(plan) {
+  if (canAccess(plan, "starter")) return Infinity;
+  return Math.max(0, ANALYZE_FREE_LIMIT - getAnalyzeUsedToday());
+}
 function PlanGate({ requires, userPlan, children, setTab }) {
   if (canAccess(userPlan, requires)) return children;
   const label = requires.charAt(0).toUpperCase() + requires.slice(1);
+  const prices = { starter: "$9", pro: "$29", elite: "$99" };
+  const taglines = {
+    starter: "entry & stop targets, edge signals, picks history",
+    pro: "screener, portfolio tracker & advanced analytics",
+    elite: "options flow, insider activity & elite signals",
+  };
   return (
     <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ filter: "blur(7px)", pointerEvents: "none", userSelect: "none", opacity: 0.28 }}>{children}</div>
+      <div style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none", opacity: 0.55 }}>{children}</div>
       <div style={{
         position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 8,
-        background: "rgba(7,11,18,0.78)", backdropFilter: "blur(4px)", borderRadius: 14,
+        alignItems: "center", justifyContent: "flex-end", padding: "0 24px 32px",
+        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.6) 40%, rgba(7,9,16,0.94) 100%)",
       }}>
-        <span style={{ fontSize: 22 }}>🔒</span>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.92)", textAlign: "center" }}>{label} plan required</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", textAlign: "center", maxWidth: 190, lineHeight: 1.5 }}>Upgrade to unlock this feature</div>
-        <button
-          onClick={() => setTab("pricing")}
-          style={{ marginTop: 4, padding: "8px 20px", borderRadius: 8, cursor: "pointer", background: "linear-gradient(135deg,#16a34a,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em" }}
-        >Upgrade →</button>
+        <div style={{ textAlign: "center", maxWidth: 360 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.28)", borderRadius: 20, padding: "3px 12px", marginBottom: 10 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label} · {prices[requires]}/mo</span>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5, letterSpacing: "-0.01em" }}>
+            Unlock {taglines[requires]}
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginBottom: 18, lineHeight: 1.6 }}>
+            This is a live preview of what {label} members see.
+          </div>
+          <button onClick={() => setTab("pricing")} style={{
+            padding: "10px 28px", borderRadius: 10, cursor: "pointer",
+            background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff",
+            border: "none", fontSize: 13, fontWeight: 700, letterSpacing: "0.02em",
+            boxShadow: "0 0 24px rgba(0,180,80,0.30)",
+          }}>Upgrade to {label} →</button>
+        </div>
       </div>
     </div>
   );
@@ -3649,6 +3674,14 @@ async function loadWatchlistLive() {
 
   async function handleAnalyze() {
     if (loadingAnalyze) return;
+
+    // Enforce daily analyze limit for free users
+    if (!canAccess(userPlan, "starter") && analyzeRemaining(userPlan) <= 0) {
+      setTab("pricing");
+      showToast?.("Daily limit reached — upgrade to Starter for unlimited analyzes.");
+      return;
+    }
+
     try {
       setLastAnalyzeClickAt?.(Date.now());
 
@@ -3663,10 +3696,10 @@ async function loadWatchlistLive() {
         return;
       }
 
+      if (!canAccess(userPlan, "starter")) incrementAnalyzeUsage();
+
       const payload = await runAnalyze(s);
 
-      // Do not auto-open the analyze modal overlay.
-      // Keep analysis in-place on the dashboard.
       if (payload) {
         setAnalyzeModalSymbol?.(s);
       }
@@ -5603,18 +5636,18 @@ async function loadWatchlistLive() {
                 </div>
               ) : (
                 <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "4px 0 2px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(5px)", opacity: 0.3, pointerEvents: "none" }}>
-                    {["Entry","Stop","Target"].map(lbl => (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(4px)", opacity: 0.6, pointerEvents: "none" }}>
+                    {[["Entry","$—"],["Stop","$—"],["Target","$—"]].map(([lbl, val]) => (
                       <div key={lbl} style={{ background: darkMode ? "rgba(10,14,26,0.85)" : "rgba(240,242,248,0.90)", padding: "10px 14px" }}>
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>{lbl}</div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>$—</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: lbl === "Stop" ? "rgba(248,113,113,0.85)" : lbl === "Target" ? "rgba(134,239,172,0.85)" : T.text }}>{val}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(7,11,18,0.75)", borderRadius: 12 }}>
-                    <span style={{ fontSize: 18 }}>🔒</span>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Starter plan required</div>
-                    <button onClick={() => setTab("pricing")} style={{ padding: "5px 14px", borderRadius: 7, background: "#16a34a", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, background: "linear-gradient(135deg,rgba(7,11,18,0.82),rgba(7,11,18,0.70))", borderRadius: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>Unlock entry, stop &amp; targets</div>
+                    <button onClick={() => setTab("pricing")} style={{ marginTop: 2, padding: "5px 16px", borderRadius: 7, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px rgba(0,180,80,0.25)" }}>Upgrade →</button>
                   </div>
                 </div>
               )
@@ -5627,11 +5660,18 @@ async function loadWatchlistLive() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{Math.round(ai100)}</span>
                 </div>
               ) : null}
-              {Number.isFinite(rrN) && rrN > 0 && canAccess(userPlan, "starter") ? (
-                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{rrN.toFixed(2)}</span>
-                </div>
+              {Number.isFinite(rrN) && rrN > 0 ? (
+                canAccess(userPlan, "starter") ? (
+                  <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{rrN.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: 6, alignItems: "baseline", filter: "blur(4px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>2.4</span>
+                  </div>
+                )
               ) : null}
               {positionSizePct !== null && Number.isFinite(Number(positionSizePct)) ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
@@ -5641,14 +5681,20 @@ async function loadWatchlistLive() {
               ) : null}
             </div>
 
-            {edgeSignals.length > 0 && canAccess(userPlan, "starter") ? (
-              <div className="edgeSignals" style={{ marginBottom: 14 }}>
-                {edgeSignals.slice(0, 5).map((sig, i) => (
-                  <span key={`edge_${i}`} className="edgeSignalBadge">
-                    {fmt(sig)}
-                  </span>
-                ))}
-              </div>
+            {edgeSignals.length > 0 ? (
+              canAccess(userPlan, "starter") ? (
+                <div className="edgeSignals" style={{ marginBottom: 14 }}>
+                  {edgeSignals.slice(0, 5).map((sig, i) => (
+                    <span key={`edge_${i}`} className="edgeSignalBadge">{fmt(sig)}</span>
+                  ))}
+                </div>
+              ) : (
+                <div className="edgeSignals" style={{ marginBottom: 14, filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  {edgeSignals.slice(0, 5).map((sig, i) => (
+                    <span key={`edge_${i}`} className="edgeSignalBadge">{fmt(sig)}</span>
+                  ))}
+                </div>
+              )
             ) : null}
 
             <div className="heroActions">
@@ -5786,21 +5832,28 @@ async function loadWatchlistLive() {
           </div>
 
           <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }}>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  padding: "8px 14px", fontSize: 12.5,
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                  color: activeTab === tab.id ? T.text : T.textFaint,
-                  borderBottom: activeTab === tab.id ? `2px solid ${T.textSec}` : "2px solid transparent",
-                  marginBottom: "-1px", transition: "color 0.15s ease, border-color 0.15s ease",
-                  letterSpacing: "0.02em", fontFamily: "inherit",
-                }}
-              >{tab.label}</button>
-            ))}
+            {tabs.map(t => {
+              const tabLocked = !canAccess(userPlan, "starter") && (t.id === "summary" || t.id === "metrics");
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "8px 14px", fontSize: 12.5,
+                    fontWeight: activeTab === t.id ? 700 : 500,
+                    color: activeTab === t.id ? T.text : T.textFaint,
+                    borderBottom: activeTab === t.id ? `2px solid ${T.textSec}` : "2px solid transparent",
+                    marginBottom: "-1px", transition: "color 0.15s ease, border-color 0.15s ease",
+                    letterSpacing: "0.02em", fontFamily: "inherit",
+                    display: "flex", alignItems: "center", gap: 5,
+                  }}
+                >
+                  {t.label}
+                  {tabLocked && <span style={{ fontSize: 9, background: "rgba(0,180,80,0.15)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
+                </button>
+              );
+            })}
           </div>
 
           <div style={{ flex: 1, padding: "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
@@ -5870,7 +5923,23 @@ async function loadWatchlistLive() {
               )
             )}
 
-            {activeTab === "summary" && (
+            {activeTab === "summary" && !canAccess(userPlan, "starter") && (
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 120 }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {["Bullish catalyst in earnings revision cycle", "Institutional accumulation detected", "Short interest declining — covering pressure"].map((txt, i) => (
+                      <div key={i} style={{ padding: "10px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 8, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>● {txt}</div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(to bottom, rgba(7,9,16,0.2), rgba(7,9,16,0.88))" }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Unlock AI sentiment analysis</div>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 4, padding: "7px 18px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                </div>
+              </div>
+            )}
+            {activeTab === "summary" && canAccess(userPlan, "starter") && (
               !a || !summaryHasContent ? (
                 <div className="mutedSmall">Sentiment data will appear after analysis.</div>
               ) : (
@@ -5911,7 +5980,29 @@ async function loadWatchlistLive() {
               )
             )}
 
-            {activeTab === "metrics" && (
+            {activeTab === "metrics" && !canAccess(userPlan, "starter") && (
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 120 }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {[["Momentum", 78], ["RSI", 62], ["Volume Strength", 84], ["Trend Score", 71]].map(([lbl, val]) => (
+                      <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 90, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{lbl}</div>
+                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)" }}>
+                          <div style={{ width: `${val}%`, height: "100%", borderRadius: 3, background: "rgba(34,197,94,0.7)" }} />
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", width: 28, textAlign: "right" }}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(to bottom, rgba(7,9,16,0.2), rgba(7,9,16,0.88))" }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Unlock advanced technical metrics</div>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 4, padding: "7px 18px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                </div>
+              </div>
+            )}
+            {activeTab === "metrics" && canAccess(userPlan, "starter") && (
               !a ? (
                 <div className="mutedSmall">{analyzeFallbackText}</div>
               ) : (
@@ -6592,49 +6683,97 @@ async function loadWatchlistLive() {
               <button className="btn btn--ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={loadMovers}>Retry</button>
             </div>
           ) : sorted?.length ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={thStyle} onClick={() => onSort("symbol")}>Symbol</th>
-                  <th style={thStyle} onClick={() => onSort("price")}>Last</th>
-                  <th style={thStyle} onClick={() => onSort("pct_change")}>% Change</th>
-                  <th style={thStyle} onClick={() => onSort("volume")}>Volume</th>
-                </tr>
-              </thead>
-              <tbody style={loadingMovers ? { opacity: 0.65 } : undefined}>
-                {sorted.map((m) => {
-                  const status = String(m?.data_status ?? m?.dataStatus ?? "").toLowerCase();
-                  const isAuthError = status === "auth_error";
-                  const lastValRaw = m?.price ?? m?.last_price ?? m?.lastPrice ?? m?.last;
-                  const lastVal = isAuthError ? null : lastValRaw;
-                  const priorClose = m?.prior_close ?? m?.priorClose ?? m?.prev_close ?? m?.prevClose;
-                  const chgValRaw = m?.pct_change ?? m?.change_percent ?? m?.pctChange ?? m?.change_pct ?? m?.changePct;
-                  const chgVal0 = isAuthError ? null : chgValRaw;
-                  const chgVal = Number(chgVal0) === 0 && Number.isFinite(Number(priorClose)) && Number.isFinite(Number(lastVal)) && Number(priorClose) !== 0
-                    ? ((Number(lastVal) - Number(priorClose)) / Number(priorClose)) * 100
-                    : chgVal0;
-                  const volValRaw = m?.volume;
-                  const volVal = isAuthError ? null : volValRaw;
-                  const chg = fmtSignedPct(chgVal);
+            (() => {
+              const FREE_MOVERS_LIMIT = 5;
+              const isFreeUser = !canAccess(userPlan, "starter");
+              const visibleMovers = isFreeUser ? sorted.slice(0, FREE_MOVERS_LIMIT) : sorted;
+              const hiddenCount = isFreeUser ? Math.max(0, sorted.length - FREE_MOVERS_LIMIT) : 0;
 
-                  return (
-                    <tr
-                      key={m.symbol}
-                      className="rowClickable"
-                      onClick={() => onSelectMover(m.symbol)}
-                      title="Click to load"
-                    >
-                      <td>
-                        <b style={{ fontSize: 13.5 }}>{m?.symbol ?? "—"}</b>
-                      </td>
-                      <td>{lastVal === null || lastVal === undefined || !Number.isFinite(Number(lastVal)) || Number(lastVal) <= 0 ? "—" : money(lastVal)}</td>
-                      <td className={chg.cls} style={{ fontWeight: 800 }}>{chg.text}</td>
-                      <td>{volVal === null || volVal === undefined || !Number.isFinite(Number(volVal)) || Number(volVal) <= 0 ? "—" : fmtVol(volVal)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              const renderRow = (m) => {
+                const status = String(m?.data_status ?? m?.dataStatus ?? "").toLowerCase();
+                const isAuthError = status === "auth_error";
+                const lastValRaw = m?.price ?? m?.last_price ?? m?.lastPrice ?? m?.last;
+                const lastVal = isAuthError ? null : lastValRaw;
+                const priorClose = m?.prior_close ?? m?.priorClose ?? m?.prev_close ?? m?.prevClose;
+                const chgValRaw = m?.pct_change ?? m?.change_percent ?? m?.pctChange ?? m?.change_pct ?? m?.changePct;
+                const chgVal0 = isAuthError ? null : chgValRaw;
+                const chgVal = Number(chgVal0) === 0 && Number.isFinite(Number(priorClose)) && Number.isFinite(Number(lastVal)) && Number(priorClose) !== 0
+                  ? ((Number(lastVal) - Number(priorClose)) / Number(priorClose)) * 100
+                  : chgVal0;
+                const volValRaw = m?.volume;
+                const volVal = isAuthError ? null : volValRaw;
+                const chg = fmtSignedPct(chgVal);
+                return (
+                  <tr
+                    key={m.symbol}
+                    className="rowClickable"
+                    onClick={() => onSelectMover(m.symbol)}
+                    title="Click to load"
+                  >
+                    <td><b style={{ fontSize: 13.5 }}>{m?.symbol ?? "—"}</b></td>
+                    <td>{lastVal === null || lastVal === undefined || !Number.isFinite(Number(lastVal)) || Number(lastVal) <= 0 ? "—" : money(lastVal)}</td>
+                    <td className={chg.cls} style={{ fontWeight: 800 }}>{chg.text}</td>
+                    <td>{volVal === null || volVal === undefined || !Number.isFinite(Number(volVal)) || Number(volVal) <= 0 ? "—" : fmtVol(volVal)}</td>
+                  </tr>
+                );
+              };
+
+              return (
+                <div style={{ position: "relative" }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th style={thStyle} onClick={() => onSort("symbol")}>Symbol</th>
+                        <th style={thStyle} onClick={() => onSort("price")}>Last</th>
+                        <th style={thStyle} onClick={() => onSort("pct_change")}>% Change</th>
+                        <th style={thStyle} onClick={() => onSort("volume")}>Volume</th>
+                      </tr>
+                    </thead>
+                    <tbody style={loadingMovers ? { opacity: 0.65 } : undefined}>
+                      {visibleMovers.map(renderRow)}
+                    </tbody>
+                  </table>
+                  {isFreeUser && hiddenCount > 0 && (
+                    <div style={{ position: "relative", marginTop: -2, borderRadius: "0 0 10px 10px", overflow: "hidden" }}>
+                      {/* Blurred preview rows */}
+                      <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none", opacity: 0.45 }}>
+                        <table className="table" style={{ marginTop: 0 }}>
+                          <tbody>
+                            {sorted.slice(FREE_MOVERS_LIMIT, FREE_MOVERS_LIMIT + 4).map(renderRow)}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Gradient + upgrade CTA overlay */}
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        display: "flex", flexDirection: "column",
+                        alignItems: "center", justifyContent: "flex-end",
+                        padding: "0 24px 20px",
+                        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.60) 35%, rgba(7,9,16,0.94) 100%)",
+                      }}>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.28)", borderRadius: 20, padding: "3px 12px", marginBottom: 8 }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</span>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 4, letterSpacing: "-0.01em" }}>
+                            {hiddenCount} more movers hidden
+                          </div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginBottom: 14, lineHeight: 1.5 }}>
+                            Upgrade to Starter for the full movers list.
+                          </div>
+                          <button onClick={() => setTab("pricing")} style={{
+                            padding: "9px 24px", borderRadius: 10, cursor: "pointer",
+                            background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff",
+                            border: "none", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em",
+                            boxShadow: "0 0 20px rgba(0,180,80,0.28)",
+                          }}>Upgrade to Starter →</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div className="mutedSmall">No liquid movers available (UI filter: price ≥ $1 and volume ≥ 10k).</div>
           )}
@@ -7967,6 +8106,45 @@ async function loadWatchlistLive() {
     const memberSince = userProfile?.created_at
       ? new Date(userProfile.created_at).getFullYear()
       : new Date().getFullYear();
+    const isPaidPlan = plan !== "free" && userProfile?.subscription_status === "active";
+    const isCancelling = userProfile?.cancel_at_period_end;
+    const periodEndDate = userProfile?.current_period_end
+      ? new Date(userProfile.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+      : null;
+    const planLabel = plan === "free" ? "Free" : plan.charAt(0).toUpperCase() + plan.slice(1);
+
+    const [cancelLoading, setCancelLoading] = React.useState(false);
+
+    async function handleCancelSubscription() {
+      if (!window.confirm("Cancel your subscription? You'll keep full access until the end of your billing period.")) return;
+      setCancelLoading(true);
+      try {
+        const token = localStorage.getItem("aurexis_token");
+        const r = await fetch(`${API}/stripe/cancel-subscription`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) throw new Error();
+        const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
+        setUserProfile(me);
+        showToast("Subscription cancelled. Access continues until " + (periodEndDate || "end of period") + ".");
+      } catch { showToast("Something went wrong. Please try again."); }
+      finally { setCancelLoading(false); }
+    }
+
+    async function handleReactivateSubscription() {
+      setCancelLoading(true);
+      try {
+        const token = localStorage.getItem("aurexis_token");
+        const r = await fetch(`${API}/stripe/reactivate-subscription`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) throw new Error();
+        const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
+        setUserProfile(me);
+        showToast("Subscription reactivated — you're all set.");
+      } catch { showToast("Something went wrong. Please try again."); }
+      finally { setCancelLoading(false); }
+    }
     const displayName = firstName || lastName
       ? `${firstName} ${lastName}`.trim()
       : email || "Aurexis User";
@@ -8075,15 +8253,46 @@ async function loadWatchlistLive() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={settingsSectionTitle}>Plan &amp; Billing</div>
-              <div style={{ ...settingsSectionSub, marginTop: 4 }}>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>Free</b> plan. Power and Pro tiers are coming soon with alerts, portfolio sync, and strategy backtesting.</div>
+              <div style={{ ...settingsSectionSub, marginTop: 4 }}>
+                {isPaidPlan
+                  ? isCancelling
+                    ? <>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.75)" : "rgba(8,10,22,0.75)" }}>{planLabel}</b> plan. Cancels on <b style={{ color: "#f87171" }}>{periodEndDate}</b> — you'll keep full access until then.</>
+                    : <>You're on the <b style={{ color: "#4ade80" }}>{planLabel}</b> plan. Your subscription renews automatically.</>
+                  : <>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>Free</b> plan. Upgrade to unlock full picks, analysis, and scanner access.</>
+                }
+              </div>
             </div>
-            <button
-              className="btn btn--ghost"
-              style={{ fontSize: 11, padding: "5px 12px", flexShrink: 0, marginLeft: 16 }}
-              onClick={() => setTab("pricing")}
-            >
-              Upgrade
-            </button>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 16 }}>
+              {isPaidPlan && isCancelling && (
+                <button
+                  className="btn btn--primary"
+                  style={{ fontSize: 11, padding: "5px 12px" }}
+                  onClick={handleReactivateSubscription}
+                  disabled={cancelLoading}
+                >
+                  {cancelLoading ? "…" : "Reactivate"}
+                </button>
+              )}
+              {isPaidPlan && !isCancelling && (
+                <button
+                  className="btn btn--ghost"
+                  style={{ fontSize: 11, padding: "5px 12px", color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}
+                  onClick={handleCancelSubscription}
+                  disabled={cancelLoading}
+                >
+                  {cancelLoading ? "…" : "Cancel Plan"}
+                </button>
+              )}
+              {!isPaidPlan && (
+                <button
+                  className="btn btn--primary"
+                  style={{ fontSize: 11, padding: "5px 12px" }}
+                  onClick={() => setTab("pricing")}
+                >
+                  Upgrade
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -8242,6 +8451,64 @@ async function loadWatchlistLive() {
     const [upgradeLoading, setUpgradeLoading] = React.useState(null);
     const [upgradeError, setUpgradeError] = React.useState("");
 
+    // Feature matrix definition
+    const FEATURE_CATEGORIES = [
+      {
+        label: "AI Pick",
+        features: [
+          { key: "daily_pick",    label: "Daily AI pick (stock + direction)" },
+          { key: "entry_targets", label: "Live entry, stop & Fibonacci targets" },
+          { key: "rr_ratio",      label: "Risk/Reward ratio" },
+          { key: "edge_signals",  label: "Edge signals" },
+        ],
+      },
+      {
+        label: "Analysis",
+        features: [
+          { key: "analyze_limit",  label: "3 stock analyses per day" },
+          { key: "analyze_unltd",  label: "Unlimited stock analysis" },
+          { key: "why_this_trade", label: "\"Why This Trade\" reasoning" },
+          { key: "ai_summary",     label: "AI news & sentiment summary" },
+          { key: "adv_metrics",    label: "Advanced technical metrics" },
+        ],
+      },
+      {
+        label: "Dashboard",
+        features: [
+          { key: "market_regime",  label: "Market regime indicator" },
+          { key: "top_movers_5",   label: "Top Movers (5 tickers)" },
+          { key: "top_movers_all", label: "Top Movers (full, unlimited)" },
+          { key: "perf_tracking",  label: "Performance tracking" },
+          { key: "recent_picks",   label: "Recent picks history (30 days)" },
+        ],
+      },
+      {
+        label: "Tools",
+        features: [
+          { key: "watchlist",      label: "Watchlist" },
+          { key: "trade_journal",  label: "Trade journal" },
+          { key: "screener",       label: "Multi-ticker screener" },
+          { key: "portfolio",      label: "Portfolio tracking" },
+        ],
+      },
+      {
+        label: "Elite",
+        features: [
+          { key: "options_flow",   label: "Options flow feed" },
+          { key: "insider",        label: "Insider buying signals" },
+          { key: "backtesting",    label: "Strategy backtesting" },
+          { key: "priority_sup",   label: "Priority support" },
+        ],
+      },
+    ];
+
+    const PLAN_FEATURES = {
+      free:    new Set(["daily_pick", "market_regime", "top_movers_5", "analyze_limit", "why_this_trade"]),
+      starter: new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal"]),
+      pro:     new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio"]),
+      elite:   new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio", "options_flow", "insider", "backtesting", "priority_sup"]),
+    };
+
     const plans = [
       {
         id: "free",
@@ -8249,14 +8516,9 @@ async function loadWatchlistLive() {
         price: "$0",
         period: "forever",
         badge: null,
+        badgeColor: null,
         accent: T.borderStrong,
         btnLabel: "Get Started Free",
-        features: [
-          "Yesterday's AI pick (24h delayed)",
-          "Top movers dashboard",
-          "Market regime indicator",
-          "1 stock analysis per day",
-        ],
       },
       {
         id: "starter",
@@ -8267,17 +8529,6 @@ async function loadWatchlistLive() {
         badgeColor: "#00b450",
         accent: "rgba(0,180,80,0.55)",
         btnLabel: "Get Starter",
-        features: [
-          "Today's AI pick, live",
-          "Entry, stop & target levels",
-          "Trade plan + R/R ratio",
-          "Edge signals",
-          "Unlimited AI analysis",
-          "Performance tracking",
-          "Recent picks history",
-          "Trade journal",
-          "Watchlist",
-        ],
       },
       {
         id: "pro",
@@ -8285,17 +8536,9 @@ async function loadWatchlistLive() {
         price: "$29",
         period: "per month",
         badge: null,
+        badgeColor: null,
         accent: "rgba(99,102,241,0.55)",
         btnLabel: "Get Pro",
-        features: [
-          "Everything in Starter",
-          "Full screener (multi-ticker)",
-          "Portfolio sync & tracking",
-          "Portfolio-aware analysis",
-          "Sector momentum alerts",
-          "Priority pick alerts",
-          "Priority support",
-        ],
       },
       {
         id: "elite",
@@ -8306,16 +8549,6 @@ async function loadWatchlistLive() {
         badgeColor: "#f59e0b",
         accent: "rgba(245,158,11,0.55)",
         btnLabel: "Join Elite",
-        features: [
-          "Everything in Pro",
-          "Options flow feed",
-          "Strategy backtesting",
-          "Custom sector scans",
-          "Advanced sector scans",
-          "Portfolio risk analysis",
-          "Multi-account support",
-          "Early feature access",
-        ],
       },
     ];
 
@@ -8364,9 +8597,9 @@ async function loadWatchlistLive() {
     }
 
     return (
-      <div style={{ padding: "28px 28px 40px", maxWidth: 960, margin: "0 auto" }}>
+      <div style={{ padding: "28px 20px 48px", maxWidth: 1100, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <div style={{ marginBottom: 36, textAlign: "center" }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>PRICING</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>Simple, transparent pricing.</div>
           <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
@@ -8378,23 +8611,24 @@ async function loadWatchlistLive() {
           </div>
         )}
 
-        {/* Plan grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        {/* Plan grid — 4 columns */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
           {plans.map((plan) => {
             const isCurrent = plan.id === userPlan;
             const isLoading = upgradeLoading === plan.id;
             const isPopular = plan.badge === "MOST POPULAR";
+            const planFeatures = PLAN_FEATURES[plan.id] || new Set();
+
             return (
-              <div key={plan.name} style={{
+              <div key={plan.id} style={{
                 borderRadius: 16,
                 border: `1px solid ${plan.accent}`,
                 background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.98)",
-                padding: "24px 20px 22px",
+                padding: "24px 18px 20px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 0,
                 position: "relative",
-                boxShadow: isPopular ? `0 0 0 1px ${plan.accent}, 0 4px 24px rgba(0,180,80,0.10)` : "none",
+                boxShadow: isPopular ? `0 0 0 1px ${plan.accent}, 0 4px 28px rgba(0,180,80,0.10)` : "none",
               }}>
                 {/* Badge */}
                 {plan.badge && (
@@ -8409,20 +8643,49 @@ async function loadWatchlistLive() {
                 )}
 
                 {/* Plan name */}
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.textFaint, marginBottom: 10 }}>{plan.name}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.textFaint, marginBottom: 8 }}>{plan.name}</div>
 
                 {/* Price */}
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
-                  <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: T.text, lineHeight: 1 }}>{plan.price}</span>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 2 }}>
+                  <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.03em", color: T.text, lineHeight: 1 }}>{plan.price}</span>
                 </div>
-                <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 20 }}>{plan.period}</div>
+                <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 18 }}>{plan.period}</div>
 
-                {/* Features */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
-                  {plan.features.map((f) => (
-                    <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <span style={{ color: "#00b450", fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
-                      <span style={{ fontSize: 12.5, color: T.textSec, lineHeight: 1.45 }}>{f}</span>
+                {/* Feature matrix */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+                  {FEATURE_CATEGORIES.map((cat) => (
+                    <div key={cat.label}>
+                      {/* Category label */}
+                      <div style={{
+                        fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+                        color: T.textFaint, marginBottom: 6, paddingBottom: 4,
+                        borderBottom: `1px solid ${T.border}`,
+                      }}>
+                        {cat.label}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        {cat.features.map((feat) => {
+                          const included = planFeatures.has(feat.key);
+                          return (
+                            <div key={feat.key} style={{ display: "flex", alignItems: "flex-start", gap: 7 }}>
+                              <span style={{
+                                flexShrink: 0, marginTop: 1, fontSize: 12, fontWeight: 700,
+                                color: included ? "#00b450" : (darkMode ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.20)"),
+                              }}>
+                                {included ? "✓" : "✗"}
+                              </span>
+                              <span style={{
+                                fontSize: 11.5,
+                                lineHeight: 1.45,
+                                color: included ? T.textSec : (darkMode ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.25)"),
+                                textDecoration: included ? "none" : "line-through",
+                              }}>
+                                {feat.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -8433,7 +8696,7 @@ async function loadWatchlistLive() {
                   disabled={isCurrent || isLoading}
                   style={{
                     display: "block",
-                    marginTop: 22,
+                    marginTop: 20,
                     padding: "10px 0",
                     borderRadius: 10,
                     textAlign: "center",
@@ -9127,6 +9390,14 @@ const renderPage = () => {
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                   {loadingAnalyze ? <span className="btnSpinner" /> : null}
                   <span>{loadingAnalyze ? "Analyzing…" : "Analyze"}</span>
+                  {!loadingAnalyze && !canAccess(userPlan, "starter") && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
+                      background: analyzeRemaining(userPlan) <= 1 ? "rgba(248,113,113,0.18)" : "rgba(255,255,255,0.12)",
+                      color: analyzeRemaining(userPlan) <= 1 ? "#fca5a5" : "rgba(255,255,255,0.55)",
+                      borderRadius: 4, padding: "1px 5px",
+                    }}>{analyzeRemaining(userPlan)}/{ANALYZE_FREE_LIMIT}</span>
+                  )}
                 </span>
               </RippleButton>
             </form>
