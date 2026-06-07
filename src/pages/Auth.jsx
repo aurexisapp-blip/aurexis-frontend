@@ -164,9 +164,10 @@ export default function Auth({ defaultView = "login" }) {
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
-            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} onClick={() => { window.location.href = `${API}/auth/apple/redirect`; }}>
+            <button type="button" disabled style={{ ...S.socialBtn, ...S.appleBtn, opacity: 0.45, cursor: "not-allowed", position: "relative" }}>
               <AppleIcon />
               <span>Continue with Apple</span>
+              <span style={S.comingSoon}>Soon</span>
             </button>
           </div>
 
@@ -272,9 +273,10 @@ export default function Auth({ defaultView = "login" }) {
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
-            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} onClick={() => { window.location.href = `${API}/auth/apple/redirect`; }}>
+            <button type="button" disabled style={{ ...S.socialBtn, ...S.appleBtn, opacity: 0.45, cursor: "not-allowed", position: "relative" }}>
               <AppleIcon />
               <span>Continue with Apple</span>
+              <span style={S.comingSoon}>Soon</span>
             </button>
           </div>
 
