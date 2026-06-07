@@ -71,7 +71,15 @@ export default function Auth({ defaultView = "login" }) {
       const data = await res.json();
       if (!res.ok) { setError(data?.detail || data?.message || "Login failed. Check your credentials."); return; }
       const token = data?.access_token || data?.token;
-      if (token) localStorage.setItem("aurexis_token", token);
+      if (token) {
+        // Detect account switch — clear onboarding flag if logging in as a different user
+        const prevUser = localStorage.getItem("aurexis_user_email");
+        if (prevUser && prevUser !== email) {
+          localStorage.removeItem("aurexis_onboarding_complete");
+        }
+        localStorage.setItem("aurexis_token", token);
+        localStorage.setItem("aurexis_user_email", email);
+      }
       navigate("/app");
     } catch {
       setError("Network error — check your connection.");
@@ -91,7 +99,12 @@ export default function Auth({ defaultView = "login" }) {
       if (!signupRes.ok) { setError(signupData?.detail || signupData?.message || "Signup failed."); return; }
 
       const newToken = signupData?.access_token || signupData?.token;
-      if (newToken) localStorage.setItem("aurexis_token", newToken);
+      if (newToken) {
+        // Always show onboarding for brand new signups
+        localStorage.removeItem("aurexis_onboarding_complete");
+        localStorage.setItem("aurexis_token", newToken);
+        localStorage.setItem("aurexis_user_email", email);
+      }
 
       if (plan === "free") { navigate("/app"); return; }
 
