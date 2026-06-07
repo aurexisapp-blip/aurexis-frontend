@@ -578,7 +578,7 @@ function PricingCard({ plan, index, onGetStarted }) {
         whileHover={btnHover}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        onClick={() => window.location.href = "/waitlist"}
+        onClick={() => window.location.href = `/signup?plan=${tier.toLowerCase()}`}
       >
         {btnLabel}
       </motion.button>
@@ -987,17 +987,17 @@ export default function Landing({ onGetStarted }) {
     {
       cardStyle: S.pricingCard, badge: null, tier: "Free", price: "$0", period: "forever",
       features: [["✓","Yesterday's AI pick (24h delayed)"],["✓","Top movers dashboard"],["✓","Market regime indicator"],["✓","1 stock analysis per day"]],
-      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Join the Waitlist", featuredColor: null,
+      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Started Free", featuredColor: null,
     },
     {
       cardStyle: S.pricingCardFeatured, badge: "Most Popular", tier: "Starter", price: "$9", period: "per month",
       features: [["✓","Today's AI pick, live"],["✓","Entry, stop & target levels"],["✓","Trade plan + R/R ratio"],["✓","Edge signals"],["✓","Unlimited AI analysis"],["✓","Performance tracking"],["✓","Recent picks history"],["✓","Trade journal"],["✓","Watchlist"]],
-      btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Join the Waitlist", featuredColor: "rgba(255,255,255,0.72)",
+      btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Get Started", featuredColor: "rgba(255,255,255,0.72)",
     },
     {
       cardStyle: S.pricingCard, badge: null, tier: "Pro", price: "$29", period: "per month",
       features: [["✓","Everything in Starter"],["✓","Full screener (multi-ticker)"],["✓","Portfolio sync & tracking"],["✓","Portfolio-aware analysis"],["✓","Sector momentum alerts"],["✓","Priority pick alerts"],["✓","Priority support"]],
-      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Join the Waitlist", featuredColor: null,
+      btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Pro", featuredColor: null,
     },
     {
       cardStyle: S.pricingCardElite, badge: "For serious traders", badgeStyle: S.pricingBadgeElite,
@@ -1014,7 +1014,7 @@ export default function Landing({ onGetStarted }) {
       ],
       btnStyle: S.pricingBtnElite,
       btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(245,158,11,0.32)" },
-      btnLabel: "Join the Waitlist",
+      btnLabel: "Join Elite",
       featuredColor: "rgba(253,230,138,0.75)",
       checkColor: "#f59e0b",
     },
@@ -1046,7 +1046,7 @@ export default function Landing({ onGetStarted }) {
               whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => window.location.href = "/waitlist"}
+              onClick={() => window.location.href = "/signup"}
             >
               Get Today's Pick →
             </motion.button>
@@ -1133,7 +1133,7 @@ export default function Landing({ onGetStarted }) {
               transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => window.location.href = "/waitlist"}
+              onClick={() => window.location.href = "/signup"}
             >
               <span>Get Today's Pick</span>
               <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>

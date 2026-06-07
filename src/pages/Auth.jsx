@@ -5,27 +5,40 @@ const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 const PLANS = [
   {
+    id: "free",
+    label: "Free",
+    price: "$0",
+    period: "/mo",
+    desc: "Yesterday's pick, movers dashboard",
+  },
+  {
     id: "starter",
     label: "Starter",
     price: "$9",
     period: "/mo",
-    desc: "Daily AI pick, basic signals",
+    desc: "Live pick, trade plan, edge signals",
   },
   {
     id: "pro",
     label: "Pro",
     price: "$29",
     period: "/mo",
-    desc: "Full analysis, screener, watchlist",
+    desc: "Full screener, portfolio sync, alerts",
   },
   {
     id: "elite",
     label: "Elite",
     price: "$99",
     period: "/mo",
-    desc: "Everything + priority data feeds",
+    desc: "Options flow, backtesting, custom scans",
   },
 ];
+
+function getInitialPlan() {
+  const param = new URLSearchParams(window.location.search).get("plan") || "";
+  const valid = ["free", "starter", "pro", "elite"];
+  return valid.includes(param.toLowerCase()) ? param.toLowerCase() : "starter";
+}
 
 export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
@@ -33,7 +46,7 @@ export default function Auth({ defaultView = "login" }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [plan, setPlan] = useState("pro");
+  const [plan, setPlan] = useState(getInitialPlan);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -90,10 +103,16 @@ export default function Auth({ defaultView = "login" }) {
         return;
       }
 
-      // Use the token returned by signup for the checkout request.
       const newToken = signupData?.access_token || signupData?.token;
       if (newToken) localStorage.setItem("aurexis_token", newToken);
 
+      // Free plan — no Stripe, go straight to app.
+      if (plan === "free") {
+        navigate("/app");
+        return;
+      }
+
+      // Paid plan — create Stripe checkout session.
       const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
         method: "POST",
         headers: {
@@ -103,7 +122,7 @@ export default function Auth({ defaultView = "login" }) {
         body: JSON.stringify({
           plan,
           success_url: window.location.origin + "/app",
-          cancel_url: window.location.origin + "/pricing",
+          cancel_url: window.location.origin + "/",
         }),
       });
       const checkoutData = await checkoutRes.json();
@@ -113,7 +132,6 @@ export default function Auth({ defaultView = "login" }) {
       }
       const url = checkoutData?.url || checkoutData?.checkout_url;
       if (url) {
-        // Validate that the redirect is to Stripe's checkout domain to prevent open redirects.
         let parsed;
         try { parsed = new URL(String(url)); } catch { parsed = null; }
         if (!parsed || !["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
