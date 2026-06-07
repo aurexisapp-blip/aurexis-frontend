@@ -226,7 +226,7 @@ export default function Auth({ defaultView = "login" }) {
           <div style={M.formSub}>{isLogin ? "Sign in to your account." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect`; }}>
+            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}`; }}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
@@ -354,7 +354,7 @@ export default function Auth({ defaultView = "login" }) {
           <div style={S.formSub}>{isLogin ? "Sign in to access your AI picks." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect`; }}>
+            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}`; }}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
