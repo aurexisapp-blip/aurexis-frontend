@@ -986,7 +986,7 @@ export default function Landing({ onGetStarted }) {
   const PRICING_PLANS = [
     {
       cardStyle: S.pricingCard, badge: null, tier: "Free", price: "$0", period: "forever",
-      features: [["✓","Yesterday's AI pick"],["✓","Top movers dashboard"],["✓","1 stock analysis per day"],["–","Today's pick (delayed 24h)"],["–","Entry / stop / target levels"]],
+      features: [["✓","Yesterday's AI pick"],["✓","Top movers dashboard"],["✓","1 stock analysis per day"],["✓","Today's pick (delayed 24h)"],["✓","Entry / stop / target levels"]],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Join the Waitlist", featuredColor: null,
     },
     {
