@@ -12,6 +12,16 @@ import Cookies from "./pages/Cookies";
 import "./index.css";
 
 function AppGate() {
+  // Capture OAuth token from URL before the gate check so it isn't lost
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("token");
+  if (urlToken) {
+    localStorage.setItem("aurexis_token", urlToken);
+    if (params.get("new_user") === "1") {
+      localStorage.setItem("aurexis_force_onboarding", "1");
+    }
+    window.history.replaceState({}, "", window.location.pathname);
+  }
   if (!localStorage.getItem("aurexis_token")) return <Navigate to="/login" replace />;
   return <App />;
 }
