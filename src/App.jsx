@@ -2540,6 +2540,9 @@ function AppInner() {
   const [analyzeData, setAnalyzeData] = useState(null);
   const [analyzeIsLowConviction, setAnalyzeIsLowConviction] = useState(false);
   const [analysisBySymbol, setAnalysisBySymbol] = useState({});
+  const [analyzeHistory, setAnalyzeHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("aurexis_analyze_history") || "[]"); } catch { return []; }
+  });
   const [bestPickData, setBestPickData] = useState(null);
   const [analyzeSymbol, setAnalyzeSymbol] = useState("");
 
@@ -3734,6 +3737,19 @@ async function loadWatchlistLive() {
       setAnalyzeIsLowConviction(isLowConv);
 
       setAnalyzeData(mappedData);
+
+      // Save to analyze history
+      (() => {
+        const toScore100 = (v) => { const n = Number(v); if (!Number.isFinite(n)) return null; return Math.max(0, Math.min(100, n <= 10 ? n * 10 : n)); };
+        const rawScore = mappedData?.score ?? mappedData?.ai_score ?? mappedData?.aiScore ?? mappedData?.technicals?.ai_score;
+        const entry = { symbol: s, score: toScore100(rawScore), decision: String(mappedData?.trade_decision || mappedData?.classification || "").toUpperCase() || null, ts: Date.now() };
+        setAnalyzeHistory(prev => {
+          const filtered = (Array.isArray(prev) ? prev : []).filter(x => x.symbol !== s);
+          const next = [entry, ...filtered].slice(0, 10);
+          try { localStorage.setItem("aurexis_analyze_history", JSON.stringify(next)); } catch {}
+          return next;
+        });
+      })();
 
       lastValidAnalysisRef.current = mappedData;
 
@@ -5091,47 +5107,43 @@ async function loadWatchlistLive() {
       );
     };
 
-    // ---- SIGNAL TRACKER CARD ----
-    const SignalTrackerCard = () => {
-      const allPicks = Array.isArray(recentPicksData) ? recentPicksData : [];
-      const perf = performanceData && typeof performanceData === "object" ? performanceData : null;
+    // ---- ANALYZE HISTORY CARD ----
+    const AnalyzeHistoryCard = () => {
+      const history = Array.isArray(analyzeHistory) ? analyzeHistory.slice(0, 8) : [];
 
-      const apiWinRate  = Number.isFinite(Number(perf?.win_rate))       ? Number(perf.win_rate)       : null;
-      const apiAvgRet   = Number.isFinite(Number(perf?.avg_return_pct)) ? Number(perf.avg_return_pct) : null;
-      const apiTotal    = Number.isFinite(Number(perf?.total_picks))    ? Number(perf.total_picks)    : null;
-
-      // Build streak from most recent picks (cap at 12 dots)
-      const streakPicks = allPicks.slice(0, 12);
-      const wonLocal  = allPicks.filter(p => /^w(on|in)/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
-      const lostLocal = allPicks.filter(p => /^l(ost|oss)/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
-      const decisiveLocal = wonLocal + lostLocal;
-      const localWinRate = decisiveLocal > 0 ? (wonLocal / decisiveLocal) * 100 : null;
-      const localAvgRet  = (() => {
-        const rets = allPicks.filter(p => Number.isFinite(Number(p?.max_return_pct))).map(p => Number(p.max_return_pct));
-        return rets.length > 0 ? rets.reduce((a, b) => a + b, 0) / rets.length : null;
-      })();
-
-      const winRate  = apiWinRate  ?? localWinRate;
-      const avgRet   = apiAvgRet   ?? localAvgRet;
-      const total    = apiTotal    ?? allPicks.length;
-
-      // Current win streak count
-      const currentStreak = (() => {
-        let count = 0;
-        for (const p of allPicks) {
-          const out = String(p?.status || p?.outcome || "").toLowerCase();
-          if (/^w(on|in)/.test(out)) count++;
-          else if (/^l(ost|oss)/.test(out)) break;
-          else continue;
-        }
-        return count;
-      })();
-
-      const winRingPct = winRate !== null ? Math.round(winRate) : 0;
-      const ringColor = winRate !== null ? (winRate >= 60 ? "#4ade80" : winRate >= 40 ? "#fbbf24" : "#f87171") : T.textGhost;
-      const ringCircumference = 2 * Math.PI * 26;
-
-      if (loadingRecentPicks && allPicks.length === 0) return <SkeletonCard title="Signal Tracker" />;
+      const scoreColor = (sc) => {
+        if (sc === null || sc === undefined) return T.textGhost;
+        if (sc >= 70) return "#4ade80";
+        if (sc >= 45) return "#fbbf24";
+        return "#f87171";
+      };
+      const scoreBg = (sc) => {
+        if (sc === null || sc === undefined) return T.bg3;
+        if (sc >= 70) return "rgba(74,222,128,0.08)";
+        if (sc >= 45) return "rgba(251,191,36,0.07)";
+        return "rgba(248,113,113,0.08)";
+      };
+      const scoreBorder = (sc) => {
+        if (sc === null || sc === undefined) return T.border2;
+        if (sc >= 70) return "rgba(74,222,128,0.20)";
+        if (sc >= 45) return "rgba(251,191,36,0.18)";
+        return "rgba(248,113,113,0.18)";
+      };
+      const timeAgo = (ts) => {
+        const diff = Math.floor((Date.now() - ts) / 1000);
+        if (diff < 60) return "just now";
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+      };
+      const verdictLabel = (dec) => {
+        if (!dec) return null;
+        if (dec.includes("BUY") || dec.includes("ACTION") || dec.includes("LONG")) return { text: "BUY", color: "#4ade80" };
+        if (dec.includes("NO_TRADE") || dec.includes("NOTRADE")) return { text: "NO TRADE", color: T.textGhost };
+        if (dec.includes("LOW") || dec.includes("CONVICTION")) return { text: "LOW", color: "#fbbf24" };
+        if (dec.includes("AVOID") || dec.includes("SHORT") || dec.includes("SELL")) return { text: "AVOID", color: "#f87171" };
+        return null;
+      };
 
       return (
         <div style={{
@@ -5143,97 +5155,68 @@ async function loadWatchlistLive() {
           {/* Header */}
           <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Signal Tracker</div>
-              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>AI pick outcomes over time</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analyze History</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Your recent lookups</div>
             </div>
-            {total > 0 ? (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: T.bg3, border: `1px solid ${T.border2}`, color: T.textFaint, letterSpacing: "0.04em" }}>{total} picks</span>
+            {history.length > 0 ? (
+              <button onClick={() => { setAnalyzeHistory([]); try { localStorage.removeItem("aurexis_analyze_history"); } catch {} }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>Clear</button>
             ) : null}
           </div>
 
-          {/* Win rate ring + stats */}
-          <div style={{ padding: "16px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 18 }}>
-            {/* SVG ring */}
-            <div style={{ position: "relative", flexShrink: 0, width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={64} height={64} style={{ transform: "rotate(-90deg)" }}>
-                <circle cx={32} cy={32} r={26} fill="none" stroke={darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={6} />
-                <circle cx={32} cy={32} r={26} fill="none" stroke={ringColor} strokeWidth={6}
-                  strokeDasharray={ringCircumference}
-                  strokeDashoffset={ringCircumference * (1 - winRingPct / 100)}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 800ms ease" }}
-                />
-              </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: winRate !== null ? ringColor : T.textGhost, lineHeight: 1 }}>
-                  {winRate !== null ? `${Math.round(winRate)}%` : "—"}
-                </span>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", marginBottom: 3 }}>WIN RATE</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: winRate !== null ? ringColor : T.textGhost }}>
-                  {winRate !== null ? `${Math.round(winRate)}%` : "—"}
+          {/* Rows */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {history.length === 0 ? (
+              <div style={{ padding: "28px 18px", textAlign: "center" }}>
+                <div style={{ fontSize: 28, opacity: 0.07, marginBottom: 10 }}>⊙</div>
+                <div style={{ fontSize: 12, color: T.textFaint, lineHeight: 1.6 }}>
+                  Stocks you analyze will appear here.
                 </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", marginBottom: 3 }}>AVG RETURN</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: avgRet !== null ? (avgRet >= 0 ? "#4ade80" : "#f87171") : T.textGhost }}>
-                  {avgRet !== null ? `${avgRet >= 0 ? "+" : ""}${avgRet.toFixed(1)}%` : "—"}
+                <div style={{ fontSize: 11, color: T.textGhost, marginTop: 4 }}>
+                  Type any ticker above and hit Analyze.
                 </div>
-              </div>
-              {currentStreak >= 2 ? (
-                <div style={{ gridColumn: "span 2" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)", padding: "2px 8px", borderRadius: 5 }}>
-                    🔥 {currentStreak}-pick win streak
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Streak dots */}
-          <div style={{ padding: "12px 18px 16px", flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Recent Outcomes</div>
-            {streakPicks.length === 0 ? (
-              <div style={{ fontSize: 11, color: T.textGhost, lineHeight: 1.6 }}>
-                Pick outcomes appear here after each daily scan.<br />
-                <span style={{ color: T.textFaint }}>New picks added each market day at 9:30 AM ET.</span>
               </div>
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-                {streakPicks.map((p, i) => {
-                  const out = String(p?.status || p?.outcome || "").toLowerCase();
-                  const isW = /^w(on|in)/.test(out);
-                  const isL = /^l(ost|oss)/.test(out);
-                  const sym = normalizeSymbol(p?.symbol || p?.ticker || "");
-                  const ret = Number(p?.max_return_pct ?? p?.return_pct);
-                  return (
-                    <div
-                      key={i}
-                      title={`${sym || "?"}: ${isW ? "Won" : isL ? "Lost" : "Pending"}${Number.isFinite(ret) ? ` (${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%)` : ""}`}
-                      style={{
-                        width: 28, height: 28, borderRadius: 8,
-                        background: isW ? "rgba(74,222,128,0.15)" : isL ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
-                        border: `1px solid ${isW ? "rgba(74,222,128,0.30)" : isL ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.08)"}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: sym ? "pointer" : "default",
-                      }}
-                      onClick={() => { if (sym) { setSymbol(sym); runAnalyze(sym); } }}
-                    >
-                      <span style={{ fontSize: 9, fontWeight: 800, color: isW ? "#4ade80" : isL ? "#f87171" : T.textGhost }}>
-                        {sym ? sym.slice(0, 2) : "?"}
-                      </span>
+              history.map((item, i) => {
+                const vd = verdictLabel(item.decision);
+                const isLast = i === history.length - 1;
+                return (
+                  <div
+                    key={`${item.symbol}_${item.ts}`}
+                    onClick={() => { setSymbol(item.symbol); runAnalyze(item.symbol); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "11px 18px",
+                      borderBottom: isLast ? "none" : `1px solid ${T.border}`,
+                      cursor: "pointer", transition: "background 0.12s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = T.bg2; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {/* Symbol avatar */}
+                    <div style={{ width: 36, height: 36, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: scoreColor(item.score) }}>{item.symbol.slice(0, 2)}</span>
                     </div>
-                  );
-                })}
-                {total > streakPicks.length ? (
-                  <span style={{ fontSize: 10, color: T.textGhost }}>+{total - streakPicks.length} more</span>
-                ) : null}
-              </div>
+
+                    {/* Symbol + time */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>{item.symbol}</div>
+                      <div style={{ fontSize: 10, color: T.textGhost, marginTop: 1 }}>{timeAgo(item.ts)}</div>
+                    </div>
+
+                    {/* Verdict pill */}
+                    {vd ? (
+                      <span style={{ fontSize: 9, fontWeight: 800, color: vd.color, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{vd.text}</span>
+                    ) : null}
+
+                    {/* AI score */}
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: scoreColor(item.score), lineHeight: 1 }}>
+                        {item.score !== null && item.score !== undefined ? item.score : "—"}
+                      </div>
+                      <div style={{ fontSize: 9, color: T.textGhost, marginTop: 1 }}>score</div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -6550,7 +6533,7 @@ async function loadWatchlistLive() {
         <motion.div className="dashCell dashCell--picks"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-          <SignalTrackerCard />
+          <AnalyzeHistoryCard />
         </motion.div>
         <div className="dashCell dashCell--why">
           {analyzeIsLowConviction ? (
