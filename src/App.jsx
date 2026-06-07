@@ -4995,6 +4995,252 @@ async function loadWatchlistLive() {
     const showDegradedBanner = String(statusRaw || "").toLowerCase() === "degraded";
 
     // ---- PERFORMANCE CARD ----
+    // ---- MARKET PULSE CARD ----
+    const MarketPulseCard = () => {
+      const session = sessionFromClockOrHeuristic(clock);
+      const isOpen = session === "OPEN";
+      const bestPayload0 = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
+      const best0 = bestPayload0?.best_pick && typeof bestPayload0.best_pick === "object" ? bestPayload0.best_pick
+        : bestPayload0?.pick && typeof bestPayload0.pick === "object" ? bestPayload0.pick : bestPayload0;
+      const marketRegime = String(best0?.market_regime || bestPayload0?.market_regime || "").trim().toUpperCase();
+      const regimeLabel = marketRegime === "BULL" ? "Bullish" : marketRegime === "BEAR" ? "Bearish" : marketRegime || "Neutral";
+      const regimeDesc = marketRegime === "BULL" ? "Momentum setups have edge" : marketRegime === "BEAR" ? "Defensive positioning preferred" : "Mixed signals — wait for clarity";
+      const regimeColor = marketRegime === "BULL" ? { fg: "#4ade80", bg: "rgba(74,222,128,0.08)", border: "rgba(74,222,128,0.18)" }
+        : marketRegime === "BEAR" ? { fg: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.18)" }
+        : { fg: "#fbbf24", bg: "rgba(251,191,36,0.07)", border: "rgba(251,191,36,0.18)" };
+
+      const topM = Array.isArray(movers) ? movers.slice(0, 4) : [];
+
+      const nextTimeLabel = (() => {
+        if (!clock) return null;
+        const raw = isOpen ? clock.next_close : clock.next_open;
+        if (!raw) return null;
+        try {
+          const d = new Date(raw);
+          if (isNaN(d)) return null;
+          return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+        } catch { return null; }
+      })();
+
+      return (
+        <div style={{
+          background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          height: "100%", display: "flex", flexDirection: "column",
+        }}>
+          {/* Header */}
+          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Market Pulse</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Live session & regime context</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: isOpen ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(74,222,128,0.20)" : "rgba(255,255,255,0.10)"}` }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: isOpen ? "#4ade80" : "rgba(255,255,255,0.25)", display: "inline-block", boxShadow: isOpen ? "0 0 6px #4ade80" : "none" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: isOpen ? "#4ade80" : T.textFaint, letterSpacing: "0.05em" }}>{isOpen ? "OPEN" : "CLOSED"}</span>
+            </div>
+          </div>
+
+          {/* Regime */}
+          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Market Regime</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ padding: "5px 12px", borderRadius: 8, background: regimeColor.bg, border: `1px solid ${regimeColor.border}` }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: regimeColor.fg, letterSpacing: "0.02em" }}>{regimeLabel || "—"}</span>
+              </div>
+              {marketRegime ? <span style={{ fontSize: 11, color: T.textFaint }}>{regimeDesc}</span> : <span style={{ fontSize: 11, color: T.textGhost }}>Loads with daily pick</span>}
+            </div>
+            {nextTimeLabel ? (
+              <div style={{ fontSize: 11, color: T.textGhost, marginTop: 8 }}>{isOpen ? "Closes" : "Opens"} {nextTimeLabel}</div>
+            ) : null}
+          </div>
+
+          {/* Top movers mini-strip */}
+          <div style={{ padding: "12px 18px 16px", flex: 1 }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Today's Leaders</div>
+            {topM.length === 0 ? (
+              <div style={{ fontSize: 11, color: T.textGhost }}>Loading movers…</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {topM.map(m => {
+                  const pct = Number(m.pct_change);
+                  const isPos = pct >= 0;
+                  return (
+                    <button
+                      key={m.symbol}
+                      onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
+                      style={{
+                        background: isPos ? "rgba(74,222,128,0.06)" : "rgba(248,113,113,0.06)",
+                        border: `1px solid ${isPos ? "rgba(74,222,128,0.14)" : "rgba(248,113,113,0.14)"}`,
+                        borderRadius: 9, padding: "9px 11px", cursor: "pointer", textAlign: "left",
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        transition: "background 0.12s",
+                      }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{m.symbol}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: isPos ? "#4ade80" : "#f87171" }}>
+                        {isPos ? "+" : ""}{Number.isFinite(pct) ? pct.toFixed(1) : "—"}%
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // ---- SIGNAL TRACKER CARD ----
+    const SignalTrackerCard = () => {
+      const allPicks = Array.isArray(recentPicksData) ? recentPicksData : [];
+      const perf = performanceData && typeof performanceData === "object" ? performanceData : null;
+
+      const apiWinRate  = Number.isFinite(Number(perf?.win_rate))       ? Number(perf.win_rate)       : null;
+      const apiAvgRet   = Number.isFinite(Number(perf?.avg_return_pct)) ? Number(perf.avg_return_pct) : null;
+      const apiTotal    = Number.isFinite(Number(perf?.total_picks))    ? Number(perf.total_picks)    : null;
+
+      // Build streak from most recent picks (cap at 12 dots)
+      const streakPicks = allPicks.slice(0, 12);
+      const wonLocal  = allPicks.filter(p => /^w(on|in)/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      const lostLocal = allPicks.filter(p => /^l(ost|oss)/.test(String(p?.status || p?.outcome || "").toLowerCase())).length;
+      const decisiveLocal = wonLocal + lostLocal;
+      const localWinRate = decisiveLocal > 0 ? (wonLocal / decisiveLocal) * 100 : null;
+      const localAvgRet  = (() => {
+        const rets = allPicks.filter(p => Number.isFinite(Number(p?.max_return_pct))).map(p => Number(p.max_return_pct));
+        return rets.length > 0 ? rets.reduce((a, b) => a + b, 0) / rets.length : null;
+      })();
+
+      const winRate  = apiWinRate  ?? localWinRate;
+      const avgRet   = apiAvgRet   ?? localAvgRet;
+      const total    = apiTotal    ?? allPicks.length;
+
+      // Current win streak count
+      const currentStreak = (() => {
+        let count = 0;
+        for (const p of allPicks) {
+          const out = String(p?.status || p?.outcome || "").toLowerCase();
+          if (/^w(on|in)/.test(out)) count++;
+          else if (/^l(ost|oss)/.test(out)) break;
+          else continue;
+        }
+        return count;
+      })();
+
+      const winRingPct = winRate !== null ? Math.round(winRate) : 0;
+      const ringColor = winRate !== null ? (winRate >= 60 ? "#4ade80" : winRate >= 40 ? "#fbbf24" : "#f87171") : T.textGhost;
+      const ringCircumference = 2 * Math.PI * 26;
+
+      if (loadingRecentPicks && allPicks.length === 0) return <SkeletonCard title="Signal Tracker" />;
+
+      return (
+        <div style={{
+          background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          height: "100%", display: "flex", flexDirection: "column",
+        }}>
+          {/* Header */}
+          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Signal Tracker</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>AI pick outcomes over time</div>
+            </div>
+            {total > 0 ? (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: T.bg3, border: `1px solid ${T.border2}`, color: T.textFaint, letterSpacing: "0.04em" }}>{total} picks</span>
+            ) : null}
+          </div>
+
+          {/* Win rate ring + stats */}
+          <div style={{ padding: "16px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 18 }}>
+            {/* SVG ring */}
+            <div style={{ position: "relative", flexShrink: 0, width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={64} height={64} style={{ transform: "rotate(-90deg)" }}>
+                <circle cx={32} cy={32} r={26} fill="none" stroke={darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"} strokeWidth={6} />
+                <circle cx={32} cy={32} r={26} fill="none" stroke={ringColor} strokeWidth={6}
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringCircumference * (1 - winRingPct / 100)}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 800ms ease" }}
+                />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: winRate !== null ? ringColor : T.textGhost, lineHeight: 1 }}>
+                  {winRate !== null ? `${Math.round(winRate)}%` : "—"}
+                </span>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", marginBottom: 3 }}>WIN RATE</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: winRate !== null ? ringColor : T.textGhost }}>
+                  {winRate !== null ? `${Math.round(winRate)}%` : "—"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", marginBottom: 3 }}>AVG RETURN</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: avgRet !== null ? (avgRet >= 0 ? "#4ade80" : "#f87171") : T.textGhost }}>
+                  {avgRet !== null ? `${avgRet >= 0 ? "+" : ""}${avgRet.toFixed(1)}%` : "—"}
+                </div>
+              </div>
+              {currentStreak >= 2 ? (
+                <div style={{ gridColumn: "span 2" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.18)", padding: "2px 8px", borderRadius: 5 }}>
+                    🔥 {currentStreak}-pick win streak
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Streak dots */}
+          <div style={{ padding: "12px 18px 16px", flex: 1 }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Recent Outcomes</div>
+            {streakPicks.length === 0 ? (
+              <div style={{ fontSize: 11, color: T.textGhost, lineHeight: 1.6 }}>
+                Pick outcomes appear here after each daily scan.<br />
+                <span style={{ color: T.textFaint }}>New picks added each market day at 9:30 AM ET.</span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                {streakPicks.map((p, i) => {
+                  const out = String(p?.status || p?.outcome || "").toLowerCase();
+                  const isW = /^w(on|in)/.test(out);
+                  const isL = /^l(ost|oss)/.test(out);
+                  const sym = normalizeSymbol(p?.symbol || p?.ticker || "");
+                  const ret = Number(p?.max_return_pct ?? p?.return_pct);
+                  return (
+                    <div
+                      key={i}
+                      title={`${sym || "?"}: ${isW ? "Won" : isL ? "Lost" : "Pending"}${Number.isFinite(ret) ? ` (${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%)` : ""}`}
+                      style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: isW ? "rgba(74,222,128,0.15)" : isL ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
+                        border: `1px solid ${isW ? "rgba(74,222,128,0.30)" : isL ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.08)"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: sym ? "pointer" : "default",
+                      }}
+                      onClick={() => { if (sym) { setSymbol(sym); runAnalyze(sym); } }}
+                    >
+                      <span style={{ fontSize: 9, fontWeight: 800, color: isW ? "#4ade80" : isL ? "#f87171" : T.textGhost }}>
+                        {sym ? sym.slice(0, 2) : "?"}
+                      </span>
+                    </div>
+                  );
+                })}
+                {total > streakPicks.length ? (
+                  <span style={{ fontSize: 10, color: T.textGhost }}>+{total - streakPicks.length} more</span>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // ---- PERFORMANCE + RECENT PICKS (kept for data, replaced in render) ----
     const PerformanceCard = () => {
       if (loadingPerformance) return <SkeletonCard title="Performance" />;
       const perf = performanceData && typeof performanceData === "object" ? performanceData : null;
@@ -6299,12 +6545,12 @@ async function loadWatchlistLive() {
         <motion.div className="dashCell dashCell--performance"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-          <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><PerformanceCard /></PlanGate>
+          <MarketPulseCard />
         </motion.div>
         <motion.div className="dashCell dashCell--picks"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-          <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><RecentPicksCard /></PlanGate>
+          <SignalTrackerCard />
         </motion.div>
         <div className="dashCell dashCell--why">
           {analyzeIsLowConviction ? (
