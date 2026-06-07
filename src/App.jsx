@@ -2023,151 +2023,198 @@ const ONBOARDING_STEPS = [
 
 function OnboardingModal({ onDone, userName = "" }) {
   const [step, setStep] = React.useState(0);
+
+  React.useEffect(() => {
+    const el = document.createElement("style");
+    el.id = "ob-css";
+    el.textContent = `
+      @keyframes ob-up {
+        from { opacity: 0; transform: translateY(22px); }
+        to   { opacity: 1; transform: translateY(0);    }
+      }
+      @keyframes ob-glow {
+        0%,100% { opacity: 0.10; transform: translate(-50%,-50%) scale(1);    }
+        50%      { opacity: 0.18; transform: translate(-50%,-50%) scale(1.08); }
+      }
+      @keyframes ob-orb2 {
+        0%,100% { opacity: 0.05; }
+        50%      { opacity: 0.11; }
+      }
+      .ob-a  { animation: ob-up 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+      .ob-d1 { animation-delay: 0.00s; }
+      .ob-d2 { animation-delay: 0.08s; }
+      .ob-d3 { animation-delay: 0.15s; }
+      .ob-d4 { animation-delay: 0.22s; }
+      .ob-d5 { animation-delay: 0.30s; }
+    `;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
+
   const current = ONBOARDING_STEPS[step];
   const isLast = step === ONBOARDING_STEPS.length - 1;
-  const displayTitle = step === 0 && userName
-    ? `Welcome, ${userName}.`
-    : current.title;
+  const isWelcome = step === 0;
+  const displayTitle = isWelcome && userName ? `Welcome, ${userName}.` : current.title;
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "#060a10",
+      background: "#050810",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       overflow: "hidden",
     }}>
-      {/* Background grid */}
+      {/* Grid */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: "linear-gradient(rgba(0,180,80,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,80,0.03) 1px, transparent 1px)",
-        backgroundSize: "60px 60px",
+        backgroundImage: "linear-gradient(rgba(0,180,80,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,80,0.025) 1px,transparent 1px)",
+        backgroundSize: "52px 52px",
       }} />
-      {/* Green radial glow */}
+
+      {/* Primary pulsing glow */}
       <div style={{
-        position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)",
-        width: 700, height: 500, pointerEvents: "none",
-        background: "radial-gradient(ellipse, rgba(0,180,80,0.10) 0%, transparent 65%)",
+        position: "absolute", top: "38%", left: "50%",
+        width: 900, height: 650, pointerEvents: "none",
+        background: "radial-gradient(ellipse, rgba(0,180,80,0.13) 0%, transparent 60%)",
+        animation: "ob-glow 5s ease-in-out infinite",
       }} />
-      {/* Bottom fade */}
+
+      {/* Secondary glow bottom-right */}
       <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 200, pointerEvents: "none",
-        background: "linear-gradient(transparent, #060a10)",
+        position: "absolute", bottom: "5%", right: "10%",
+        width: 500, height: 360, pointerEvents: "none",
+        background: "radial-gradient(ellipse, rgba(0,100,50,0.08) 0%, transparent 65%)",
+        animation: "ob-orb2 7s ease-in-out infinite",
       }} />
+
+      {/* Top progress bar */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.05)" }}>
+        <div style={{
+          height: "100%",
+          width: `${((step + 1) / ONBOARDING_STEPS.length) * 100}%`,
+          background: "linear-gradient(90deg, #00b450, #00e676)",
+          boxShadow: "0 0 10px rgba(0,200,80,0.8)",
+          transition: "width 0.45s cubic-bezier(0.4,0,0.2,1)",
+        }} />
+      </div>
 
       {/* Skip */}
       <button onClick={onDone} style={{
-        position: "fixed", top: 22, right: 26,
-        background: "none", border: "1px solid rgba(255,255,255,0.10)",
-        color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 600,
-        cursor: "pointer", fontFamily: "inherit", padding: "5px 12px",
-        borderRadius: 8, letterSpacing: 0.5,
-      }}>
-        Skip
-      </button>
+        position: "fixed", top: 20, right: 24,
+        background: "none", border: "1px solid rgba(255,255,255,0.09)",
+        color: "rgba(255,255,255,0.28)", fontSize: 11, fontWeight: 600,
+        cursor: "pointer", fontFamily: "inherit", padding: "5px 13px",
+        borderRadius: 8, letterSpacing: 0.6,
+      }}>Skip</button>
 
-      {/* Step counter */}
-      <div style={{
-        position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
-        fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
-        color: "rgba(255,255,255,0.25)",
-      }}>
-        {step + 1} / {ONBOARDING_STEPS.length}
-      </div>
-
-      <div style={{ position: "relative", width: "100%", maxWidth: 580, padding: "0 32px", textAlign: "center" }}>
+      {/* Slide content — key re-mounts on each step to replay animation */}
+      <div key={step} style={{ position: "relative", width: "100%", maxWidth: 600, padding: "0 40px", textAlign: "center" }}>
 
         {/* Icon */}
-        <div style={{ marginBottom: 32, lineHeight: 1 }}>
+        <div className="ob-a ob-d1" style={{ marginBottom: 30 }}>
           {current.icon === null ? (
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 72, height: 72, borderRadius: 20,
-              background: "linear-gradient(135deg, rgba(0,180,80,0.20), rgba(0,180,80,0.05))",
-              border: "1px solid rgba(0,180,80,0.25)",
-              boxShadow: "0 0 40px rgba(0,180,80,0.12)",
+              width: 84, height: 84, borderRadius: 24,
+              background: "linear-gradient(135deg, rgba(0,180,80,0.20), rgba(0,60,30,0.15))",
+              border: "1px solid rgba(0,180,80,0.28)",
+              boxShadow: "0 0 0 8px rgba(0,180,80,0.05), 0 0 60px rgba(0,180,80,0.15)",
             }}>
-              <span style={{ fontSize: 36, fontWeight: 900, color: "#00b450", letterSpacing: "-2px" }}>A</span>
+              <span style={{
+                fontSize: 40, fontWeight: 900, letterSpacing: "-2px",
+                background: "linear-gradient(135deg, #00e676, #00b450)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              }}>A</span>
             </div>
           ) : (
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 72, height: 72, borderRadius: 20,
-              background: "rgba(255,255,255,0.04)",
+              width: 84, height: 84, borderRadius: 24,
+              background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.08)",
-            }}>
-              <span style={{ fontSize: 36 }}>{current.icon}</span>
-            </div>
+              boxShadow: "0 0 0 8px rgba(255,255,255,0.02)",
+              fontSize: 40,
+            }}>{current.icon}</div>
           )}
         </div>
 
         {/* Eyebrow */}
-        <div style={{
-          fontSize: 10, fontWeight: 800, letterSpacing: "0.16em",
-          color: "#00b450", marginBottom: 14, textTransform: "uppercase",
-        }}>
-          {current.eyebrow}
-        </div>
+        <div className="ob-a ob-d2" style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: "0.22em",
+          color: "#00b450", marginBottom: 16, textTransform: "uppercase",
+        }}>{current.eyebrow}</div>
 
         {/* Title */}
-        <div style={{
-          fontSize: 34, fontWeight: 800, color: "#fff",
-          marginBottom: 20, lineHeight: 1.15, letterSpacing: "-0.03em",
-        }}>
-          {displayTitle}
-        </div>
+        <div className="ob-a ob-d3" style={{
+          fontSize: isWelcome ? 46 : 36,
+          fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: 18,
+          ...(isWelcome
+            ? { background: "linear-gradient(135deg,#ffffff 0%,rgba(255,255,255,0.70) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
+            : { color: "#fff" }
+          ),
+        }}>{displayTitle}</div>
 
         {/* Body */}
-        <p style={{
-          fontSize: 16, color: "rgba(255,255,255,0.55)",
-          lineHeight: 1.75, margin: "0 auto 32px", maxWidth: 460,
-        }}>
-          {current.body}
-        </p>
+        <p className="ob-a ob-d4" style={{
+          fontSize: 16, color: "rgba(255,255,255,0.48)",
+          lineHeight: 1.8, margin: "0 auto",
+          maxWidth: 460,
+        }}>{current.body}</p>
 
-        {/* Stat callout */}
-        {current.stat && (
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 12,
-            background: "rgba(0,180,80,0.07)", border: "1px solid rgba(0,180,80,0.18)",
-            borderRadius: 12, padding: "12px 24px", marginBottom: 36,
+        {/* Stat */}
+        {current.stat ? (
+          <div className="ob-a ob-d4" style={{
+            marginTop: 32, padding: "24px 36px",
+            background: "linear-gradient(135deg, rgba(0,180,80,0.09), rgba(0,180,80,0.04))",
+            border: "1px solid rgba(0,180,80,0.16)",
+            borderRadius: 18, display: "inline-block",
+            boxShadow: "0 0 40px rgba(0,180,80,0.07)",
           }}>
-            <span style={{ fontSize: 26, fontWeight: 800, color: "#00b450", letterSpacing: "-0.02em" }}>{current.stat.value}</span>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{current.stat.label}</span>
+            <div style={{
+              fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
+              background: "linear-gradient(135deg, #00e676, #00b450)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              marginBottom: 8,
+            }}>{current.stat.value}</div>
+            <div style={{
+              fontSize: 11, color: "rgba(255,255,255,0.32)", fontWeight: 700,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+            }}>{current.stat.label}</div>
           </div>
+        ) : (
+          <div style={{ height: 28 }} />
         )}
-        {!current.stat && <div style={{ marginBottom: 36 }} />}
 
-        {/* CTA */}
-        <button
-          onClick={isLast ? onDone : () => setStep(s => s + 1)}
-          style={{
-            width: "100%", padding: "17px 0",
-            background: "linear-gradient(135deg, #00c853, #00b450)",
-            border: "none", borderRadius: 14,
-            fontSize: 15, fontWeight: 700, color: "#fff",
-            cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.4,
-            boxShadow: "0 4px 32px rgba(0,180,80,0.30), 0 1px 0 rgba(255,255,255,0.10) inset",
-            transition: "transform 0.15s, box-shadow 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 40px rgba(0,180,80,0.40), 0 1px 0 rgba(255,255,255,0.10) inset"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 32px rgba(0,180,80,0.30), 0 1px 0 rgba(255,255,255,0.10) inset"; }}
-        >
-          {isLast ? "Enter Aurexis →" : "Continue →"}
-        </button>
+        {/* CTA + dots */}
+        <div className="ob-a ob-d5" style={{ marginTop: 36 }}>
+          <button
+            onClick={isLast ? onDone : () => setStep(s => s + 1)}
+            style={{
+              width: "100%", padding: "18px 0",
+              background: "linear-gradient(135deg, #00c853, #009c3b)",
+              border: "none", borderRadius: 14,
+              fontSize: 15, fontWeight: 700, color: "#fff",
+              cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
+              boxShadow: "0 4px 40px rgba(0,180,80,0.38), 0 1px 0 rgba(255,255,255,0.12) inset",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 52px rgba(0,180,80,0.52), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 40px rgba(0,180,80,0.38), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
+          >{isLast ? "Enter Aurexis →" : "Continue →"}</button>
 
-        {/* Progress dots */}
-        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 28 }}>
-          {ONBOARDING_STEPS.map((_, i) => (
-            <div key={i} onClick={() => setStep(i)} style={{
-              width: i === step ? 28 : 7, height: 7,
-              borderRadius: 999, cursor: "pointer",
-              background: i === step ? "#00b450" : i < step ? "rgba(0,180,80,0.35)" : "rgba(255,255,255,0.10)",
-              transition: "width 0.25s ease, background 0.25s ease",
-            }} />
-          ))}
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 24 }}>
+            {ONBOARDING_STEPS.map((_, i) => (
+              <div key={i} onClick={() => setStep(i)} style={{
+                height: 4, borderRadius: 999, cursor: "pointer",
+                width: i === step ? 32 : 6,
+                background: i === step ? "#00b450" : i < step ? "rgba(0,180,80,0.40)" : "rgba(255,255,255,0.10)",
+                transition: "width 0.3s ease, background 0.3s ease",
+              }} />
+            ))}
+          </div>
         </div>
+
       </div>
     </div>
   );
