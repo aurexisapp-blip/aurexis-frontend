@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
@@ -14,6 +14,17 @@ function getInitialPlan() {
   const param = new URLSearchParams(window.location.search).get("plan") || "";
   const valid = ["free", "starter", "pro", "elite"];
   return valid.includes(param.toLowerCase()) ? param.toLowerCase() : "starter";
+}
+
+function useMobile(breakpoint = 768) {
+  const [mobile, setMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpoint]);
+  return mobile;
 }
 
 function GoogleIcon() {
@@ -37,6 +48,7 @@ function AppleIcon() {
 
 export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
+  const isMobile = useMobile();
   const [view, setView] = useState(defaultView);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -107,6 +119,108 @@ export default function Auth({ defaultView = "login" }) {
 
   const isLogin = view === "login";
 
+  /* ── Mobile layout ── */
+  if (isMobile) {
+    return (
+      <div style={M.page}>
+        {/* Compact top strip */}
+        <div style={M.topStrip}>
+          <a href="/" style={M.logoRow}>
+            <div style={S.logoMark}>A</div>
+            <span style={S.logoText}>AUREXIS</span>
+          </a>
+          <div style={M.tagline}>One AI pick. Every trading day.</div>
+          <div style={M.statsRow}>
+            {[
+              { val: "73%", label: "Win rate" },
+              { val: "2.4×", label: "Avg R/R" },
+              { val: "1,200+", label: "Scanned" },
+            ].map(({ val, label }) => (
+              <div key={label} style={M.stat}>
+                <div style={M.statVal}>{val}</div>
+                <div style={M.statLabel}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form */}
+        <div style={M.formWrap}>
+          <div style={M.formHeading}>{isLogin ? "Welcome back" : "Create your account"}</div>
+          <div style={M.formSub}>{isLogin ? "Sign in to your account." : "Start free, upgrade anytime."}</div>
+
+          <div style={S.socials}>
+            <button type="button" style={S.socialBtn} disabled title="Coming soon">
+              <GoogleIcon />
+              <span>Continue with Google</span>
+              <span style={S.comingSoon}>Soon</span>
+            </button>
+            <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} disabled title="Coming soon">
+              <AppleIcon />
+              <span>Continue with Apple</span>
+              <span style={{ ...S.comingSoon, color: "rgba(0,0,0,0.35)", background: "rgba(0,0,0,0.08)" }}>Soon</span>
+            </button>
+          </div>
+
+          <div style={S.divider}>
+            <div style={S.dividerLine} />
+            <span style={S.dividerLabel}>or continue with email</span>
+            <div style={S.dividerLine} />
+          </div>
+
+          <form onSubmit={isLogin ? handleLogin : handleSignup} style={S.fields} noValidate>
+            <input
+              type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              required autoComplete="email" placeholder="Email address" style={S.input}
+            />
+            <input
+              type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              required autoComplete={isLogin ? "current-password" : "new-password"}
+              placeholder="Password" style={S.input}
+            />
+
+            {!isLogin && (
+              <div style={S.planRow}>
+                {PLANS.map((p) => {
+                  const active = plan === p.id;
+                  return (
+                    <button key={p.id} type="button" onClick={() => setPlan(p.id)}
+                      style={{ ...S.planPill, ...(active ? S.planPillActive : {}) }}>
+                      <span style={{ ...S.planPillLabel, ...(active ? { color: "#fff" } : {}) }}>{p.label}</span>
+                      <span style={{ ...S.planPillPrice, ...(active ? { color: "#4ade80" } : {}) }}>{p.price}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {error ? <div style={S.errorBox}>{error}</div> : null}
+
+            <button type="submit" style={S.submit} disabled={loading}>
+              {loading
+                ? (isLogin ? "Signing in…" : "Creating account…")
+                : (isLogin ? "Sign In →" : plan === "free" ? "Create Free Account →" : "Create Account & Pay →")}
+            </button>
+          </form>
+
+          <div style={S.switchRow}>
+            {isLogin ? "Don't have an account?" : "Already have an account?"}
+            <button type="button" style={S.switchLink} onClick={() => switchView(isLogin ? "signup" : "login")}>
+              {isLogin ? "Sign up free" : "Sign in"}
+            </button>
+          </div>
+
+          <div style={S.legal}>
+            By continuing you agree to our{" "}
+            <a href="/terms" style={S.legalLink}>Terms</a> and{" "}
+            <a href="/privacy" style={S.legalLink}>Privacy Policy</a>.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Desktop layout ── */
   return (
     <div style={S.page}>
       {/* Left panel — branding */}
@@ -145,7 +259,6 @@ export default function Auth({ defaultView = "login" }) {
           <div style={S.formHeading}>{isLogin ? "Welcome back" : "Create your account"}</div>
           <div style={S.formSub}>{isLogin ? "Sign in to access your AI picks." : "Start free, upgrade anytime."}</div>
 
-          {/* Social — disabled until backend supports OAuth */}
           <div style={S.socials}>
             <button type="button" style={S.socialBtn} disabled title="Coming soon">
               <GoogleIcon />
@@ -159,14 +272,12 @@ export default function Auth({ defaultView = "login" }) {
             </button>
           </div>
 
-          {/* Divider */}
           <div style={S.divider}>
             <div style={S.dividerLine} />
             <span style={S.dividerLabel}>or continue with email</span>
             <div style={S.dividerLine} />
           </div>
 
-          {/* Email form */}
           <form onSubmit={isLogin ? handleLogin : handleSignup} style={S.fields} noValidate>
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -220,6 +331,9 @@ export default function Auth({ defaultView = "login" }) {
   );
 }
 
+/* ─────────────────────────────────────────────
+   Desktop styles
+───────────────────────────────────────────── */
 const S = {
   page: {
     minHeight: "100vh",
@@ -228,7 +342,7 @@ const S = {
     background: "#07090f",
   },
 
-  /* ── Left branding panel ── */
+  /* Left branding panel */
   left: {
     flex: "0 0 45%",
     background: "linear-gradient(160deg, #0a1a12 0%, #070d0a 50%, #060910 100%)",
@@ -260,72 +374,29 @@ const S = {
     color: "rgba(255,255,255,0.90)",
   },
   leftHeadline: {
-    fontSize: 38,
-    fontWeight: 800,
-    color: "#fff",
-    lineHeight: 1.15,
-    letterSpacing: "-0.03em",
-    marginBottom: 20,
+    fontSize: 38, fontWeight: 800, color: "#fff",
+    lineHeight: 1.15, letterSpacing: "-0.03em", marginBottom: 20,
   },
   leftSub: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.42)",
-    lineHeight: 1.65,
-    marginBottom: 52,
+    fontSize: 15, color: "rgba(255,255,255,0.42)",
+    lineHeight: 1.65, marginBottom: 52,
   },
-  stats: {
-    display: "flex",
-    gap: 36,
-  },
-  stat: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  statVal: {
-    fontSize: 26,
-    fontWeight: 800,
-    color: "#4ade80",
-    letterSpacing: "-0.02em",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.35)",
-    fontWeight: 500,
-  },
+  stats: { display: "flex", gap: 36 },
+  stat:  { display: "flex", flexDirection: "column", gap: 4 },
+  statVal:   { fontSize: 26, fontWeight: 800, color: "#4ade80", letterSpacing: "-0.02em" },
+  statLabel: { fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 500 },
 
-  /* ── Right form panel ── */
+  /* Right form panel */
   right: {
     flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "60px 48px",
-    overflowY: "auto",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    padding: "60px 48px", overflowY: "auto",
   },
-  form: {
-    width: "100%",
-    maxWidth: 380,
-  },
-  formHeading: {
-    fontSize: 26,
-    fontWeight: 800,
-    color: "#fff",
-    letterSpacing: "-0.02em",
-    marginBottom: 6,
-  },
-  formSub: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.35)",
-    marginBottom: 28,
-    lineHeight: 1.5,
-  },
-  socials: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-    marginBottom: 22,
-  },
+  form:       { width: "100%", maxWidth: 380 },
+  formHeading: { fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 6 },
+  formSub:    { fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 28, lineHeight: 1.5 },
+
+  socials: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 },
   socialBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
     padding: "12px 16px", borderRadius: 11,
@@ -347,22 +418,13 @@ const S = {
     fontSize: 10, fontWeight: 700,
     background: "rgba(255,255,255,0.12)",
     color: "rgba(255,255,255,0.45)",
-    padding: "2px 7px", borderRadius: 20,
-    letterSpacing: "0.04em",
+    padding: "2px 7px", borderRadius: 20, letterSpacing: "0.04em",
   },
-  divider: {
-    display: "flex", alignItems: "center", gap: 12, marginBottom: 22,
-  },
-  dividerLine: {
-    flex: 1, height: 1, background: "rgba(255,255,255,0.07)",
-  },
-  dividerLabel: {
-    fontSize: 11, color: "rgba(255,255,255,0.22)",
-    fontWeight: 500, whiteSpace: "nowrap",
-  },
-  fields: {
-    display: "flex", flexDirection: "column", gap: 12,
-  },
+  divider:     { display: "flex", alignItems: "center", gap: 12, marginBottom: 22 },
+  dividerLine: { flex: 1, height: 1, background: "rgba(255,255,255,0.07)" },
+  dividerLabel: { fontSize: 11, color: "rgba(255,255,255,0.22)", fontWeight: 500, whiteSpace: "nowrap" },
+
+  fields: { display: "flex", flexDirection: "column", gap: 12 },
   input: {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.09)",
@@ -371,28 +433,18 @@ const S = {
     outline: "none", width: "100%", boxSizing: "border-box",
     fontFamily: "inherit",
   },
-  planRow: {
-    display: "flex", gap: 7, marginTop: 2,
-  },
+  planRow: { display: "flex", gap: 7, marginTop: 2 },
   planPill: {
     flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
     padding: "10px 4px", borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.08)",
     background: "rgba(255,255,255,0.03)",
-    cursor: "pointer", fontFamily: "inherit", gap: 3,
-    transition: "all 0.15s",
+    cursor: "pointer", fontFamily: "inherit", gap: 3, transition: "all 0.15s",
   },
-  planPillActive: {
-    background: "rgba(0,180,80,0.12)",
-    border: "1px solid rgba(0,180,80,0.35)",
-  },
-  planPillLabel: {
-    fontSize: 11, fontWeight: 700,
-    color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em",
-  },
-  planPillPrice: {
-    fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.30)",
-  },
+  planPillActive: { background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.35)" },
+  planPillLabel:  { fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.02em" },
+  planPillPrice:  { fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.30)" },
+
   errorBox: {
     fontSize: 13, color: "#f87171",
     background: "rgba(248,113,113,0.08)",
@@ -405,26 +457,61 @@ const S = {
     color: "#fff", fontSize: 15, fontWeight: 700,
     cursor: "pointer", letterSpacing: "0.01em",
     fontFamily: "inherit", marginTop: 4,
-    boxShadow: "0 4px 24px rgba(22,163,74,0.30)",
-    width: "100%",
+    boxShadow: "0 4px 24px rgba(22,163,74,0.30)", width: "100%",
   },
-  switchRow: {
-    marginTop: 22, fontSize: 13,
-    color: "rgba(255,255,255,0.32)",
-  },
+  switchRow: { marginTop: 22, fontSize: 13, color: "rgba(255,255,255,0.32)" },
   switchLink: {
-    background: "none", border: "none",
-    color: "#4ade80", fontWeight: 600,
-    cursor: "pointer", fontSize: 13,
+    background: "none", border: "none", color: "#4ade80",
+    fontWeight: 600, cursor: "pointer", fontSize: 13,
     fontFamily: "inherit", padding: 0, marginLeft: 5,
   },
-  legal: {
-    marginTop: 18,
-    fontSize: 11, color: "rgba(255,255,255,0.18)",
-    lineHeight: 1.5,
+  legal:     { marginTop: 18, fontSize: 11, color: "rgba(255,255,255,0.18)", lineHeight: 1.5 },
+  legalLink: { color: "rgba(255,255,255,0.30)", textDecoration: "underline" },
+};
+
+/* ─────────────────────────────────────────────
+   Mobile styles
+───────────────────────────────────────────── */
+const M = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    background: "#07090f",
   },
-  legalLink: {
-    color: "rgba(255,255,255,0.30)",
-    textDecoration: "underline",
+
+  /* Compact top strip */
+  topStrip: {
+    background: "linear-gradient(160deg, #0a1a12 0%, #07100a 100%)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    padding: "28px 24px 24px",
   },
+  logoRow: {
+    display: "flex", alignItems: "center", gap: 9,
+    textDecoration: "none", marginBottom: 18,
+  },
+  tagline: {
+    fontSize: 22, fontWeight: 800, color: "#fff",
+    letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 20,
+  },
+  statsRow: {
+    display: "flex", gap: 0,
+  },
+  stat: {
+    flex: 1, display: "flex", flexDirection: "column", gap: 3,
+    borderLeft: "1px solid rgba(255,255,255,0.07)",
+    paddingLeft: 14,
+  },
+  statVal:   { fontSize: 20, fontWeight: 800, color: "#4ade80", letterSpacing: "-0.02em" },
+  statLabel: { fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500 },
+
+  /* Form area */
+  formWrap: {
+    flex: 1,
+    padding: "32px 24px 40px",
+    overflowY: "auto",
+  },
+  formHeading: { fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 5 },
+  formSub:     { fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 24, lineHeight: 1.5 },
 };
