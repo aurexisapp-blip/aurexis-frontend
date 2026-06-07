@@ -54,12 +54,13 @@ export default function Auth({ defaultView = "login" }) {
   const [password, setPassword] = useState("");
   const [plan, setPlan] = useState(getInitialPlan);
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState(() => {
     const e = new URLSearchParams(window.location.search).get("error") || "";
     return OAUTH_ERRORS[e] || "";
   });
 
-  function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); }
+  function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); setTermsAccepted(false); }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -218,9 +219,24 @@ export default function Auth({ defaultView = "login" }) {
               </div>
             )}
 
+            {!isLogin && (
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginTop: 2 }}>
+                <input
+                  type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                  style={{ width: 15, height: 15, marginTop: 2, accentColor: "#00b450", flexShrink: 0, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
+                  By creating an account you agree to our{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Terms of Service</a>
+                  {" "}and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Privacy Policy</a>.
+                </span>
+              </label>
+            )}
+
             {error ? <div style={S.errorBox}>{error}</div> : null}
 
-            <button type="submit" style={S.submit} disabled={loading}>
+            <button type="submit" style={{ ...S.submit, opacity: (!isLogin && !termsAccepted) ? 0.45 : 1 }} disabled={loading || (!isLogin && !termsAccepted)}>
               {loading
                 ? (isLogin ? "Signing in…" : "Creating account…")
                 : (isLogin ? "Sign In →" : plan === "free" ? "Create Free Account →" : "Create Account & Pay →")}
@@ -232,12 +248,6 @@ export default function Auth({ defaultView = "login" }) {
             <button type="button" style={S.switchLink} onClick={() => switchView(isLogin ? "signup" : "login")}>
               {isLogin ? "Sign up free" : "Sign in"}
             </button>
-          </div>
-
-          <div style={S.legal}>
-            By continuing you agree to our{" "}
-            <a href="/terms" style={S.legalLink}>Terms</a> and{" "}
-            <a href="/privacy" style={S.legalLink}>Privacy Policy</a>.
           </div>
         </div>
       </div>
@@ -337,9 +347,24 @@ export default function Auth({ defaultView = "login" }) {
               </div>
             )}
 
+            {!isLogin && (
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginTop: 2 }}>
+                <input
+                  type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                  style={{ width: 15, height: 15, marginTop: 2, accentColor: "#00b450", flexShrink: 0, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
+                  By creating an account you agree to our{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Terms of Service</a>
+                  {" "}and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Privacy Policy</a>.
+                </span>
+              </label>
+            )}
+
             {error ? <div style={S.errorBox}>{error}</div> : null}
 
-            <button type="submit" style={S.submit} disabled={loading}>
+            <button type="submit" style={{ ...S.submit, opacity: (!isLogin && !termsAccepted) ? 0.45 : 1 }} disabled={loading || (!isLogin && !termsAccepted)}>
               {loading
                 ? (isLogin ? "Signing in…" : "Creating account…")
                 : (isLogin ? "Sign In →" : plan === "free" ? "Create Free Account →" : "Create Account & Pay →")}
@@ -351,12 +376,6 @@ export default function Auth({ defaultView = "login" }) {
             <button type="button" style={S.switchLink} onClick={() => switchView(isLogin ? "signup" : "login")}>
               {isLogin ? "Sign up free" : "Sign in"}
             </button>
-          </div>
-
-          <div style={S.legal}>
-            By continuing you agree to our{" "}
-            <a href="/terms" style={S.legalLink}>Terms</a> and{" "}
-            <a href="/privacy" style={S.legalLink}>Privacy Policy</a>.
           </div>
         </div>
       </div>
