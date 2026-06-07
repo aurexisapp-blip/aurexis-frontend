@@ -8964,15 +8964,27 @@ const renderPage = () => {
             >
               <div style={{
                 width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.4) 100%)",
-                border: "1.5px solid rgba(99,102,241,0.35)",
+                background: "linear-gradient(135deg, rgba(0,180,80,0.40) 0%, rgba(0,120,60,0.30) 100%)",
+                border: "1.5px solid rgba(0,180,80,0.30)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 11, fontWeight: 800, color: T.text,
-              }}>AU</div>
+              }}>{(() => {
+                const fn = userProfile?.first_name || "";
+                const ln = userProfile?.last_name || "";
+                const em = userProfile?.email || "";
+                if (fn && ln) return `${fn[0]}${ln[0]}`.toUpperCase();
+                if (fn) return fn.slice(0,2).toUpperCase();
+                if (em) return em.slice(0,2).toUpperCase();
+                return "AU";
+              })()}</div>
               {!sidebarCollapsed && (
                 <div style={{ overflow: "hidden", textAlign: "left" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: T.textSec, whiteSpace: "nowrap" }}>My Account</div>
-                  <div style={{ fontSize: 10, color: T.textFaint, whiteSpace: "nowrap" }}>Free Plan</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.textSec, whiteSpace: "nowrap" }}>
+                    {userProfile?.first_name || userProfile?.email?.split("@")[0] || "My Account"}
+                  </div>
+                  <div style={{ fontSize: 10, color: T.textFaint, whiteSpace: "nowrap" }}>
+                    {userProfile ? (userProfile.plan.charAt(0).toUpperCase() + userProfile.plan.slice(1)) + " Plan" : "Free Plan"}
+                  </div>
                 </div>
               )}
             </motion.button>
