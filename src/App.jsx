@@ -2165,7 +2165,10 @@ function AppInner() {
     const oauthToken = params.get("token");
     if (oauthToken) {
       localStorage.setItem("aurexis_token", oauthToken);
-      // Clean the token out of the URL bar without a reload
+      // New OAuth user — clear onboarding flag so they see the welcome flow
+      if (params.get("new_user") === "1") {
+        localStorage.removeItem("aurexis_onboarding_complete");
+      }
       const clean = window.location.pathname;
       window.history.replaceState({}, "", clean);
     }
@@ -7971,13 +7974,18 @@ async function loadWatchlistLive() {
   };
 
   const Pricing = () => {
+    const [upgradeLoading, setUpgradeLoading] = React.useState(null);
+    const [upgradeError, setUpgradeError] = React.useState("");
+
     const plans = [
       {
+        id: "free",
         name: "FREE",
         price: "$0",
         period: "forever",
         badge: null,
         accent: T.borderStrong,
+        btnLabel: "Get Started Free",
         features: [
           "Yesterday's AI pick (24h delayed)",
           "Top movers dashboard",
@@ -7986,12 +7994,14 @@ async function loadWatchlistLive() {
         ],
       },
       {
+        id: "starter",
         name: "STARTER",
         price: "$9",
         period: "per month",
         badge: "MOST POPULAR",
         badgeColor: "#00b450",
         accent: "rgba(0,180,80,0.55)",
+        btnLabel: "Get Starter",
         features: [
           "Today's AI pick, live",
           "Entry, stop & target levels",
@@ -8005,11 +8015,13 @@ async function loadWatchlistLive() {
         ],
       },
       {
+        id: "pro",
         name: "PRO",
         price: "$29",
         period: "per month",
         badge: null,
         accent: "rgba(99,102,241,0.55)",
+        btnLabel: "Get Pro",
         features: [
           "Everything in Starter",
           "Full screener (multi-ticker)",
@@ -8021,12 +8033,14 @@ async function loadWatchlistLive() {
         ],
       },
       {
+        id: "elite",
         name: "ELITE",
         price: "$99",
         period: "per month",
         badge: "FOR SERIOUS TRADERS",
         badgeColor: "#f59e0b",
         accent: "rgba(245,158,11,0.55)",
+        btnLabel: "Join Elite",
         features: [
           "Everything in Pro",
           "Options flow feed",
@@ -8040,6 +8054,50 @@ async function loadWatchlistLive() {
       },
     ];
 
+    async function handleUpgrade(plan) {
+      if (plan.id === userPlan) return;
+      setUpgradeError("");
+
+      if (plan.id === "free") {
+        window.location.href = "/signup?plan=free";
+        return;
+      }
+
+      setUpgradeLoading(plan.id);
+      try {
+        const token = localStorage.getItem("aurexis_token");
+        const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+        const res = await fetch(`${API}/stripe/create-checkout-session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            plan: plan.id,
+            success_url: `${window.location.origin}/app`,
+            cancel_url: `${window.location.origin}/app`,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setUpgradeError(data?.detail || data?.message || "Could not start checkout."); return; }
+        const url = data?.url || data?.checkout_url;
+        if (url) {
+          let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
+          if (!parsed || !["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
+            setUpgradeError("Invalid checkout URL."); return;
+          }
+          window.location.href = parsed.href;
+        } else {
+          setUpgradeError("No checkout URL returned.");
+        }
+      } catch {
+        setUpgradeError("Network error — check your connection.");
+      } finally {
+        setUpgradeLoading(null);
+      }
+    }
+
     return (
       <div style={{ padding: "28px 28px 40px", maxWidth: 960, margin: "0 auto" }}>
         {/* Header */}
@@ -8049,79 +8107,93 @@ async function loadWatchlistLive() {
           <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
         </div>
 
+        {upgradeError && (
+          <div style={{ fontSize: 13, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.16)", borderRadius: 8, padding: "10px 14px", marginBottom: 20, textAlign: "center" }}>
+            {upgradeError}
+          </div>
+        )}
+
         {/* Plan grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {plans.map((plan) => (
-            <div key={plan.name} style={{
-              borderRadius: 16,
-              border: `1px solid ${plan.accent}`,
-              background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.98)",
-              padding: "24px 20px 22px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 0,
-              position: "relative",
-              boxShadow: plan.badge === "MOST POPULAR" ? `0 0 0 1px ${plan.accent}, 0 4px 24px rgba(0,180,80,0.10)` : "none",
-            }}>
-              {/* Badge */}
-              {plan.badge && (
-                <div style={{
-                  position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)",
-                  background: plan.badgeColor, color: "#fff",
-                  fontSize: 9, fontWeight: 800, letterSpacing: "0.10em",
-                  padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap",
-                }}>
-                  {plan.badge}
-                </div>
-              )}
-
-              {/* Plan name */}
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.textFaint, marginBottom: 10 }}>{plan.name}</div>
-
-              {/* Price */}
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: T.text, lineHeight: 1 }}>{plan.price}</span>
-              </div>
-              <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 20 }}>{plan.period}</div>
-
-              {/* Features */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
-                {plan.features.map((f) => (
-                  <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                    <span style={{ color: "#00b450", fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
-                    <span style={{ fontSize: 12.5, color: T.textSec, lineHeight: 1.45 }}>{f}</span>
+          {plans.map((plan) => {
+            const isCurrent = plan.id === userPlan;
+            const isLoading = upgradeLoading === plan.id;
+            const isPopular = plan.badge === "MOST POPULAR";
+            return (
+              <div key={plan.name} style={{
+                borderRadius: 16,
+                border: `1px solid ${plan.accent}`,
+                background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.98)",
+                padding: "24px 20px 22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 0,
+                position: "relative",
+                boxShadow: isPopular ? `0 0 0 1px ${plan.accent}, 0 4px 24px rgba(0,180,80,0.10)` : "none",
+              }}>
+                {/* Badge */}
+                {plan.badge && (
+                  <div style={{
+                    position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)",
+                    background: plan.badgeColor, color: "#fff",
+                    fontSize: 9, fontWeight: 800, letterSpacing: "0.10em",
+                    padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap",
+                  }}>
+                    {plan.badge}
                   </div>
-                ))}
-              </div>
+                )}
 
-              {/* CTA */}
-              <a
-                href="https://useaurexis.com/#waitlist"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "block",
-                  marginTop: 22,
-                  padding: "10px 0",
-                  borderRadius: 10,
-                  textAlign: "center",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textDecoration: "none",
-                  background: plan.badge === "MOST POPULAR"
-                    ? "#00b450"
-                    : darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
-                  color: plan.badge === "MOST POPULAR" ? "#fff" : T.text,
-                  border: plan.badge === "MOST POPULAR" ? "none" : `1px solid ${T.border2}`,
-                  transition: "opacity 0.15s",
-                }}
-              >
-                Join the Waitlist
-              </a>
-              <div style={{ fontSize: 10, color: T.textGhost, textAlign: "center", marginTop: 8 }}>Cancel anytime</div>
-            </div>
-          ))}
+                {/* Plan name */}
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.textFaint, marginBottom: 10 }}>{plan.name}</div>
+
+                {/* Price */}
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: T.text, lineHeight: 1 }}>{plan.price}</span>
+                </div>
+                <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 20 }}>{plan.period}</div>
+
+                {/* Features */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1 }}>
+                  {plan.features.map((f) => (
+                    <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ color: "#00b450", fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
+                      <span style={{ fontSize: 12.5, color: T.textSec, lineHeight: 1.45 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={() => handleUpgrade(plan)}
+                  disabled={isCurrent || isLoading}
+                  style={{
+                    display: "block",
+                    marginTop: 22,
+                    padding: "10px 0",
+                    borderRadius: 10,
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: isCurrent ? "default" : "pointer",
+                    width: "100%",
+                    fontFamily: "inherit",
+                    background: isCurrent
+                      ? (darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)")
+                      : isPopular
+                        ? "#00b450"
+                        : darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+                    color: isCurrent ? T.textFaint : isPopular ? "#fff" : T.text,
+                    border: isPopular && !isCurrent ? "none" : `1px solid ${T.border2}`,
+                    opacity: isLoading ? 0.6 : 1,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  {isCurrent ? "Current Plan" : isLoading ? "Redirecting…" : plan.btnLabel}
+                </button>
+                {!isCurrent && <div style={{ fontSize: 10, color: T.textGhost, textAlign: "center", marginTop: 8 }}>Cancel anytime</div>}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
