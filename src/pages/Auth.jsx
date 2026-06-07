@@ -4,34 +4,10 @@ import { useNavigate } from "react-router-dom";
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 const PLANS = [
-  {
-    id: "free",
-    label: "Free",
-    price: "$0",
-    period: "/mo",
-    desc: "Yesterday's pick, movers dashboard",
-  },
-  {
-    id: "starter",
-    label: "Starter",
-    price: "$9",
-    period: "/mo",
-    desc: "Live pick, trade plan, edge signals",
-  },
-  {
-    id: "pro",
-    label: "Pro",
-    price: "$29",
-    period: "/mo",
-    desc: "Full screener, portfolio sync, alerts",
-  },
-  {
-    id: "elite",
-    label: "Elite",
-    price: "$99",
-    period: "/mo",
-    desc: "Options flow, backtesting, custom scans",
-  },
+  { id: "free",    label: "Free",    price: "$0"  },
+  { id: "starter", label: "Starter", price: "$9"  },
+  { id: "pro",     label: "Pro",     price: "$29" },
+  { id: "elite",   label: "Elite",   price: "$99" },
 ];
 
 function getInitialPlan() {
@@ -40,32 +16,43 @@ function getInitialPlan() {
   return valid.includes(param.toLowerCase()) ? param.toLowerCase() : "starter";
 }
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908C16.658 14.108 17.64 11.8 17.64 9.2z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+      <path d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg width="15" height="18" viewBox="0 0 814 1000" fill="currentColor" style={{ flexShrink: 0 }}>
+      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 612 0 510.7 0 414.8c0-167.2 109.2-255.8 216.2-255.8 57.4 0 105.5 38.2 141.9 38.2 35 0 90.1-40.8 155.5-40.8 24.6 0 108.2 2.6 168.9 87.5zm-68.7-179.5c31.4-37.5 53.4-89.9 53.4-142.3 0-7.7-.6-15.4-1.9-21.7C724.2 6.4 667.9 36.9 631.3 80c-29.5 34.4-56.9 86.8-56.9 140.5 0 8.3 1.3 16.6 1.9 19.1 3.2.6 8.3 1.3 13.4 1.3 51.1 0 103.7-27.4 136.7-79.5z"/>
+    </svg>
+  );
+}
+
 export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
   const [view, setView] = useState(defaultView);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [plan, setPlan] = useState(getInitialPlan);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function resetForm() {
-    setEmail("");
-    setPassword("");
-    setPlan("pro");
-    setError("");
-  }
+  function switchView(v) { setView(v); setEmail(""); setPassword(""); setError(""); }
 
-  function switchView(v) {
-    setView(v);
-    resetForm();
+  function handleOAuth(provider) {
+    window.location.href = `${API}/auth/${provider}/redirect`;
   }
 
   async function handleLogin(e) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
       const res = await fetch(`${API}/auth/login`, {
         method: "POST",
@@ -73,24 +60,18 @@ export default function Auth({ defaultView = "login" }) {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data?.detail || data?.message || "Login failed. Check your credentials.");
-        return;
-      }
+      if (!res.ok) { setError(data?.detail || data?.message || "Login failed. Check your credentials."); return; }
       const token = data?.access_token || data?.token;
       if (token) localStorage.setItem("aurexis_token", token);
       navigate("/app");
     } catch {
-      setError("Network error — make sure the server is running.");
-    } finally {
-      setLoading(false);
-    }
+      setError("Network error — check your connection.");
+    } finally { setLoading(false); }
   }
 
   async function handleSignup(e) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
       const signupRes = await fetch(`${API}/auth/signup`, {
         method: "POST",
@@ -98,401 +79,280 @@ export default function Auth({ defaultView = "login" }) {
         body: JSON.stringify({ email, password, plan }),
       });
       const signupData = await signupRes.json();
-      if (!signupRes.ok) {
-        setError(signupData?.detail || signupData?.message || "Signup failed.");
-        return;
-      }
+      if (!signupRes.ok) { setError(signupData?.detail || signupData?.message || "Signup failed."); return; }
 
       const newToken = signupData?.access_token || signupData?.token;
       if (newToken) localStorage.setItem("aurexis_token", newToken);
 
-      // Free plan — no Stripe, go straight to app.
-      if (plan === "free") {
-        navigate("/app");
-        return;
-      }
+      if (plan === "free") { navigate("/app"); return; }
 
-      // Paid plan — create Stripe checkout session.
       const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(newToken ? { "Authorization": `Bearer ${newToken}` } : {}),
-        },
-        body: JSON.stringify({
-          plan,
-          success_url: window.location.origin + "/app",
-          cancel_url: window.location.origin + "/",
-        }),
+        headers: { "Content-Type": "application/json", ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}) },
+        body: JSON.stringify({ plan, success_url: `${window.location.origin}/app`, cancel_url: `${window.location.origin}/` }),
       });
       const checkoutData = await checkoutRes.json();
-      if (!checkoutRes.ok) {
-        setError(checkoutData?.detail || checkoutData?.message || "Could not create checkout session.");
-        return;
-      }
+      if (!checkoutRes.ok) { setError(checkoutData?.detail || checkoutData?.message || "Could not start checkout."); return; }
+
       const url = checkoutData?.url || checkoutData?.checkout_url;
       if (url) {
-        let parsed;
-        try { parsed = new URL(String(url)); } catch { parsed = null; }
+        let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
         if (!parsed || !["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
-          setError("Invalid checkout URL returned from server.");
-          return;
+          setError("Invalid checkout URL."); return;
         }
         window.location.href = parsed.href;
       } else {
-        setError("No checkout URL returned from server.");
+        setError("No checkout URL returned.");
       }
     } catch {
-      setError("Network error — make sure the server is running.");
-    } finally {
-      setLoading(false);
-    }
+      setError("Network error — check your connection.");
+    } finally { setLoading(false); }
   }
 
+  const isLogin = view === "login";
+
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+    <div style={S.page}>
+      <div style={S.glow} />
+
+      <div style={S.card}>
         {/* Logo */}
-        <div style={styles.logoRow}>
-          <span style={styles.logoMark}>A</span>
-          <span style={styles.logoText}>AUREXIS</span>
-        </div>
+        <a href="/" style={S.logoRow}>
+          <div style={S.logoMark}>A</div>
+          <span style={S.logoText}>AUREXIS</span>
+        </a>
 
-        {/* Tab switcher */}
-        <div style={styles.tabs}>
-          <button
-            style={{ ...styles.tab, ...(view === "login" ? styles.tabActive : {}) }}
-            onClick={() => switchView("login")}
-            type="button"
-          >
-            Log In
+        {/* Heading */}
+        <div style={S.heading}>{isLogin ? "Welcome back" : "Create your account"}</div>
+        <div style={S.subheading}>{isLogin ? "Sign in to access your AI picks." : "Start free, upgrade anytime."}</div>
+
+        {/* Social */}
+        <div style={S.socials}>
+          <button type="button" style={S.socialBtn} onClick={() => handleOAuth("google")}>
+            <GoogleIcon />
+            <span>Continue with Google</span>
           </button>
-          <button
-            style={{ ...styles.tab, ...(view === "signup" ? styles.tabActive : {}) }}
-            onClick={() => switchView("signup")}
-            type="button"
-          >
-            Sign Up
+          <button type="button" style={{ ...S.socialBtn, ...S.appleBtn }} onClick={() => handleOAuth("apple")}>
+            <AppleIcon />
+            <span>Continue with Apple</span>
           </button>
         </div>
 
-        {view === "login" ? (
-          <form onSubmit={handleLogin} style={styles.form} noValidate>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                style={styles.input}
-              />
-            </div>
+        {/* Divider */}
+        <div style={S.divider}>
+          <div style={S.dividerLine} />
+          <span style={S.dividerLabel}>or</span>
+          <div style={S.dividerLine} />
+        </div>
 
-            {error ? <div style={styles.error}>{error}</div> : null}
+        {/* Form */}
+        <form onSubmit={isLogin ? handleLogin : handleSignup} style={S.form} noValidate>
+          <input
+            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            required autoComplete="email" placeholder="Email address" style={S.input}
+          />
+          <input
+            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            required autoComplete={isLogin ? "current-password" : "new-password"}
+            placeholder="Password" style={S.input}
+          />
 
-            <button type="submit" style={styles.submit} disabled={loading}>
-              {loading ? "Logging in…" : "Log In"}
-            </button>
-
-            <div style={styles.switchRow}>
-              Don't have an account?{" "}
-              <button type="button" style={styles.switchLink} onClick={() => switchView("signup")}>
-                Sign up
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleSignup} style={styles.form} noValidate>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                placeholder="••••••••"
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Choose a plan</label>
-              <div style={styles.planGrid}>
-                {PLANS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPlan(p.id)}
-                    style={{
-                      ...styles.planCard,
-                      ...(plan === p.id ? styles.planCardActive : {}),
-                    }}
-                  >
-                    <div style={styles.planLabel}>{p.label}</div>
-                    <div style={styles.planPrice}>
-                      <span style={styles.planPriceNum}>{p.price}</span>
-                      <span style={styles.planPeriod}>{p.period}</span>
-                    </div>
-                    <div style={styles.planDesc}>{p.desc}</div>
-                    {plan === p.id ? <div style={styles.planCheck}>✓</div> : null}
+          {!isLogin && (
+            <div style={S.planRow}>
+              {PLANS.map((p) => {
+                const active = plan === p.id;
+                return (
+                  <button key={p.id} type="button" onClick={() => setPlan(p.id)}
+                    style={{ ...S.planPill, ...(active ? S.planPillActive : {}) }}>
+                    <span style={S.planPillLabel}>{p.label}</span>
+                    <span style={{ ...S.planPillPrice, ...(active ? { color: "#4ade80" } : {}) }}>{p.price}</span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          )}
 
-            {error ? <div style={styles.error}>{error}</div> : null}
+          {error ? <div style={S.errorBox}>{error}</div> : null}
 
-            <button type="submit" style={styles.submit} disabled={loading}>
-              {loading ? "Creating account…" : "Create Account & Continue"}
-            </button>
+          <button type="submit" style={S.submit} disabled={loading}>
+            {loading
+              ? (isLogin ? "Signing in…" : "Creating account…")
+              : (isLogin ? "Sign In" : plan === "free" ? "Create Free Account" : "Create Account & Pay →")}
+          </button>
+        </form>
 
-            <div style={styles.switchRow}>
-              Already have an account?{" "}
-              <button type="button" style={styles.switchLink} onClick={() => switchView("login")}>
-                Log in
-              </button>
-            </div>
-          </form>
-        )}
+        {/* Switch view */}
+        <div style={S.switchRow}>
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
+          <button type="button" style={S.switchLink}
+            onClick={() => switchView(isLogin ? "signup" : "login")}>
+            {isLogin ? "Sign up" : "Sign in"}
+          </button>
+        </div>
+
+        {/* Legal */}
+        <div style={S.legal}>
+          By continuing you agree to our{" "}
+          <a href="/terms" style={S.legalLink}>Terms</a> and{" "}
+          <a href="/privacy" style={S.legalLink}>Privacy Policy</a>.
+        </div>
       </div>
     </div>
   );
 }
 
-const styles = {
+const S = {
   page: {
     minHeight: "100vh",
-    background: "#070b12",
+    background: "#07090f",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "24px 16px",
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    position: "relative",
+    overflow: "hidden",
+  },
+  glow: {
+    position: "fixed",
+    top: "-10%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: 800,
+    height: 500,
+    background: "radial-gradient(ellipse, rgba(0,180,80,0.06) 0%, transparent 65%)",
+    pointerEvents: "none",
+    zIndex: 0,
   },
   card: {
+    position: "relative",
+    zIndex: 1,
     width: "100%",
-    maxWidth: 420,
-    background: "rgba(10,12,16,0.72)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    padding: "36px 32px 32px",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+    maxWidth: 400,
+    background: "rgba(11,14,20,0.92)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 20,
+    padding: "36px 32px 28px",
+    boxShadow: "0 30px 90px rgba(0,0,0,0.65)",
+    backdropFilter: "blur(24px)",
   },
   logoRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 28,
-    justifyContent: "center",
+    display: "flex", alignItems: "center", gap: 9,
+    justifyContent: "center", marginBottom: 30,
+    textDecoration: "none",
   },
   logoMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: "rgba(0,180,80,1)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 16,
-    fontWeight: 900,
-    color: "#fff",
-    letterSpacing: -0.5,
-    lineHeight: "32px",
-    textAlign: "center",
+    width: 30, height: 30, borderRadius: 8,
+    background: "#00b450",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 15, fontWeight: 900, color: "#fff",
+    flexShrink: 0,
   },
   logoText: {
-    fontSize: 18,
-    fontWeight: 900,
-    letterSpacing: 2,
-    color: "rgba(255,255,255,0.92)",
+    fontSize: 15, fontWeight: 900, letterSpacing: "0.2em",
+    color: "rgba(255,255,255,0.90)",
   },
-  tabs: {
-    display: "flex",
-    borderRadius: 10,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    padding: 3,
-    marginBottom: 28,
-    gap: 3,
+  heading: {
+    fontSize: 22, fontWeight: 800, color: "#fff",
+    textAlign: "center", letterSpacing: "-0.02em", marginBottom: 6,
   },
-  tab: {
-    flex: 1,
-    padding: "8px 0",
-    border: "none",
-    borderRadius: 7,
-    background: "transparent",
-    color: "rgba(255,255,255,0.50)",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-    letterSpacing: 0.2,
+  subheading: {
+    fontSize: 13, color: "rgba(255,255,255,0.35)",
+    textAlign: "center", marginBottom: 26, lineHeight: 1.5,
   },
-  tabActive: {
-    background: "rgba(0,180,80,0.14)",
-    color: "rgba(0,200,90,1)",
-    border: "1px solid rgba(0,180,80,0.22)",
+  socials: {
+    display: "flex", flexDirection: "column", gap: 9, marginBottom: 20,
+  },
+  socialBtn: {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+    padding: "11px 16px", borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.11)",
+    background: "rgba(255,255,255,0.05)",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14, fontWeight: 600, cursor: "pointer",
+    fontFamily: "inherit", width: "100%",
+    transition: "background 0.15s, border-color 0.15s",
+  },
+  appleBtn: {
+    background: "#fff",
+    borderColor: "#fff",
+    color: "#000",
+  },
+  divider: {
+    display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1, height: 1, background: "rgba(255,255,255,0.07)",
+  },
+  dividerLabel: {
+    fontSize: 12, color: "rgba(255,255,255,0.22)",
+    fontWeight: 500, letterSpacing: "0.04em",
   },
   form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 18,
-  },
-  fieldGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 7,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.55)",
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
+    display: "flex", flexDirection: "column", gap: 11,
   },
   input: {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 9,
-    padding: "11px 14px",
-    fontSize: 14,
-    color: "rgba(255,255,255,0.90)",
-    outline: "none",
-    width: "100%",
-    boxSizing: "border-box",
-    transition: "border-color 0.15s ease",
-    fontFamily: "inherit",
-  },
-  planGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 10,
-    marginTop: 2,
-  },
-  planCard: {
-    position: "relative",
-    background: "rgba(255,255,255,0.04)",
+    background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 10,
-    padding: "14px 10px 12px",
-    cursor: "pointer",
-    textAlign: "center",
-    transition: "all 0.15s ease",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    fontFamily: "inherit",
+    borderRadius: 10, padding: "12px 14px",
+    fontSize: 14, color: "rgba(255,255,255,0.90)",
+    outline: "none", width: "100%", boxSizing: "border-box",
+    fontFamily: "inherit", transition: "border-color 0.15s",
   },
-  planCardActive: {
+  planRow: {
+    display: "flex", gap: 6, marginTop: 4,
+  },
+  planPill: {
+    flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+    padding: "9px 4px", borderRadius: 9,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.03)",
+    cursor: "pointer", fontFamily: "inherit", gap: 3,
+    transition: "all 0.15s",
+  },
+  planPillActive: {
     background: "rgba(0,180,80,0.10)",
-    border: "1px solid rgba(0,180,80,0.35)",
-    boxShadow: "0 0 0 1px rgba(0,180,80,0.20)",
+    border: "1px solid rgba(0,180,80,0.32)",
   },
-  planLabel: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "rgba(255,255,255,0.80)",
-    letterSpacing: 0.3,
+  planPillLabel: {
+    fontSize: 11, fontWeight: 700,
+    color: "rgba(255,255,255,0.65)", letterSpacing: "0.02em",
   },
-  planPrice: {
-    display: "flex",
-    alignItems: "baseline",
-    justifyContent: "center",
-    gap: 1,
-    marginTop: 2,
+  planPillPrice: {
+    fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.38)",
   },
-  planPriceNum: {
-    fontSize: 20,
-    fontWeight: 900,
-    color: "rgba(255,255,255,0.92)",
-    lineHeight: 1,
-  },
-  planPeriod: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.45)",
-    fontWeight: 500,
-  },
-  planDesc: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.38)",
-    lineHeight: 1.35,
-    marginTop: 2,
-  },
-  planCheck: {
-    position: "absolute",
-    top: 6,
-    right: 8,
-    fontSize: 10,
-    color: "rgba(0,200,90,1)",
-    fontWeight: 900,
-  },
-  error: {
-    background: "rgba(255,90,90,0.08)",
-    border: "1px solid rgba(255,90,90,0.20)",
-    borderRadius: 8,
-    padding: "10px 13px",
-    fontSize: 13,
-    color: "rgba(255,120,120,0.90)",
-    lineHeight: 1.45,
+  errorBox: {
+    fontSize: 13, color: "#f87171",
+    background: "rgba(248,113,113,0.08)",
+    border: "1px solid rgba(248,113,113,0.16)",
+    borderRadius: 8, padding: "9px 12px", lineHeight: 1.4,
   },
   submit: {
-    background: "rgba(0,180,80,1)",
-    border: "none",
-    borderRadius: 10,
-    padding: "13px 0",
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#fff",
-    cursor: "pointer",
-    letterSpacing: 0.3,
-    marginTop: 2,
-    transition: "opacity 0.15s ease",
-    fontFamily: "inherit",
-    width: "100%",
+    padding: "13px 0", borderRadius: 10, border: "none",
+    background: "linear-gradient(135deg, #16a34a, #15803d)",
+    color: "#fff", fontSize: 14, fontWeight: 700,
+    cursor: "pointer", letterSpacing: "0.02em",
+    fontFamily: "inherit", marginTop: 4,
+    boxShadow: "0 4px 20px rgba(22,163,74,0.28)",
+    transition: "opacity 0.15s",
   },
   switchRow: {
-    textAlign: "center",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.42)",
+    marginTop: 20, textAlign: "center",
+    fontSize: 13, color: "rgba(255,255,255,0.32)",
   },
   switchLink: {
-    background: "none",
-    border: "none",
-    color: "rgba(0,200,90,0.90)",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    padding: 0,
-    fontFamily: "inherit",
+    background: "none", border: "none",
+    color: "#4ade80", fontWeight: 600,
+    cursor: "pointer", fontSize: 13,
+    fontFamily: "inherit", padding: 0, marginLeft: 5,
+  },
+  legal: {
+    marginTop: 16, textAlign: "center",
+    fontSize: 11, color: "rgba(255,255,255,0.20)",
+    lineHeight: 1.5,
+  },
+  legalLink: {
+    color: "rgba(255,255,255,0.35)",
     textDecoration: "underline",
-    textUnderlineOffset: 2,
   },
 };
