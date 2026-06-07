@@ -2185,7 +2185,9 @@ function AppInner() {
   const [apiOnline, setApiOnline] = useState(false);
   const debugEnabled = (() => {
     try {
-      return String(window?.location?.search || "").includes("debug=1");
+      // Only allow debug mode in local development to prevent information disclosure in production.
+      const isDev = import.meta.env.DEV === true;
+      return isDev && String(window?.location?.search || "").includes("debug=1");
     } catch {
       return false;
     }

@@ -160,9 +160,7 @@ async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: 
       const errMsg = extractErrorMessage(data, res.status);
       try {
         // eslint-disable-next-line no-console
-        console.error("API_RESPONSE", res);
-        // eslint-disable-next-line no-console
-        console.error("API_ERROR", { method, path, status: res.status, url, error: errMsg });
+        console.error("API_ERROR", { method, path, status: res.status, error: errMsg });
       } catch {
         // ignore
       }
@@ -175,7 +173,7 @@ async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: 
     const errMsg = isAbort ? "Request timed out" : "Network error";
     try {
       // eslint-disable-next-line no-console
-      console.error("API_ERROR", { method, path, status: 0, url, error: errMsg });
+      console.error("API_ERROR", { method, path, status: 0, error: errMsg });
     } catch {
       // ignore
     }

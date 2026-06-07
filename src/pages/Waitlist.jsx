@@ -1,10 +1,13 @@
 import React, { useState, useRef } from "react";
 import emailjs from "@emailjs/browser";
 
-// ── EmailJS config — fill these in ───────────────────────────────────────────
-const EMAILJS_SERVICE_ID  = "service_eu25jjf";
-const EMAILJS_TEMPLATE_ID = "template_rh2z2ya";
-const EMAILJS_PUBLIC_KEY  = "sqJqw5fZ52fgPM038";
+// ── EmailJS config — set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID,
+//    and VITE_EMAILJS_PUBLIC_KEY in your .env files. These are intentionally
+//    client-side keys (EmailJS public key) and are safe to expose, but
+//    keeping them in env vars avoids hardcoding them in source control.
+const EMAILJS_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID  || "service_eu25jjf";
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_rh2z2ya";
+const EMAILJS_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY  || "sqJqw5fZ52fgPM038";
 
 const GREEN = "#00ff94";
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 const PLANS = [
   {
@@ -56,7 +56,7 @@ export default function Auth({ defaultView = "login" }) {
     try {
       const res = await fetch(`${API}/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("aurexis_token")}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
@@ -81,7 +81,7 @@ export default function Auth({ defaultView = "login" }) {
     try {
       const signupRes = await fetch(`${API}/auth/signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("aurexis_token")}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, plan }),
       });
       const signupData = await signupRes.json();
@@ -90,9 +90,16 @@ export default function Auth({ defaultView = "login" }) {
         return;
       }
 
+      // Use the token returned by signup for the checkout request.
+      const newToken = signupData?.access_token || signupData?.token;
+      if (newToken) localStorage.setItem("aurexis_token", newToken);
+
       const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("aurexis_token")}` },
+        headers: {
+          "Content-Type": "application/json",
+          ...(newToken ? { "Authorization": `Bearer ${newToken}` } : {}),
+        },
         body: JSON.stringify({
           plan,
           success_url: window.location.origin + "/app",
@@ -106,7 +113,14 @@ export default function Auth({ defaultView = "login" }) {
       }
       const url = checkoutData?.url || checkoutData?.checkout_url;
       if (url) {
-        window.location.href = url;
+        // Validate that the redirect is to Stripe's checkout domain to prevent open redirects.
+        let parsed;
+        try { parsed = new URL(String(url)); } catch { parsed = null; }
+        if (!parsed || !["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
+          setError("Invalid checkout URL returned from server.");
+          return;
+        }
+        window.location.href = parsed.href;
       } else {
         setError("No checkout URL returned from server.");
       }
