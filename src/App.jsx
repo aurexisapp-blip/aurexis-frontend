@@ -5753,7 +5753,7 @@ async function loadWatchlistLive() {
                     ) : null}
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 11, color: T.textFaint, fontStyle: "italic" }}>
-                        Monitoring for conviction confirmation — upgrade to see full details
+                        Monitoring for conviction confirmation — no entry signal yet
                       </span>
                     </div>
                   </div>
