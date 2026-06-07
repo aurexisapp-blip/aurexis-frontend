@@ -2089,6 +2089,53 @@ function OnboardingModal({ onDone }) {
   );
 }
 
+// ── Plan gating ───────────────────────────────────────────────────────────────
+function _parseJwt(token) {
+  try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); } catch { return {}; }
+}
+const PLAN_RANK = { free: 0, starter: 1, pro: 2, elite: 3 };
+function usePlan() {
+  const read = () => {
+    const tok = localStorage.getItem("aurexis_token");
+    if (!tok) return "free";
+    const p = _parseJwt(tok);
+    const raw = String(p?.plan || p?.tier || p?.subscription || "free").toLowerCase().trim();
+    return PLAN_RANK[raw] !== undefined ? raw : "free";
+  };
+  const [plan, setPlan] = React.useState(read);
+  React.useEffect(() => {
+    const sync = () => setPlan(read());
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  return plan;
+}
+function canAccess(userPlan, minPlan) {
+  return (PLAN_RANK[userPlan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
+}
+function PlanGate({ requires, userPlan, children, setTab }) {
+  if (canAccess(userPlan, requires)) return children;
+  const label = requires.charAt(0).toUpperCase() + requires.slice(1);
+  return (
+    <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+      <div style={{ filter: "blur(7px)", pointerEvents: "none", userSelect: "none", opacity: 0.28 }}>{children}</div>
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", gap: 8,
+        background: "rgba(7,11,18,0.78)", backdropFilter: "blur(4px)", borderRadius: 14,
+      }}>
+        <span style={{ fontSize: 22 }}>🔒</span>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.92)", textAlign: "center" }}>{label} plan required</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", textAlign: "center", maxWidth: 190, lineHeight: 1.5 }}>Upgrade to unlock this feature</div>
+        <button
+          onClick={() => setTab("pricing")}
+          style={{ marginTop: 4, padding: "8px 20px", borderRadius: 8, cursor: "pointer", background: "linear-gradient(135deg,#16a34a,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em" }}
+        >Upgrade →</button>
+      </div>
+    </div>
+  );
+}
+
 function AppInner() {
   const NAV = useMemo(
     () => ({
@@ -2164,6 +2211,7 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
+  const userPlan = usePlan();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([
@@ -5358,34 +5406,52 @@ async function loadWatchlistLive() {
             </div>
 
             {!isLowConviction && (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                gap: "1px",
-                background: T.bg3,
-                borderRadius: 12,
-                overflow: "hidden",
-                margin: "18px 0 16px",
-              }}>
-                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Entry</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
-                    {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
+              canAccess(userPlan, "starter") ? (
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "1px",
+                  background: T.bg3,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  margin: "18px 0 16px",
+                }}>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Entry</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+                      {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
+                    </div>
+                  </div>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Stop</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
+                      {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
+                    </div>
+                  </div>
+                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Target</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
+                      {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
+                    </div>
                   </div>
                 </div>
-                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Stop</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
-                    {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
+              ) : (
+                <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", margin: "18px 0 16px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(5px)", opacity: 0.3, pointerEvents: "none" }}>
+                    {["Entry","Stop","Target"].map(lbl => (
+                      <div key={lbl} style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>{lbl}</div>
+                        <div style={{ fontSize: 26, fontWeight: 700, color: T.text }}>$—</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(7,11,18,0.75)", borderRadius: 12 }}>
+                    <span style={{ fontSize: 18 }}>🔒</span>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Starter plan required</div>
+                    <button onClick={() => setTab("pricing")} style={{ padding: "5px 14px", borderRadius: 7, background: "#16a34a", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
                   </div>
                 </div>
-                <div style={{ background: "rgba(10,14,26,0.85)", padding: "14px 18px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Target</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
-                    {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
-                  </div>
-                </div>
-              </div>
+              )
             )}
 
             <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
@@ -5395,7 +5461,7 @@ async function loadWatchlistLive() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{Math.round(ai100)}</span>
                 </div>
               ) : null}
-              {Number.isFinite(rrN) && rrN > 0 ? (
+              {Number.isFinite(rrN) && rrN > 0 && canAccess(userPlan, "starter") ? (
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
                   <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{rrN.toFixed(2)}</span>
@@ -5409,7 +5475,7 @@ async function loadWatchlistLive() {
               ) : null}
             </div>
 
-            {edgeSignals.length > 0 ? (
+            {edgeSignals.length > 0 && canAccess(userPlan, "starter") ? (
               <div className="edgeSignals" style={{ marginBottom: 14 }}>
                 {edgeSignals.slice(0, 5).map((sig, i) => (
                   <span key={`edge_${i}`} className="edgeSignalBadge">
@@ -5836,12 +5902,12 @@ async function loadWatchlistLive() {
         <motion.div className="dashCell dashCell--performance"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-          <PerformanceCard />
+          <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><PerformanceCard /></PlanGate>
         </motion.div>
         <motion.div className="dashCell dashCell--picks"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-          <RecentPicksCard />
+          <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><RecentPicksCard /></PlanGate>
         </motion.div>
         <div className="dashCell dashCell--why">
           {analyzeIsLowConviction ? (
@@ -8432,16 +8498,18 @@ async function loadWatchlistLive() {
 const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
   if (tab === "movers") return <Movers />;
-  if (tab === "screener") return <Screener />;
+  if (tab === "screener") return <PlanGate requires="pro" userPlan={userPlan} setTab={setTab}><Screener /></PlanGate>;
   if (tab === "launch") return <Launch />;
   if (tab === "portfolio")
     return (
-      <PortfolioErrorBoundary>
-        <Portfolio />
-      </PortfolioErrorBoundary>
+      <PlanGate requires="pro" userPlan={userPlan} setTab={setTab}>
+        <PortfolioErrorBoundary>
+          <Portfolio />
+        </PortfolioErrorBoundary>
+      </PlanGate>
     );
-  if (tab === "watchlist") return <Watchlist />;
-  if (tab === "tradejournal") return <TradeJournal />;
+  if (tab === "watchlist") return <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><Watchlist /></PlanGate>;
+  if (tab === "tradejournal") return <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><TradeJournal /></PlanGate>;
   if (tab === "settings") return <Settings />;
   if (tab === "support") return <Support />;
   if (tab === "pricing") return <Pricing />;
@@ -8516,58 +8584,64 @@ const renderPage = () => {
             {!sidebarCollapsed && (
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px", marginTop: 4 }}>Main</div>
             )}
-            {NAV.main.map((n) => (
-              <motion.button
-                key={n.key}
-                className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
-                onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
-                title={sidebarCollapsed ? n.label : undefined}
-                whileHover={{ scale: 1.04 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: sidebarCollapsed ? 0 : 10,
-                  justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                  padding: sidebarCollapsed ? "9px 0" : "9px 10px",
-                  borderRadius: 8,
-                  width: "100%",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
-                {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{n.label}</span>}
-              </motion.button>
-            ))}
+            {NAV.main.map((n) => {
+              const navMinPlan = { screener: "pro" }[n.key];
+              const navLocked = navMinPlan && !canAccess(userPlan, navMinPlan);
+              return (
+                <motion.button
+                  key={n.key}
+                  className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
+                  onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
+                  title={sidebarCollapsed ? (navLocked ? `${n.label} (${navMinPlan}+)` : n.label) : undefined}
+                  whileHover={{ scale: 1.04 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  style={{
+                    display: "flex", alignItems: "center",
+                    gap: sidebarCollapsed ? 0 : 10,
+                    justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                    padding: sidebarCollapsed ? "9px 0" : "9px 10px",
+                    borderRadius: 8, width: "100%", whiteSpace: "nowrap",
+                    opacity: navLocked ? 0.55 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
+                  {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{n.label}</span>}
+                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 9, opacity: 0.6 }}>🔒</span>}
+                </motion.button>
+              );
+            })}
 
             <div style={{ height: 1, background: T.bg3, margin: "8px 0" }} />
 
             {!sidebarCollapsed && (
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px" }}>Trading</div>
             )}
-            {NAV.trading.map((n) => (
-              <motion.button
-                key={n.key}
-                className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
-                onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
-                title={sidebarCollapsed ? n.label : undefined}
-                whileHover={{ scale: 1.04 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: sidebarCollapsed ? 0 : 10,
-                  justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                  padding: sidebarCollapsed ? "9px 0" : "9px 10px",
-                  borderRadius: 8,
-                  width: "100%",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
-                {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{n.label}</span>}
-              </motion.button>
-            ))}
+            {NAV.trading.map((n) => {
+              const navMinPlan = { watchlist: "starter", tradejournal: "starter" }[n.key];
+              const navLocked = navMinPlan && !canAccess(userPlan, navMinPlan);
+              return (
+                <motion.button
+                  key={n.key}
+                  className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
+                  onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
+                  title={sidebarCollapsed ? (navLocked ? `${n.label} (${navMinPlan}+)` : n.label) : undefined}
+                  whileHover={{ scale: 1.04 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  style={{
+                    display: "flex", alignItems: "center",
+                    gap: sidebarCollapsed ? 0 : 10,
+                    justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                    padding: sidebarCollapsed ? "9px 0" : "9px 10px",
+                    borderRadius: 8, width: "100%", whiteSpace: "nowrap",
+                    opacity: navLocked ? 0.55 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
+                  {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{n.label}</span>}
+                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 9, opacity: 0.6 }}>🔒</span>}
+                </motion.button>
+              );
+            })}
 
             <div style={{ height: 1, background: T.bg3, margin: "8px 0" }} />
 
