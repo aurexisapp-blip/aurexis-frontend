@@ -902,31 +902,6 @@ function ProductDemo() {
               </div>
             </div>
 
-            {/* Stats strip */}
-            <div style={{
-              display: "flex", background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.05)", borderRadius: 9, overflow: "hidden",
-            }}>
-              {[
-                { label: "WIN RATE",   val: "45.9%"  },
-                { label: "PICKS",      val: "37"     },
-                { label: "AVG RETURN", val: "+3.8%"  },
-              ].map(({ label, val }, i) => (
-                <div key={label} style={{
-                  flex: 1, textAlign: "center", padding: "10px 8px",
-                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                }}>
-                  <div style={{
-                    fontSize: 14, fontWeight: 800, color: "#4ade80",
-                    letterSpacing: "-0.02em", marginBottom: 3,
-                  }}>{val}</div>
-                  <div style={{
-                    fontSize: 8, fontWeight: 700, letterSpacing: "0.1em",
-                    textTransform: "uppercase", color: "rgba(255,255,255,0.26)",
-                  }}>{label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
         </div>
@@ -1111,7 +1086,7 @@ export default function Landing({ onGetStarted }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.88 }}
           >
-            Verified on Alpaca. 45.9% win rate. $9/month.
+            AI-powered stock picks. One setup, every trading day. $9/month.
           </motion.p>
 
           {/* CTA */}
@@ -1144,15 +1119,6 @@ export default function Landing({ onGetStarted }) {
 
 
         <div style={S.divider} />
-
-        {/* ── Stats bar — full width with vertical separators ── */}
-        <div style={S.statsBar} className="stats-bar">
-          <StatBarItem raw="45.9%" label="Live Win Rate" delay={0} />
-          <div style={S.statsBarSep} className="stats-bar-sep" />
-          <StatBarItem raw="+3.8%" label="Avg Return Per Pick" delay={110} />
-          <div style={S.statsBarSep} className="stats-bar-sep" />
-          <StatBarItem raw="1200" label="Stocks Scanned Daily" delay={220} />
-        </div>
 
         <div style={S.divider} />
 
@@ -1434,8 +1400,8 @@ export default function Landing({ onGetStarted }) {
               answer: "Three things: (1) much cheaper at $9/month vs $200–500/year, (2) we publish daily timestamped picks verified on Alpaca, (3) we openly say NO_TRADE when conditions aren't right rather than forcing weak picks.",
             },
             {
-              question: "What's your win rate?",
-              answer: "Across our live testing period, the system has shown approximately 60% win rate with a 1.7:1 win/loss ratio. Past performance does not guarantee future results — markets change and results vary.",
+              question: "How does Aurexis pick stocks?",
+              answer: "The AI scans 1,200+ stocks each evening using momentum, volume, and technical criteria to find the single highest-conviction setup. It then calculates entry, stop loss, and target levels based on the chart structure. Past results do not guarantee future performance.",
             },
             {
               question: "What happens if a pick doesn't work?",
