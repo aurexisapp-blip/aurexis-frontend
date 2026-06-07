@@ -100,8 +100,7 @@ export default function Auth({ defaultView = "login" }) {
 
       const newToken = signupData?.access_token || signupData?.token;
       if (newToken) {
-        // Always show onboarding for brand new signups
-        localStorage.removeItem("aurexis_onboarding_complete");
+        localStorage.setItem("aurexis_force_onboarding", "1");
         localStorage.setItem("aurexis_token", newToken);
         localStorage.setItem("aurexis_user_email", email);
       }

@@ -2163,15 +2163,33 @@ function AppInner() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get("token");
+    const isNewOAuth = params.get("new_user") === "1";
     if (oauthToken) {
       localStorage.setItem("aurexis_token", oauthToken);
-      // New OAuth user — clear onboarding flag so they see the welcome flow
-      if (params.get("new_user") === "1") {
-        localStorage.removeItem("aurexis_onboarding_complete");
-      }
+      if (isNewOAuth) localStorage.setItem("aurexis_force_onboarding", "1");
       const clean = window.location.pathname;
       window.history.replaceState({}, "", clean);
     }
+  }, []);
+
+  // Determine onboarding visibility based on per-user key from /auth/me
+  React.useEffect(() => {
+    const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    const token = localStorage.getItem("aurexis_token");
+    if (!token) return;
+    fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(me => {
+        if (!me?.id) return;
+        const key = `aurexis_onboarding_done_${me.id}`;
+        const forceFlag = localStorage.getItem("aurexis_force_onboarding");
+        // Show onboarding if: never done for this user, OR signup/OAuth forced it
+        if (!localStorage.getItem(key) || forceFlag === "1") {
+          localStorage.removeItem("aurexis_force_onboarding");
+          setShowOnboarding(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   React.useEffect(() => {
@@ -2385,9 +2403,7 @@ function AppInner() {
   const [loadingAccount, setLoadingAccount] = useState(false);
   const [loadingMovers, setLoadingMovers] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false); // kept
-  const [showOnboarding, setShowOnboarding] = useState(
-    () => !localStorage.getItem("aurexis_onboarding_complete")
-  );
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
 
   const [analyzeStatus, setAnalyzeStatus] = useState("");
@@ -9364,7 +9380,13 @@ const renderPage = () => {
 
       {showOnboarding ? (
         <OnboardingModal onDone={() => {
-          localStorage.setItem("aurexis_onboarding_complete", "true");
+          const token = localStorage.getItem("aurexis_token");
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split(".")[1]));
+              if (payload?.sub) localStorage.setItem(`aurexis_onboarding_done_${payload.sub}`, "1");
+            } catch {}
+          }
           setShowOnboarding(false);
         }} />
       ) : null}
