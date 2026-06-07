@@ -38,19 +38,10 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="15" height="17" viewBox="0 0 814 1000" fill="currentColor" style={{ flexShrink: 0 }}>
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 612 0 510.7 0 414.8c0-167.2 109.2-255.8 216.2-255.8 57.4 0 105.5 38.2 141.9 38.2 35 0 90.1-40.8 155.5-40.8 24.6 0 108.2 2.6 168.9 87.5zm-68.7-179.5c31.4-37.5 53.4-89.9 53.4-142.3 0-7.7-.6-15.4-1.9-21.7C724.2 6.4 667.9 36.9 631.3 80c-29.5 34.4-56.9 86.8-56.9 140.5 0 8.3 1.3 16.6 1.9 19.1 3.2.6 8.3 1.3 13.4 1.3 51.1 0 103.7-27.4 136.7-79.5z"/>
-    </svg>
-  );
-}
 
 const OAUTH_ERRORS = {
   google_denied: "Google sign-in was cancelled.",
   google_failed: "Google sign-in failed. Please try email instead.",
-  apple_denied:  "Apple sign-in was cancelled.",
-  apple_failed:  "Apple sign-in failed. Please try email instead.",
 };
 
 export default function Auth({ defaultView = "login" }) {
@@ -164,11 +155,6 @@ export default function Auth({ defaultView = "login" }) {
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
-            <button type="button" disabled style={{ ...S.socialBtn, ...S.appleBtn, opacity: 0.45, cursor: "not-allowed", position: "relative" }}>
-              <AppleIcon />
-              <span>Continue with Apple</span>
-              <span style={S.comingSoon}>Soon</span>
-            </button>
           </div>
 
           <div style={S.divider}>
@@ -272,11 +258,6 @@ export default function Auth({ defaultView = "login" }) {
             <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect`; }}>
               <GoogleIcon />
               <span>Continue with Google</span>
-            </button>
-            <button type="button" disabled style={{ ...S.socialBtn, ...S.appleBtn, opacity: 0.45, cursor: "not-allowed", position: "relative" }}>
-              <AppleIcon />
-              <span>Continue with Apple</span>
-              <span style={S.comingSoon}>Soon</span>
             </button>
           </div>
 
@@ -414,18 +395,6 @@ const S = {
     fontSize: 14, fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit", width: "100%",
-  },
-  appleBtn: {
-    background: "rgba(255,255,255,0.92)",
-    borderColor: "rgba(255,255,255,0.92)",
-    color: "#111",
-  },
-  comingSoon: {
-    position: "absolute", right: 14,
-    fontSize: 10, fontWeight: 700,
-    background: "rgba(255,255,255,0.12)",
-    color: "rgba(255,255,255,0.45)",
-    padding: "2px 7px", borderRadius: 20, letterSpacing: "0.04em",
   },
   divider:     { display: "flex", alignItems: "center", gap: 12, marginBottom: 22 },
   dividerLine: { flex: 1, height: 1, background: "rgba(255,255,255,0.07)" },
