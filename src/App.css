@@ -2463,21 +2463,21 @@ a:hover{
 [data-theme="light"] {
   color-scheme: light;
   --bg0: #f0f2f6;
-  --panel: rgba(255,255,255,0.82);
-  --panel2: rgba(255,255,255,0.92);
-  --panelSolid: rgba(248,250,252,0.98);
-  --line: rgba(0,0,0,0.07);
-  --line2: rgba(0,0,0,0.11);
-  --text: rgba(8,10,22,0.92);
-  --muted: rgba(8,10,22,0.56);
-  --muted2: rgba(8,10,22,0.44);
-  --muted3: rgba(8,10,22,0.32);
-  --shadow: 0 4px 14px rgba(0,0,0,0.06);
-  --shadow2: 0 8px 22px rgba(0,0,0,0.09);
-  --danger: rgba(220,38,38,0.90);
-  --dangerSoft: rgba(220,38,38,0.07);
-  --warn: rgba(160,100,0,0.90);
-  --warnSoft: rgba(160,100,0,0.07);
+  --panel: #ffffff;
+  --panel2: #ffffff;
+  --panelSolid: #ffffff;
+  --line: rgba(0,0,0,0.08);
+  --line2: rgba(0,0,0,0.12);
+  --text: #0a0d1a;
+  --muted: rgba(10,13,26,0.55);
+  --muted2: rgba(10,13,26,0.42);
+  --muted3: rgba(10,13,26,0.30);
+  --shadow: 0 2px 10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow2: 0 6px 22px rgba(0,0,0,0.09);
+  --danger: rgba(210,30,30,0.90);
+  --dangerSoft: rgba(210,30,30,0.07);
+  --warn: rgba(150,90,0,0.90);
+  --warnSoft: rgba(150,90,0,0.07);
   --cool: rgba(0,100,200,1);
   --coolSoft: rgba(0,100,200,0.06);
 }
@@ -2496,11 +2496,12 @@ a:hover{
 }
 
 [data-theme="light"] .main {
-  background: rgba(232,236,244,0.75);
+  background: #f0f2f6;
 }
 
 [data-theme="light"] .sidebar {
-  background: rgba(248,250,252,0.98);
+  background: #ffffff;
+  border-right-color: rgba(0,0,0,0.08);
 }
 
 [data-theme="light"] .sidebar::before {
@@ -2517,9 +2518,16 @@ a:hover{
 }
 
 [data-theme="light"] .sideItem:hover {
-  background: rgba(0,0,0,0.03);
-  border-color: rgba(0,0,0,0.08);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.09);
+  box-shadow: none;
+}
+
+[data-theme="light"] .sideItem--active {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  color: rgba(10,13,26,0.90);
+  box-shadow: none;
 }
 
 [data-theme="light"] .sideItem::after {
@@ -2536,9 +2544,9 @@ a:hover{
 }
 
 [data-theme="light"] .card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.5)), var(--panel);
-  border-color: rgba(0,0,0,0.07);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.04);
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.05);
 }
 
 [data-theme="light"] .card::before {
@@ -2563,8 +2571,9 @@ a:hover{
 [data-theme="light"] .cardHead { border-bottom-color: rgba(0,0,0,0.04); }
 
 [data-theme="light"] .headerBar {
-  border-bottom-color: var(--line);
-  background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.00));
+  border-bottom-color: rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
 }
 
 [data-theme="light"] .cmdBar {

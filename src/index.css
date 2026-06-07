@@ -15,6 +15,11 @@ body {
   background: #070b12;
 }
 
+[data-theme="light"] body {
+  background: #f0f2f6;
+  color: #0a0d1a;
+}
+
 button, input {
   font: inherit;
 }

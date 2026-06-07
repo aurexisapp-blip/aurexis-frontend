@@ -2355,23 +2355,23 @@ function AppInner() {
     inputBg:    "rgba(0,0,0,0.18)",
   } : {
     // Text
-    text:       "rgba(8,10,22,0.90)",
-    textSec:    "rgba(8,10,22,0.72)",
-    textMuted:  "rgba(8,10,22,0.52)",
-    textFaint:  "rgba(8,10,22,0.40)",
-    textGhost:  "rgba(8,10,22,0.30)",
-    textHint:   "rgba(8,10,22,0.22)",
+    text:       "#0a0d1a",
+    textSec:    "rgba(10,13,26,0.72)",
+    textMuted:  "rgba(10,13,26,0.52)",
+    textFaint:  "rgba(10,13,26,0.40)",
+    textGhost:  "rgba(10,13,26,0.28)",
+    textHint:   "rgba(10,13,26,0.18)",
     // Borders
-    border:     "rgba(0,0,0,0.07)",
-    border2:    "rgba(0,0,0,0.10)",
-    borderStrong: "rgba(0,0,0,0.13)",
+    border:     "rgba(0,0,0,0.08)",
+    border2:    "rgba(0,0,0,0.12)",
+    borderStrong: "rgba(0,0,0,0.16)",
     // Backgrounds / surfaces
-    bg:         "rgba(255,255,255,0.65)",
-    bg2:        "rgba(255,255,255,0.75)",
-    bg3:        "rgba(0,0,0,0.03)",
-    surface:    "rgba(232,236,244,0.75)",
-    surfaceCard:"rgba(248,250,252,0.98)",
-    surfaceDeep:"rgba(0,0,0,0.04)",
+    bg:         "rgba(255,255,255,0.70)",
+    bg2:        "rgba(0,0,0,0.025)",
+    bg3:        "rgba(0,0,0,0.04)",
+    surface:    "#f0f2f6",
+    surfaceCard:"#ffffff",
+    surfaceDeep:"rgba(0,0,0,0.05)",
     overlay:    "rgba(0,0,0,0.35)",
     inputBg:    "rgba(0,0,0,0.04)",
   }, [darkMode]);
@@ -5055,10 +5055,10 @@ async function loadWatchlistLive() {
                 catch { return false; }
               })();
 
-              const retColor = isWin ? "#4ade80" : isLoss ? "#f87171" : "rgba(255,255,255,0.40)";
-              const outcomeBg     = isWin ? "rgba(74,222,128,0.08)" : isLoss ? "rgba(248,113,113,0.08)" : isExpired ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.04)";
-              const outcomeBorder = isWin ? "rgba(74,222,128,0.20)" : isLoss ? "rgba(248,113,113,0.20)" : isExpired ? "rgba(251,191,36,0.18)" : "rgba(255,255,255,0.09)";
-              const outcomeColor  = isWin ? "#4ade80"               : isLoss ? "#f87171"               : isExpired ? "#fbbf24"               : "rgba(255,255,255,0.35)";
+              const retColor = isWin ? "#4ade80" : isLoss ? "#f87171" : T.textMuted;
+              const outcomeBg     = isWin ? "rgba(74,222,128,0.08)" : isLoss ? "rgba(248,113,113,0.08)" : isExpired ? "rgba(251,191,36,0.06)" : T.bg2;
+              const outcomeBorder = isWin ? "rgba(74,222,128,0.20)" : isLoss ? "rgba(248,113,113,0.20)" : isExpired ? "rgba(251,191,36,0.18)" : T.border2;
+              const outcomeColor  = isWin ? "#4ade80"               : isLoss ? "#f87171"               : isExpired ? "#fbbf24"               : T.textFaint;
               const outcomeLabel  = isWin ? "Won" : isLoss ? "Lost" : isExpired ? "Expired" : "Pending";
 
               return (
@@ -5069,11 +5069,11 @@ async function loadWatchlistLive() {
                     display: "grid", gridTemplateColumns: "1fr 60px 72px",
                     gap: 8, alignItems: "center",
                     padding: "11px 18px",
-                    borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: isLast ? "none" : `1px solid ${T.border}`,
                     cursor: sym ? "pointer" : "default",
                     transition: "background 0.12s",
                   }}
-                  onMouseEnter={e => { if (sym) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseEnter={e => { if (sym) e.currentTarget.style.background = T.bg2; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                 >
                   {/* Symbol + date + signals */}
@@ -5794,8 +5794,8 @@ async function loadWatchlistLive() {
                   background: "none", border: "none", cursor: "pointer",
                   padding: "8px 14px", fontSize: 12.5,
                   fontWeight: activeTab === tab.id ? 700 : 500,
-                  color: activeTab === tab.id ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.42)",
-                  borderBottom: activeTab === tab.id ? "2px solid rgba(255,255,255,0.72)" : "2px solid transparent",
+                  color: activeTab === tab.id ? T.text : T.textFaint,
+                  borderBottom: activeTab === tab.id ? `2px solid ${T.textSec}` : "2px solid transparent",
                   marginBottom: "-1px", transition: "color 0.15s ease, border-color 0.15s ease",
                   letterSpacing: "0.02em", fontFamily: "inherit",
                 }}
@@ -7053,7 +7053,7 @@ async function loadWatchlistLive() {
       whiteSpace: "nowrap",
       userSelect: "none",
       borderBottom: `1px solid ${T.border}`,
-      background: "rgba(8,12,22,0.70)",
+      background: darkMode ? "rgba(8,12,22,0.70)" : "rgba(240,242,248,0.90)",
       transition: "color 0.12s",
     };
 
@@ -7133,7 +7133,7 @@ async function loadWatchlistLive() {
                         key={key}
                         style={{
                           ...thBase,
-                          color: sortCol === key ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.30)",
+                          color: sortCol === key ? T.textSec : T.textGhost,
                         }}
                         onClick={() => handleSort(key)}
                       >
@@ -7159,16 +7159,16 @@ async function loadWatchlistLive() {
                           if (!row.error) { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); }
                         }}
                         style={{
-                          borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.045)",
+                          borderBottom: isLast ? "none" : `1px solid ${T.border}`,
                           cursor: row.error ? "default" : "pointer",
                           transition: "background 0.12s",
                         }}
-                        onMouseEnter={(e) => { if (!row.error) e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                        onMouseEnter={(e) => { if (!row.error) e.currentTarget.style.background = T.bg2; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                       >
                         {/* Symbol */}
                         <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.90)" }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? T.textGhost : T.text }}>
                             {row.symbol}
                           </span>
                           {row.error ? (
@@ -7895,8 +7895,8 @@ async function loadWatchlistLive() {
                             <td style={{ padding: "6px 8px" }}>
                               <span style={{
                                 fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700,
-                                background: s.status === "boosted" ? "rgba(74,222,128,0.12)" : s.status === "penalized" ? "rgba(251,113,133,0.12)" : "rgba(255,255,255,0.06)",
-                                color: s.status === "boosted" ? "#4ade80" : s.status === "penalized" ? "#fb7185" : "rgba(255,255,255,0.4)",
+                                background: s.status === "boosted" ? "rgba(74,222,128,0.12)" : s.status === "penalized" ? "rgba(251,113,133,0.12)" : T.bg3,
+                                color: s.status === "boosted" ? "#4ade80" : s.status === "penalized" ? "#fb7185" : T.textMuted,
                               }}>{s.status.toUpperCase()}</span>
                             </td>
                           </tr>
@@ -7924,10 +7924,10 @@ async function loadWatchlistLive() {
                       <tbody>
                         {data.recent_picks.map((p, i) => (
                           <tr key={i} style={{ borderTop: `1px solid ${T.border}` }}>
-                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#fff" }}>{p.symbol}</td>
+                            <td style={{ padding: "6px 8px", fontWeight: 700, color: T.text }}>{p.symbol}</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.score}</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.entry != null ? `$${p.entry}` : "—"}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#4ade80" : p.change_pct < 0 ? "#fb7185" : "rgba(255,255,255,0.4)" }}>
+                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#4ade80" : p.change_pct < 0 ? "#fb7185" : T.textMuted }}>
                               {p.change_pct != null ? `${p.change_pct > 0 ? "+" : ""}${p.change_pct}%` : "pending"}
                             </td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textFaint }}>{p.days != null ? `${p.days}d` : "—"}</td>
