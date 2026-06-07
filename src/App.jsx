@@ -8597,6 +8597,10 @@ async function loadWatchlistLive() {
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
       if (twoFaEnabled) {
         await fetch(`${API}/auth/2fa/disable`, { method: "POST", headers });
+        try {
+          const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+          setUserProfile(me);
+        } catch {}
         setTwoFaEnabled(false);
         showToast("Two-factor authentication disabled.");
       } else {
@@ -8616,10 +8620,14 @@ async function loadWatchlistLive() {
         body: JSON.stringify({ code: twoFaCode }),
       });
       if (res.ok) {
+        // Refresh profile first so twoFaEnabled re-initialises correctly after remount
+        try {
+          const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+          setUserProfile(me);
+        } catch {}
         setTwoFaEnabled(true);
-        setTwoFaStep("idle");
+        setTwoFaStep("done");
         setTwoFaCode("");
-        showToast("Two-factor authentication enabled.");
       } else {
         setTwoFaError("Invalid or expired code. Try again.");
       }
@@ -8847,6 +8855,22 @@ async function loadWatchlistLive() {
                 </button>
               </div>
             </form>
+          )}
+
+          {twoFaStep === "done" && (
+            <div style={{
+              marginTop: 16, padding: "16px 18px", borderRadius: 12,
+              background: "rgba(0,180,80,0.08)", border: "1px solid rgba(0,180,80,0.22)",
+              display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <span style={{ fontSize: 22 }}>✅</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", marginBottom: 2 }}>2FA is now active</div>
+                <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.45)" : "rgba(8,10,22,0.50)" }}>
+                  You'll receive a 6-digit code by email each time you sign in.
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
