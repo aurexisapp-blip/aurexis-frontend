@@ -1016,15 +1016,26 @@ export default function Landing({ onGetStarted }) {
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
             <div style={S.navLogo}>AUREXIS</div>
-            <motion.button
-              style={S.navCta}
-              whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => window.location.href = "/signup"}
-            >
-              Get Today's Pick →
-            </motion.button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <motion.button
+                style={{ padding: "9px 20px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em" }}
+                whileHover={{ color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.28)" }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                onClick={() => window.location.href = "/login"}
+              >
+                Log In
+              </motion.button>
+              <motion.button
+                style={S.navCta}
+                whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                onClick={() => window.location.href = "/signup"}
+              >
+                Get Today's Pick →
+              </motion.button>
+            </div>
           </motion.div>
         </nav>
 
