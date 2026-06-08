@@ -2262,7 +2262,7 @@ function analyzeRemaining(plan) {
 }
 function StarterFakePreview() {
   return (
-    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         {[["WIN RATE","73%","#4ade80"],["AVG RETURN","+8.4%","#4ade80"],["TOTAL PICKS","47","#fff"]].map(([lbl,val,clr]) => (
           <div key={lbl} style={{ flex: 1, padding: "12px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -2300,7 +2300,7 @@ function ProFakePreview() {
     { sym: "GOOGL",price: "$171.90", rsi: 55, mom: "Low",  signal: "HOLD" },
   ];
   return (
-    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>SCREENER RESULTS · 21 matches</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 44px 50px 52px", gap: "0 8px", padding: "0 4px 8px", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: 6 }}>
         {["SYMBOL","PRICE","RSI","MOM","SIGNAL"].map(h => (
@@ -2324,7 +2324,7 @@ function ProFakePreview() {
 
 function EliteFakePreview() {
   return (
-    <div style={{ padding: "16px 18px", minHeight: 320, background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>OPTIONS FLOW · UNUSUAL ACTIVITY</div>
       {[
         { sym: "NVDA", type: "CALL", strike: "$900C", exp: "Jun 21", size: "$2.4M", sentiment: "Bullish" },
@@ -2393,11 +2393,12 @@ function PlanGate({ requires, userPlan, children, setTab }) {
   }[requires];
 
   return (
-    <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+    <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", minHeight: "calc(100vh - 110px)" }}>
       {/* Content visible at top, fading + blurring toward bottom */}
       <div style={{
         filter: "blur(4px)",
         pointerEvents: "none", userSelect: "none",
+        minHeight: "calc(100vh - 110px)",
         WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 25%, transparent 72%)",
         maskImage: "linear-gradient(to bottom, black 0%, black 25%, transparent 72%)",
       }}>{fakePreview}</div>
