@@ -59,6 +59,9 @@ export default function Auth({ defaultView = "login" }) {
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpResending, setOtpResending] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState("free");
+  const [pendingFirstName, setPendingFirstName] = useState("");
   const [error, setError] = useState(() => {
     const e = new URLSearchParams(window.location.search).get("error") || "";
     return OAUTH_ERRORS[e] || "";
@@ -104,7 +107,7 @@ export default function Auth({ defaultView = "login" }) {
       const res = await fetch(`${API}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: otpEmail, code: otpCode }),
+        body: JSON.stringify({ email: otpEmail, code: otpCode, is_new_user: isNewUser }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data?.detail || "Invalid code. Try again."); return; }
@@ -112,6 +115,26 @@ export default function Auth({ defaultView = "login" }) {
       if (token) {
         localStorage.setItem("aurexis_token", token);
         localStorage.setItem("aurexis_user_email", otpEmail);
+        if (isNewUser) {
+          localStorage.setItem("aurexis_force_onboarding", "1");
+          if (pendingFirstName) localStorage.setItem("aurexis_user_first_name", pendingFirstName);
+        }
+      }
+      // New user on a paid plan — go to Stripe after OTP
+      if (isNewUser && pendingPlan !== "free") {
+        const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ plan: pendingPlan, success_url: `${window.location.origin}/app?payment=success`, cancel_url: `${window.location.origin}/` }),
+        });
+        const checkoutData = await checkoutRes.json();
+        const url = checkoutData?.url || checkoutData?.checkout_url;
+        if (url) {
+          let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
+          if (parsed && ["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
+            window.location.href = parsed.href; return;
+          }
+        }
       }
       navigate("/app");
     } catch {
@@ -131,6 +154,16 @@ export default function Auth({ defaultView = "login" }) {
       const signupData = await signupRes.json();
       if (!signupRes.ok) { setError(signupData?.detail || signupData?.message || "Signup failed."); return; }
 
+      // Signup now always returns requires_2fa — go to OTP screen
+      if (signupData?.requires_2fa) {
+        setOtpEmail(signupData.email || email);
+        setIsNewUser(true);
+        setPendingPlan(plan);
+        setPendingFirstName(signupData.first_name || firstName.trim());
+        setOtpView(true);
+        return;
+      }
+      // Fallback: old-style token response
       const newToken = signupData?.access_token || signupData?.token;
       if (newToken) {
         localStorage.setItem("aurexis_force_onboarding", "1");
@@ -138,27 +171,7 @@ export default function Auth({ defaultView = "login" }) {
         localStorage.setItem("aurexis_user_email", email);
         if (signupData?.first_name) localStorage.setItem("aurexis_user_first_name", signupData.first_name);
       }
-
-      if (plan === "free") { navigate("/app"); return; }
-
-      const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}) },
-        body: JSON.stringify({ plan, success_url: `${window.location.origin}/app`, cancel_url: `${window.location.origin}/` }),
-      });
-      const checkoutData = await checkoutRes.json();
-      if (!checkoutRes.ok) { setError(checkoutData?.detail || checkoutData?.message || "Could not start checkout."); return; }
-
-      const url = checkoutData?.url || checkoutData?.checkout_url;
-      if (url) {
-        let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
-        if (!parsed || !["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
-          setError("Invalid checkout URL."); return;
-        }
-        window.location.href = parsed.href;
-      } else {
-        setError("No checkout URL returned.");
-      }
+      navigate("/app");
     } catch {
       setError("Network error — check your connection.");
     } finally { setLoading(false); }
@@ -170,10 +183,10 @@ export default function Auth({ defaultView = "login" }) {
     setOtpResending(true);
     setError("");
     try {
-      await fetch(`${API}/auth/login`, {
+      await fetch(`${API}/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: otpEmail, password: "" }),
+        body: JSON.stringify({ email: otpEmail, code: "" }),
       });
     } catch {}
     setOtpResending(false);
