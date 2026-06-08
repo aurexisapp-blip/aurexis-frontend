@@ -5559,8 +5559,8 @@ async function loadWatchlistLive() {
       const stopN  = Number(tp0?.stop ?? best0?.stop);
       const targets0 = Array.isArray(tp0?.targets) ? tp0.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
       const target1  = targets0[0] ?? null;
-      const target2  = targets0[1] ?? Number(best0?.target_2) || null;
-      const target3  = targets0[2] ?? Number(best0?.target_3) || null;
+      const target2  = targets0[1] ?? (Number(best0?.target_2) || null);
+      const target3  = targets0[2] ?? (Number(best0?.target_3) || null);
       const gainN    = Number(tp0?.gain_pct);
       const rrN      = Number(tp0?.risk_reward);
 
