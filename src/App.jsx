@@ -2607,7 +2607,10 @@ function AppInner() {
   const [tab, setTab] = useState("dashboard");
   const userPlan = usePlan();
 
-  // Free pick gate — free users get 1 pick per ISO week
+  const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
+  const [freePickUsed, setFreePickUsed] = React.useState(() => localStorage.getItem(_freePickMonthKey()) === "used");
+  const _useFreePick = () => { localStorage.setItem(_freePickMonthKey(), "used"); setFreePickUsed(true); };
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([
@@ -5977,7 +5980,7 @@ async function loadWatchlistLive() {
 
       const isFreeUser = !canAccess(userPlan, "starter");
       const pickIsReal = Boolean(ticker) && (tradeDec === "HIGH_CONVICTION" || tradeDec === "LOW_CONVICTION");
-      const showBlurGate = isFreeUser && pickIsReal;
+      const showBlurGate = isFreeUser && pickIsReal && !freePickUsed;
 
       const heroCard = (
         <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
@@ -6284,7 +6287,7 @@ async function loadWatchlistLive() {
               fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center",
               lineHeight: 1.6, maxWidth: 280, marginBottom: 8,
             }}>
-              Upgrade to Starter to see the full pick with entry, stop loss, and targets every day.
+              Upgrade to Starter for unlimited daily picks, or use your 1 free pick for this month.
             </div>
             <button
               onClick={() => setTab("pricing")}
@@ -6296,6 +6299,16 @@ async function loadWatchlistLive() {
               }}
             >
               Upgrade to Starter →
+            </button>
+            <button
+              onClick={_useFreePick}
+              style={{
+                background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
+                color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
+                padding: "8px 20px", cursor: "pointer",
+              }}
+            >
+              Use my free pick for this month
             </button>
           </div>
         </div>
