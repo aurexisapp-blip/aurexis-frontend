@@ -8496,11 +8496,11 @@ async function loadWatchlistLive() {
       },
       {
         q: "How accurate is the AI analysis?",
-        a: "Live tracked win rate is 45.9% with an average return of +3.8% per pick. These numbers are verified on Alpaca paper data and update automatically as picks resolve.",
+        a: "Aurexis uses a multi-signal conviction model that weighs momentum, volume, options flow, and news sentiment. Every pick is tracked live — outcomes update automatically as trades resolve over 1–5 trading days.",
       },
       {
-        q: "Can I add my own stocks to track?",
-        a: "Yes — use the Watchlist tab to add any ticker. Watchlist items are tracked live alongside the AI's top picks.",
+        q: "Can I log my own trades or monitor stocks?",
+        a: "Yes, with a Starter plan. The Trade Journal lets you manually log any trade with entry, stop, and target — it calculates your P&L automatically. The Watchlist lets you monitor AI-screened candidates and track setups before they trigger. Both are unlocked on Starter ($9/mo).",
       },
       {
         q: "How do I report a bug or wrong data?",
