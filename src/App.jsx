@@ -8624,10 +8624,20 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
-    // Always re-fetch /auth/me when Settings opens so plan reflects DB truth
+    // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
       const token = localStorage.getItem("aurexis_token");
       if (!token) return;
+      // Refresh JWT so usePlan() picks up the latest plan from the DB
+      fetch(`${API}/auth/refresh-token`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.access_token) {
+            localStorage.setItem("aurexis_token", data.access_token);
+            window.dispatchEvent(new Event("storage")); // wake up usePlan()
+          }
+        })
+        .catch(() => {});
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
         .then(me => { if (me?.id) setUserProfile(me); })
