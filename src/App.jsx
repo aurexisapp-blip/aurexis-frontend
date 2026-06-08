@@ -4173,7 +4173,6 @@ async function loadWatchlistLive() {
 
     const isSynthetic = Boolean(analysisObj && typeof analysisObj === "object" && analysisObj.__fallback);
 
-    const userPlan = "pro";
     const isPro = userPlan === "pro";
     const gatePro = false;
 
