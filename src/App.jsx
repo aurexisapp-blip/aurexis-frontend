@@ -5191,7 +5191,7 @@ async function loadWatchlistLive() {
           {/* Header */}
           <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analyze History</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Your recent lookups</div>
             </div>
             {history.length > 0 ? (
