@@ -8624,6 +8624,16 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
+    // Always re-fetch /auth/me when Settings opens so plan reflects DB truth
+    React.useEffect(() => {
+      const token = localStorage.getItem("aurexis_token");
+      if (!token) return;
+      fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(me => { if (me?.id) setUserProfile(me); })
+        .catch(() => {});
+    }, []);
+
     const firstName = userProfile?.first_name || "";
     const lastName = userProfile?.last_name || "";
     const email = userProfile?.email || "";
