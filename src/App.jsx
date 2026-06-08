@@ -5191,7 +5191,7 @@ async function loadWatchlistLive() {
           <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
-              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Your recent lookups</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Stocks you've analyzed</div>
             </div>
             {history.length > 0 ? (
               <button onClick={() => { setAnalyzeHistory([]); try { localStorage.removeItem("aurexis_analyze_history"); } catch {} }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>Clear</button>
@@ -5204,10 +5204,10 @@ async function loadWatchlistLive() {
               <div style={{ padding: "28px 18px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, opacity: 0.07, marginBottom: 10 }}>⊙</div>
                 <div style={{ fontSize: 12, color: T.textFaint, lineHeight: 1.6 }}>
-                  Stocks you analyze will appear here.
+                  Your analyzed picks will appear here.
                 </div>
                 <div style={{ fontSize: 11, color: T.textGhost, marginTop: 4 }}>
-                  Type any ticker above and hit Analyze.
+                  Run an analysis above to get started.
                 </div>
               </div>
             ) : (
