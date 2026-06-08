@@ -2632,8 +2632,15 @@ function AppInner() {
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
+  const _freePickSymKey  = () => { const d = new Date(); return `aurexis_free_pick_sym_${d.getFullYear()}_M${d.getMonth() + 1}`; };
   const [freePickUsed, setFreePickUsed] = React.useState(() => localStorage.getItem(_freePickMonthKey()) === "used");
-  const _useFreePick = () => { localStorage.setItem(_freePickMonthKey(), "used"); setFreePickUsed(true); };
+  const [freePickViewedSym, setFreePickViewedSym] = React.useState(() => localStorage.getItem(_freePickSymKey()) || null);
+  const _useFreePick = (sym) => {
+    localStorage.setItem(_freePickMonthKey(), "used");
+    localStorage.setItem(_freePickSymKey(), sym || "");
+    setFreePickUsed(true);
+    setFreePickViewedSym(sym || "");
+  };
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
@@ -3131,22 +3138,36 @@ function AppInner() {
     if (!bestPickData) return;
     const payload = typeof bestPickData === "object" ? bestPickData : null;
     if (!payload) return;
-    const pick = payload.pick || payload.best_pick || payload;
+    const pick = (payload.pick && typeof payload.pick === "object" ? payload.pick : null)
+      || (payload.best_pick && typeof payload.best_pick === "object" ? payload.best_pick : null)
+      || payload;
     const sym = String(pick?.symbol || pick?.ticker || "").toUpperCase().trim();
     const dec = String(pick?.trade_decision || payload?.trade_decision || "").toUpperCase();
     if (!sym || (dec !== "HIGH_CONVICTION" && dec !== "LOW_CONVICTION")) return;
+    // Mirror the same field paths used in HeroCard
+    const toScore100 = (v) => { const n = Number(v); if (!Number.isFinite(n)) return null; return Math.max(0, Math.min(100, n <= 10 ? n * 10 : n)); };
+    const tp = (pick?.trade_plan && typeof pick.trade_plan === "object" ? pick.trade_plan : null)
+      || (payload?.trade_plan && typeof payload.trade_plan === "object" ? payload.trade_plan : null);
+    const entryVal = tp?.entry ?? pick?.entry ?? null;
+    const stopVal  = tp?.stop  ?? pick?.stop  ?? null;
+    const tgts     = Array.isArray(tp?.targets) ? tp.targets : [];
+    const targetVal = tgts[0] ?? tp?.target_1 ?? pick?.target_1 ?? null;
+    const scoreVal  = toScore100(pick?.ai_score_0_10 ?? pick?.ai_score ?? payload?.ai_score_0_10);
     setBestPickLog(prev => {
       const list = Array.isArray(prev) ? prev : [];
-      if (list[0]?.symbol === sym && list[0]?.decision === dec) return prev; // already logged
-      const entry = {
+      const existing = list[0];
+      const existingHasData = existing?.entry != null || existing?.stop != null || existing?.score != null;
+      if (existing?.symbol === sym && existing?.decision === dec && existingHasData) return prev;
+      const logEntry = {
         symbol: sym,
         decision: dec,
-        entry: pick?.entry ?? pick?.entry_price ?? null,
-        stop: pick?.stop ?? pick?.stop_loss ?? null,
-        target: pick?.targets?.[0] ?? pick?.target_1 ?? null,
+        entry: entryVal != null ? Number(entryVal) : null,
+        stop: stopVal != null ? Number(stopVal) : null,
+        target: targetVal != null ? Number(targetVal) : null,
+        score: scoreVal,
         ts: Date.now(),
       };
-      const next = [entry, ...list.filter(x => x.symbol !== sym)].slice(0, 20);
+      const next = [logEntry, ...list.filter(x => x.symbol !== sym)].slice(0, 20);
       try { localStorage.setItem("aurexis_best_pick_log", JSON.stringify(next)); } catch {}
       return next;
     });
@@ -5282,25 +5303,26 @@ async function loadWatchlistLive() {
 
     // ---- PERSONAL BEST PICK LOG CARD ----
     const AnalyzeHistoryCard = () => {
-      const history = Array.isArray(bestPickLog) ? bestPickLog.slice(0, 8) : [];
+      const history = Array.isArray(bestPickLog) ? bestPickLog.slice(0, 10) : [];
+      const isLocked = !canAccess(userPlan, "starter");
 
       const scoreColor = (sc) => {
-        if (sc === null || sc === undefined) return T.textGhost;
+        if (sc == null) return T.textGhost;
         if (sc >= 70) return "#4ade80";
         if (sc >= 45) return "#fbbf24";
         return "#f87171";
       };
       const scoreBg = (sc) => {
-        if (sc === null || sc === undefined) return T.bg3;
-        if (sc >= 70) return "rgba(74,222,128,0.08)";
-        if (sc >= 45) return "rgba(251,191,36,0.07)";
-        return "rgba(248,113,113,0.08)";
+        if (sc == null) return T.bg3;
+        if (sc >= 70) return "rgba(74,222,128,0.10)";
+        if (sc >= 45) return "rgba(251,191,36,0.09)";
+        return "rgba(248,113,113,0.09)";
       };
       const scoreBorder = (sc) => {
-        if (sc === null || sc === undefined) return T.border2;
-        if (sc >= 70) return "rgba(74,222,128,0.20)";
-        if (sc >= 45) return "rgba(251,191,36,0.18)";
-        return "rgba(248,113,113,0.18)";
+        if (sc == null) return T.border2;
+        if (sc >= 70) return "rgba(74,222,128,0.22)";
+        if (sc >= 45) return "rgba(251,191,36,0.20)";
+        return "rgba(248,113,113,0.20)";
       };
       const timeAgo = (ts) => {
         const diff = Math.floor((Date.now() - ts) / 1000);
@@ -5309,14 +5331,19 @@ async function loadWatchlistLive() {
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return `${Math.floor(diff / 86400)}d ago`;
       };
-      const verdictLabel = (dec) => {
+      const verdictCfg = (dec) => {
         if (!dec) return null;
-        if (dec.includes("BUY") || dec.includes("ACTION") || dec.includes("LONG")) return { text: "BUY", color: "#4ade80" };
-        if (dec.includes("NO_TRADE") || dec.includes("NOTRADE")) return { text: "NO TRADE", color: T.textGhost };
-        if (dec.includes("LOW") || dec.includes("CONVICTION")) return { text: "LOW", color: "#fbbf24" };
-        if (dec.includes("AVOID") || dec.includes("SHORT") || dec.includes("SELL")) return { text: "AVOID", color: "#f87171" };
+        if (dec.includes("HIGH") || dec.includes("BUY") || dec.includes("ACTION") || dec.includes("LONG"))
+          return { text: "HIGH", color: "#4ade80", bg: "rgba(74,222,128,0.10)", border: "rgba(74,222,128,0.22)" };
+        if (dec.includes("NO_TRADE") || dec.includes("NOTRADE"))
+          return { text: "NO TRADE", color: T.textGhost, bg: T.bg3, border: T.border };
+        if (dec.includes("LOW") || dec.includes("CONVICTION"))
+          return { text: "LOW", color: "#fbbf24", bg: "rgba(251,191,36,0.09)", border: "rgba(251,191,36,0.22)" };
+        if (dec.includes("AVOID") || dec.includes("SHORT") || dec.includes("SELL"))
+          return { text: "AVOID", color: "#f87171", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)" };
         return null;
       };
+      const fmt = (v) => v != null ? `$${Number(v).toFixed(2)}` : "—";
 
       return (
         <div style={{
@@ -5326,71 +5353,118 @@ async function loadWatchlistLive() {
           height: "100%", display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
-          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
-              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Your recent best picks</div>
+              <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Entry · Stop · Target from each analysis</div>
             </div>
             {history.length > 0 ? (
-              <button onClick={() => { setBestPickLog([]); try { localStorage.removeItem("aurexis_best_pick_log"); } catch {} }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>Clear</button>
+              <button onClick={() => { setBestPickLog([]); try { localStorage.removeItem("aurexis_best_pick_log"); } catch {} }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>
+                Clear
+              </button>
             ) : null}
           </div>
 
           {/* Rows */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {history.length === 0 ? (
-              <div style={{ padding: "28px 18px", textAlign: "center" }}>
+              <div style={{ padding: "32px 18px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, opacity: 0.07, marginBottom: 10 }}>⊙</div>
-                <div style={{ fontSize: 12, color: T.textFaint, lineHeight: 1.6 }}>
-                  Your best pick history will show here.
-                </div>
-                <div style={{ fontSize: 11, color: T.textGhost, marginTop: 4 }}>
-                  Analyze a ticker above to log your first pick.
-                </div>
+                <div style={{ fontSize: 12, color: T.textFaint, lineHeight: 1.6 }}>Your best pick history will appear here.</div>
+                <div style={{ fontSize: 11, color: T.textGhost, marginTop: 4 }}>Analyze a ticker above to log your first pick.</div>
               </div>
-            ) : (
-              history.map((item, i) => {
-                const vd = verdictLabel(item.decision);
-                const isLast = i === history.length - 1;
-                return (
-                  <div
-                    key={`${item.symbol}_${item.ts}`}
-                    onClick={() => { setSymbol(item.symbol); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12, padding: "11px 18px",
-                      borderBottom: isLast ? "none" : `1px solid ${T.border}`,
-                      cursor: "pointer", transition: "background 0.12s",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = T.bg2; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                  >
-                    {/* Symbol avatar */}
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: scoreColor(item.score) }}>{item.symbol.slice(0, 2)}</span>
+            ) : history.map((item, i) => {
+              const vc = verdictCfg(item.decision);
+              const isLast = i === history.length - 1;
+              const hasTradeData = item.entry != null || item.stop != null || item.target != null;
+              const blurValues = isLocked && hasTradeData;
+
+              return (
+                <div
+                  key={`${item.symbol}_${item.ts}`}
+                  onClick={() => { setSymbol(item.symbol); }}
+                  style={{
+                    padding: "12px 18px", borderBottom: isLast ? "none" : `1px solid ${T.border}`,
+                    cursor: "pointer", transition: "background 0.12s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = T.bg2; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  {/* Top row: avatar + symbol + verdict + score + time */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: hasTradeData ? 8 : 0 }}>
+                    {/* Avatar */}
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: scoreColor(item.score) }}>{item.symbol.slice(0, 2)}</span>
                     </div>
 
-                    {/* Symbol + time */}
+                    {/* Symbol */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>{item.symbol}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: T.text, letterSpacing: "-0.01em" }}>{item.symbol}</span>
+                        {vc ? (
+                          <span style={{ fontSize: 9, fontWeight: 800, color: vc.color, background: vc.bg, border: `1px solid ${vc.border}`, borderRadius: 5, padding: "2px 6px", letterSpacing: "0.04em" }}>
+                            {vc.text}
+                          </span>
+                        ) : null}
+                      </div>
                       <div style={{ fontSize: 10, color: T.textGhost, marginTop: 1 }}>{timeAgo(item.ts)}</div>
                     </div>
 
-                    {/* Verdict pill */}
-                    {vd ? (
-                      <span style={{ fontSize: 9, fontWeight: 800, color: vd.color, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{vd.text}</span>
-                    ) : null}
-
                     {/* AI score */}
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: scoreColor(item.score), lineHeight: 1 }}>
-                        {item.score !== null && item.score !== undefined ? item.score : "—"}
+                      <div style={{ fontSize: 16, fontWeight: 800, color: scoreColor(item.score), lineHeight: 1 }}>
+                        {item.score != null ? item.score : "—"}
                       </div>
                       <div style={{ fontSize: 9, color: T.textGhost, marginTop: 1 }}>score</div>
                     </div>
                   </div>
-                );
-              })
-            )}
+
+                  {/* Trade data row: entry / stop / target */}
+                  {hasTradeData && (
+                    <div style={{ position: "relative", marginLeft: 44 }}>
+                      <div style={{
+                        display: "flex", gap: 6,
+                        filter: blurValues ? "blur(5px)" : "none",
+                        userSelect: blurValues ? "none" : "auto",
+                        transition: "filter 0.2s",
+                      }}>
+                        {[
+                          { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
+                          { label: "Stop", value: fmt(item.stop), color: "#f87171" },
+                          { label: "Target", value: fmt(item.target), color: "#4ade80" },
+                        ].map(({ label, value, color }) => (
+                          <div key={label} style={{ flex: 1, background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 7, padding: "5px 8px" }}>
+                            <div style={{ fontSize: 9, fontWeight: 600, color: T.textGhost, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Upgrade nudge overlay for locked users */}
+                      {blurValues && (
+                        <div style={{
+                          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer",
+                        }}
+                          onClick={(e) => { e.stopPropagation(); setTab("settings"); }}
+                        >
+                          <div style={{
+                            display: "flex", alignItems: "center", gap: 5,
+                            background: darkMode ? "rgba(15,19,30,0.85)" : "rgba(255,255,255,0.88)",
+                            border: "1px solid rgba(0,180,80,0.25)", borderRadius: 8,
+                            padding: "4px 10px", backdropFilter: "blur(4px)",
+                          }}>
+                            <span style={{ fontSize: 11 }}>🔒</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>Starter to unlock</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -6033,7 +6107,9 @@ async function loadWatchlistLive() {
 
       const isFreeUser = !canAccess(userPlan, "starter");
       const pickIsReal = Boolean(ticker) && (tradeDec === "HIGH_CONVICTION" || tradeDec === "LOW_CONVICTION");
-      const showBlurGate = isFreeUser && pickIsReal && !freePickUsed;
+      // Gate shows if free user AND (haven't used free pick yet, OR used it on a different symbol)
+      const isViewingFreePickedSym = freePickUsed && freePickViewedSym === ticker;
+      const showBlurGate = isFreeUser && pickIsReal && !isViewingFreePickedSym;
 
       const heroCard = (
         <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
@@ -6340,7 +6416,9 @@ async function loadWatchlistLive() {
               fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center",
               lineHeight: 1.6, maxWidth: 280, marginBottom: 8,
             }}>
-              Upgrade to Starter for unlimited daily picks, or use your 1 free pick for this month.
+              {freePickUsed
+                ? "You've used your free pick for this month. Upgrade to see every daily pick."
+                : "Upgrade to Starter for unlimited daily picks, or use your 1 free pick for this month."}
             </div>
             <button
               onClick={() => setTab("pricing")}
@@ -6353,16 +6431,18 @@ async function loadWatchlistLive() {
             >
               Upgrade to Starter →
             </button>
-            <button
-              onClick={_useFreePick}
-              style={{
-                background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
-                color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
-                padding: "8px 20px", cursor: "pointer",
-              }}
-            >
-              Use my free pick for this month
-            </button>
+            {!freePickUsed && (
+              <button
+                onClick={() => _useFreePick(ticker)}
+                style={{
+                  background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
+                  color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
+                  padding: "8px 20px", cursor: "pointer",
+                }}
+              >
+                Use my free pick for this month
+              </button>
+            )}
           </div>
         </div>
       );
