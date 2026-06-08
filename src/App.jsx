@@ -7404,33 +7404,33 @@ async function loadWatchlistLive() {
                     </tbody>
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
-                    <div style={{ position: "relative", marginTop: -2, borderRadius: "0 0 10px 10px", overflow: "hidden" }}>
-                      {/* Blurred preview rows fading out */}
+                    <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)" }}>
+                      {/* All hidden rows blurred — fills remaining screen space */}
                       <div style={{
                         filter: "blur(3px)", pointerEvents: "none", userSelect: "none",
-                        WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 75%)",
-                        maskImage: "linear-gradient(to bottom, black 0%, transparent 75%)",
+                        WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 68%)",
+                        maskImage: "linear-gradient(to bottom, black 0%, black 30%, transparent 68%)",
                       }}>
                         <table className="table" style={{ marginTop: 0 }}>
                           <tbody>
-                            {sorted.slice(FREE_MOVERS_LIMIT, FREE_MOVERS_LIMIT + 4).map(renderRow)}
+                            {sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}
                           </tbody>
                         </table>
                       </div>
                       {/* Gradient overlay */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, rgba(7,9,15,0) 10%, rgba(7,9,15,0.55) 40%, rgba(7,9,15,0.98) 72%)",
+                        background: "linear-gradient(to bottom, rgba(7,9,15,0) 15%, rgba(7,9,15,0.50) 40%, rgba(7,9,15,0.97) 65%)",
                       }} />
                       {/* CTA card */}
                       <div style={{
                         position: "absolute", inset: 0,
                         display: "flex", alignItems: "flex-end", justifyContent: "center",
-                        padding: "0 16px 18px",
+                        padding: "0 16px 32px",
                       }}>
                         <div style={{
                           width: "100%", maxWidth: 380,
-                          background: "rgba(12,16,28,0.70)",
+                          background: "rgba(12,16,28,0.72)",
                           border: "1px solid rgba(255,255,255,0.08)",
                           borderRadius: 14, padding: "16px 18px",
                           backdropFilter: "blur(20px)",
