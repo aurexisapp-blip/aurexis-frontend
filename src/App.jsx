@@ -5559,8 +5559,22 @@ async function loadWatchlistLive() {
       const stopN  = Number(tp0?.stop ?? best0?.stop);
       const targets0 = Array.isArray(tp0?.targets) ? tp0.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
       const target1  = targets0[0] ?? null;
+      const target2  = targets0[1] ?? Number(best0?.target_2) || null;
+      const target3  = targets0[2] ?? Number(best0?.target_3) || null;
       const gainN    = Number(tp0?.gain_pct);
       const rrN      = Number(tp0?.risk_reward);
+
+      // Full execution plan extras from normalized backend fields
+      const rrRatio      = Number(best0?.risk_reward_ratio);
+      const stopPct      = Number(best0?.stop_loss_pct);
+      const t1GainPct    = Number(best0?.target_1_gain_pct);
+      const t2GainPct    = Number(best0?.target_2_gain_pct);
+      const t3GainPct    = Number(best0?.target_3_gain_pct);
+      const horizonLabel = String(best0?.time_horizon_label || "3–7 days");
+      const entryNote    = String(best0?.entry_note || "Limit order at entry price");
+      const trailingStopPlan = Array.isArray(best0?.trailing_stop_plan) ? best0.trailing_stop_plan : [];
+      const pickRationale    = Array.isArray(best0?.pick_rationale) ? best0.pick_rationale : [];
+      const riskFlags        = Array.isArray(best0?.risk_flags) ? best0.risk_flags : [];
 
       // Live price from movers if available
       const moverMatch = ticker ? (Array.isArray(movers) ? movers.find(m => m?.symbol === ticker) : null) : null;
@@ -5992,53 +6006,127 @@ async function loadWatchlistLive() {
               </div>
             </div>
 
-            {!isLowConviction && (
-              canAccess(userPlan, "starter") ? (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: "1px",
-                  background: T.bg3,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  margin: "4px 0 2px",
-                }}>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+            {canAccess(userPlan, "starter") ? (
+              <div style={{ marginTop: 8, marginBottom: 4 }}>
+                {/* ── Entry + Stop row ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                     </div>
+                    <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{entryNote}</div>
                   </div>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Stop</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: "rgba(248,113,113,0.85)", letterSpacing: "-0.01em" }}>
+                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.6)", marginBottom: 4 }}>Stop Loss</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "rgba(248,113,113,0.9)", letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
                     </div>
-                  </div>
-                  <div style={{ background: "rgba(10,14,26,0.85)", padding: "10px 14px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Target</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: "rgba(134,239,172,0.85)", letterSpacing: "-0.01em" }}>
-                      {target1 !== null ? `$${target1.toFixed(2)}` : "—"}
+                    <div style={{ fontSize: 10, color: "rgba(248,113,113,0.5)" }}>
+                      {Number.isFinite(stopPct) && stopPct > 0 ? `${stopPct.toFixed(1)}% below entry — exit here if wrong` : "Exit if thesis breaks"}
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "4px 0 2px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: T.bg3, filter: "blur(4px)", opacity: 0.6, pointerEvents: "none" }}>
-                    {[["Entry","$—"],["Stop","$—"],["Target","$—"]].map(([lbl, val]) => (
-                      <div key={lbl} style={{ background: darkMode ? "rgba(10,14,26,0.85)" : "rgba(240,242,248,0.90)", padding: "10px 14px" }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>{lbl}</div>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: lbl === "Stop" ? "rgba(248,113,113,0.85)" : lbl === "Target" ? "rgba(134,239,172,0.85)" : T.text }}>{val}</div>
+
+                {/* ── Targets row ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                  {[
+                    { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(134,239,172,0.85)", bg: "rgba(134,239,172,0.05)", border: "rgba(134,239,172,0.15)" },
+                    { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(52,211,153,0.85)", bg: "rgba(52,211,153,0.05)", border: "rgba(52,211,153,0.15)" },
+                    { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(16,185,129,0.85)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
+                  ].map(({ label, val, pct, note, color, bg, border }) => (
+                    <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "10px 12px" }}>
+                      <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: "-0.02em", marginBottom: 2 }}>
+                        {val !== null && Number.isFinite(Number(val)) ? `$${Number(val).toFixed(2)}` : "—"}
+                      </div>
+                      <div style={{ fontSize: 9, color, opacity: 0.65 }}>
+                        {Number.isFinite(pct) && pct > 0 ? `+${pct.toFixed(1)}%` : note}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Stats row: R:R · Size · Horizon ── */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  {[
+                    { label: "Risk:Reward", val: Number.isFinite(rrRatio) && rrRatio > 0 ? `1 : ${rrRatio.toFixed(1)}` : null },
+                    { label: "Position Size", val: positionSizePct !== null ? `${Number(positionSizePct).toFixed(1)}% of portfolio` : null },
+                    { label: "Time Horizon", val: horizonLabel },
+                  ].filter(x => x.val).map(({ label, val }) => (
+                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: T.textFaint }}>{label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: T.text }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Trailing stop plan ── */}
+                {trailingStopPlan.length > 0 && (
+                  <div style={{ background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.12)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(251,191,36,0.6)", marginBottom: 8 }}>Trailing Stop Plan</div>
+                    {trailingStopPlan.map((step, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i < trailingStopPlan.length - 1 ? 6 : 0 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(251,191,36,0.75)", minWidth: 36, flexShrink: 0 }}>+{step.trigger_pct}%</span>
+                        <span style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.4 }}>{step.action}</span>
                       </div>
                     ))}
                   </div>
-                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, background: "linear-gradient(135deg,rgba(7,11,18,0.82),rgba(7,11,18,0.70))", borderRadius: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>Unlock entry, stop &amp; targets</div>
-                    <button onClick={() => setTab("pricing")} style={{ marginTop: 2, padding: "5px 16px", borderRadius: 7, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px rgba(0,180,80,0.25)" }}>Upgrade →</button>
+                )}
+
+                {/* ── Why this trade ── */}
+                {pickRationale.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Why This Setup</div>
+                    {pickRationale.map((r, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 4 }}>
+                        <span style={{ color: "#00b450", fontSize: 10, marginTop: 2, flexShrink: 0 }}>▸</span>
+                        <span style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Risk flags ── */}
+                {riskFlags.length > 0 && (
+                  <div style={{ background: "rgba(248,113,113,0.04)", border: "1px solid rgba(248,113,113,0.10)", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.55)", marginBottom: 6 }}>Watch Out For</div>
+                    {riskFlags.map((f, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
+                        <span style={{ color: "rgba(248,113,113,0.6)", fontSize: 10, marginTop: 2, flexShrink: 0 }}>⚠</span>
+                        <span style={{ fontSize: 11, color: "rgba(248,113,113,0.7)", lineHeight: 1.4 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                    {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
+                      <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
+                        <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: T.text }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                    {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
+                      <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
+                        <div style={{ fontSize: 9, color: "rgba(134,239,172,0.5)" }}>{v}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.7),rgba(7,11,18,0.6))", borderRadius: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Unlock full execution plan</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#00b450", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                </div>
+              </div>
             )}
 
             <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
