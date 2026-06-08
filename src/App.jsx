@@ -2660,6 +2660,9 @@ function AppInner() {
   const [analyzeHistory, setAnalyzeHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("aurexis_analyze_history") || "[]"); } catch { return []; }
   });
+  const [bestPickLog, setBestPickLog] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("aurexis_best_pick_log") || "[]"); } catch { return []; }
+  });
   const [bestPickData, setBestPickData] = useState(null);
   const [analyzeSymbol, setAnalyzeSymbol] = useState("");
 
@@ -3098,6 +3101,32 @@ function AppInner() {
 
     return `I didn't quite catch that. I can answer questions about today's pick, trade levels, win rate, market regime, edge signals, recent picks, top movers, or how any feature of the app works. What would you like to know?`;
   }, [bestPickData, performanceData, movers, recentPicksData]);
+
+  // Auto-log real AI best picks into Personal Best Pick Log
+  React.useEffect(() => {
+    if (!bestPickData) return;
+    const payload = typeof bestPickData === "object" ? bestPickData : null;
+    if (!payload) return;
+    const pick = payload.pick || payload.best_pick || payload;
+    const sym = String(pick?.symbol || pick?.ticker || "").toUpperCase().trim();
+    const dec = String(pick?.trade_decision || payload?.trade_decision || "").toUpperCase();
+    if (!sym || (dec !== "HIGH_CONVICTION" && dec !== "LOW_CONVICTION")) return;
+    setBestPickLog(prev => {
+      const list = Array.isArray(prev) ? prev : [];
+      if (list[0]?.symbol === sym && list[0]?.decision === dec) return prev; // already logged
+      const entry = {
+        symbol: sym,
+        decision: dec,
+        entry: pick?.entry ?? pick?.entry_price ?? null,
+        stop: pick?.stop ?? pick?.stop_loss ?? null,
+        target: pick?.targets?.[0] ?? pick?.target_1 ?? null,
+        ts: Date.now(),
+      };
+      const next = [entry, ...list.filter(x => x.symbol !== sym)].slice(0, 20);
+      try { localStorage.setItem("aurexis_best_pick_log", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [bestPickData]);
 
   const sendChatMessage = React.useCallback(async () => {
     const msg = chatInput.trim();
@@ -5227,9 +5256,9 @@ async function loadWatchlistLive() {
       );
     };
 
-    // ---- ANALYZE HISTORY CARD ----
+    // ---- PERSONAL BEST PICK LOG CARD ----
     const AnalyzeHistoryCard = () => {
-      const history = Array.isArray(analyzeHistory) ? analyzeHistory.slice(0, 8) : [];
+      const history = Array.isArray(bestPickLog) ? bestPickLog.slice(0, 8) : [];
 
       const scoreColor = (sc) => {
         if (sc === null || sc === undefined) return T.textGhost;
@@ -5279,7 +5308,7 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Your recent best picks</div>
             </div>
             {history.length > 0 ? (
-              <button onClick={() => { setAnalyzeHistory([]); try { localStorage.removeItem("aurexis_analyze_history"); } catch {} }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>Clear</button>
+              <button onClick={() => { setBestPickLog([]); try { localStorage.removeItem("aurexis_best_pick_log"); } catch {} }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, color: T.textGhost, padding: "2px 6px" }}>Clear</button>
             ) : null}
           </div>
 
@@ -5302,7 +5331,7 @@ async function loadWatchlistLive() {
                 return (
                   <div
                     key={`${item.symbol}_${item.ts}`}
-                    onClick={() => { setSymbol(item.symbol); runAnalyze(item.symbol); }}
+                    onClick={() => { setSymbol(item.symbol); }}
                     style={{
                       display: "flex", alignItems: "center", gap: 12, padding: "11px 18px",
                       borderBottom: isLast ? "none" : `1px solid ${T.border}`,
