@@ -2418,6 +2418,30 @@ function AppInner() {
       const clean = window.location.pathname;
       window.history.replaceState({}, "", clean);
     }
+
+    // After Stripe checkout success — refresh JWT so plan updates immediately
+    if (params.get("payment") === "success") {
+      window.history.replaceState({}, "", window.location.pathname);
+      const tok = localStorage.getItem("aurexis_token");
+      if (tok) {
+        // Give the webhook up to 4s to process before refreshing
+        setTimeout(() => {
+          fetch(`${API}/auth/refresh-token`, { method: "POST", headers: { Authorization: `Bearer ${tok}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (data?.access_token) {
+                localStorage.setItem("aurexis_token", data.access_token);
+                window.dispatchEvent(new Event("storage"));
+              }
+              return fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data?.access_token || tok}` } });
+            })
+            .then(r => r && r.ok ? r.json() : null)
+            .then(me => { if (me?.id) setUserProfile(me); })
+            .catch(() => {});
+        }, 4000);
+        showToast("Payment received! Your plan is being activated…");
+      }
+    }
   }, []);
 
   // Determine onboarding visibility based on per-user key from /auth/me
@@ -9271,7 +9295,7 @@ async function loadWatchlistLive() {
           },
           body: JSON.stringify({
             plan: plan.id,
-            success_url: `${window.location.origin}/app`,
+            success_url: `${window.location.origin}/app?payment=success`,
             cancel_url: `${window.location.origin}/app`,
           }),
         });
