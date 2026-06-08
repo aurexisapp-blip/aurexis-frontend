@@ -8504,7 +8504,7 @@ async function loadWatchlistLive() {
       },
       {
         q: "How do I report a bug or wrong data?",
-        a: "Email us at support@aurexis.ai with the ticker, date, and a screenshot. We typically respond within 24 hours.",
+        a: "Email us at aurexis.app@gmail.com with the ticker, date, and a screenshot. We typically respond within 24 hours.",
       },
     ];
 
@@ -8595,7 +8595,7 @@ async function loadWatchlistLive() {
               </div>
             </div>
             <a
-              href="mailto:support@aurexis.ai"
+              href="mailto:aurexis.app@gmail.com"
               style={{
                 display: "block", textAlign: "center", padding: "9px 0",
                 borderRadius: 8, fontSize: 13, fontWeight: 600,
@@ -8606,7 +8606,7 @@ async function loadWatchlistLive() {
               onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.22)"}
               onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.12)"}
             >
-              support@aurexis.ai
+              aurexis.app@gmail.com
             </a>
           </div>
 
