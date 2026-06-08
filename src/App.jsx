@@ -5413,57 +5413,44 @@ async function loadWatchlistLive() {
               const vc = verdictCfg(item.decision);
               const isLast = i === history.length - 1;
               const hasTradeData = item.entry != null || item.stop != null || item.target != null;
-              const blurValues = isLocked && hasTradeData;
 
               return (
                 <div
                   key={`${item.symbol}_${item.ts}`}
-                  onClick={() => { setSymbol(item.symbol); }}
                   style={{
-                    padding: "12px 18px", borderBottom: isLast ? "none" : `1px solid ${T.border}`,
-                    cursor: "pointer", transition: "background 0.12s",
+                    position: "relative", padding: "12px 18px",
+                    borderBottom: isLast ? "none" : `1px solid ${T.border}`,
+                    cursor: isLocked ? "default" : "pointer", transition: "background 0.12s",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = T.bg2; }}
+                  onClick={() => { if (!isLocked) setSymbol(item.symbol); }}
+                  onMouseEnter={e => { if (!isLocked) e.currentTarget.style.background = T.bg2; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                 >
-                  {/* Top row: avatar + symbol + verdict + score + time */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: hasTradeData ? 8 : 0 }}>
-                    {/* Avatar */}
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: scoreColor(item.score) }}>{item.symbol.slice(0, 2)}</span>
-                    </div>
-
-                    {/* Symbol */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: T.text, letterSpacing: "-0.01em" }}>{item.symbol}</span>
-                        {vc ? (
-                          <span style={{ fontSize: 9, fontWeight: 800, color: vc.color, background: vc.bg, border: `1px solid ${vc.border}`, borderRadius: 5, padding: "2px 6px", letterSpacing: "0.04em" }}>
-                            {vc.text}
-                          </span>
-                        ) : null}
+                  {/* Row content — blurred entirely for free users */}
+                  <div style={{ filter: isLocked ? "blur(6px)" : "none", userSelect: isLocked ? "none" : "auto", pointerEvents: isLocked ? "none" : "auto" }}>
+                    {/* Top row: avatar + symbol + verdict + score + time */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: hasTradeData ? 8 : 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: scoreColor(item.score) }}>{item.symbol.slice(0, 2)}</span>
                       </div>
-                      <div style={{ fontSize: 10, color: T.textGhost, marginTop: 1 }}>{timeAgo(item.ts)}</div>
-                    </div>
-
-                    {/* AI score */}
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: scoreColor(item.score), lineHeight: 1 }}>
-                        {item.score != null ? item.score : "—"}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: T.text, letterSpacing: "-0.01em" }}>{item.symbol}</span>
+                          {vc ? (
+                            <span style={{ fontSize: 9, fontWeight: 800, color: vc.color, background: vc.bg, border: `1px solid ${vc.border}`, borderRadius: 5, padding: "2px 6px", letterSpacing: "0.04em" }}>{vc.text}</span>
+                          ) : null}
+                        </div>
+                        <div style={{ fontSize: 10, color: T.textGhost, marginTop: 1 }}>{timeAgo(item.ts)}</div>
                       </div>
-                      <div style={{ fontSize: 9, color: T.textGhost, marginTop: 1 }}>score</div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: scoreColor(item.score), lineHeight: 1 }}>{item.score != null ? item.score : "—"}</div>
+                        <div style={{ fontSize: 9, color: T.textGhost, marginTop: 1 }}>score</div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Trade data row: entry / stop / target */}
-                  {hasTradeData && (
-                    <div style={{ position: "relative", marginLeft: 44 }}>
-                      <div style={{
-                        display: "flex", gap: 6,
-                        filter: blurValues ? "blur(5px)" : "none",
-                        userSelect: blurValues ? "none" : "auto",
-                        transition: "filter 0.2s",
-                      }}>
+                    {/* Trade data row */}
+                    {hasTradeData && (
+                      <div style={{ display: "flex", gap: 6, marginLeft: 44 }}>
                         {[
                           { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
                           { label: "Stop", value: fmt(item.stop), color: "#f87171" },
@@ -5475,26 +5462,26 @@ async function loadWatchlistLive() {
                           </div>
                         ))}
                       </div>
+                    )}
+                  </div>
 
-                      {/* Upgrade nudge overlay for locked users */}
-                      {blurValues && (
-                        <div style={{
-                          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer",
-                        }}
-                          onClick={(e) => { e.stopPropagation(); setTab("settings"); }}
-                        >
-                          <div style={{
-                            display: "flex", alignItems: "center", gap: 5,
-                            background: darkMode ? "rgba(15,19,30,0.85)" : "rgba(255,255,255,0.88)",
-                            border: "1px solid rgba(0,180,80,0.25)", borderRadius: 8,
-                            padding: "4px 10px", backdropFilter: "blur(4px)",
-                          }}>
-                            <span style={{ fontSize: 11 }}>🔒</span>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>Starter to unlock</span>
-                          </div>
-                        </div>
-                      )}
+                  {/* Full-row upgrade overlay for free users */}
+                  {isLocked && (
+                    <div style={{
+                      position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                      onClick={(e) => { e.stopPropagation(); setTab("pricing"); }}
+                    >
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        background: darkMode ? "rgba(10,13,22,0.80)" : "rgba(255,255,255,0.88)",
+                        border: "1px solid rgba(0,180,80,0.25)", borderRadius: 8,
+                        padding: "5px 12px", backdropFilter: "blur(6px)",
+                      }}>
+                        <span style={{ fontSize: 10 }}>🔒</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>Starter to unlock</span>
+                      </div>
                     </div>
                   )}
                 </div>
