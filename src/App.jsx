@@ -3589,12 +3589,47 @@ async function loadBestPick() {
       next?.pick?.symbol || next?.pick?.ticker ||
       next?.best_pick?.symbol || next?.best_pick?.ticker || ""
     );
-    if (_pickedSym && BLOCKED_BEST_PICK_SYMS.has(_pickedSym)) {
-      console.warn(`Best pick returned blocked symbol "${_pickedSym}" — discarding`);
-      setBestPickData({ ...next, is_trade: false, trade_decision: "NO_TRADE", no_trade_reason: "No valid pick available" });
-    } else {
-      setBestPickData(next);
-    }
+    const _finalNext = (_pickedSym && BLOCKED_BEST_PICK_SYMS.has(_pickedSym))
+      ? { ...next, is_trade: false, trade_decision: "NO_TRADE", no_trade_reason: "No valid pick available" }
+      : next;
+    setBestPickData(_finalNext);
+
+    // Log directly here where we have the raw API data — no state timing issues
+    (() => {
+      const _p = _finalNext;
+      const _pick = (_p?.pick && typeof _p.pick === "object" ? _p.pick : null)
+        || (_p?.best_pick && typeof _p.best_pick === "object" ? _p.best_pick : null)
+        || _p;
+      const _sym = String(_pick?.symbol || _pick?.ticker || "").toUpperCase().trim();
+      const _dec = String(_pick?.trade_decision || _p?.trade_decision || "").toUpperCase();
+      if (!_sym || (_dec !== "HIGH_CONVICTION" && _dec !== "LOW_CONVICTION")) return;
+      const _toS100 = (v) => { const n = Number(v); if (!Number.isFinite(n)) return null; return Math.max(0, Math.min(100, n <= 10 ? n * 10 : n)); };
+      const _tp = (_pick?.trade_plan && typeof _pick.trade_plan === "object" && Object.keys(_pick.trade_plan).length > 0 ? _pick.trade_plan : null)
+        || (_p?.trade_plan && typeof _p.trade_plan === "object" && Object.keys(_p.trade_plan).length > 0 ? _p.trade_plan : null);
+      const _entry  = _tp?.entry  ?? _pick?.entry  ?? _p?.entry  ?? null;
+      const _stop   = _tp?.stop   ?? _pick?.stop   ?? _p?.stop   ?? null;
+      const _tgts   = Array.isArray(_tp?.targets) ? _tp.targets : [];
+      const _target = _tgts[0] ?? _tp?.target_1 ?? _pick?.target_1 ?? _p?.target_1 ?? null;
+      const _score  = _toS100(_pick?.ai_score_0_10 ?? _p?.ai_score_0_10 ?? _pick?.final_score_0_10 ?? _p?.final_score_0_10);
+      setBestPickLog(prev => {
+        const list = Array.isArray(prev) ? prev : [];
+        const existing = list[0];
+        const existingHasData = existing?.entry != null || existing?.stop != null || existing?.score != null;
+        if (existing?.symbol === _sym && existing?.decision === _dec && existingHasData) return prev;
+        const logEntry = {
+          symbol: _sym, decision: _dec,
+          entry:  _entry  != null ? Number(_entry)  : null,
+          stop:   _stop   != null ? Number(_stop)   : null,
+          target: _target != null ? Number(_target) : null,
+          score:  _score,
+          ts: Date.now(),
+        };
+        const nextList = [logEntry, ...list.filter(x => x.symbol !== _sym)].slice(0, 20);
+        try { localStorage.setItem("aurexis_best_pick_log", JSON.stringify(nextList)); } catch {}
+        return nextList;
+      });
+    })();
+
     setErrBestPick("");
     markDataFetchSuccess();
   } catch (e) {
