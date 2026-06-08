@@ -2253,7 +2253,7 @@ function canAccess(userPlan, minPlan) {
 }
 
 const ANALYZE_FREE_LIMIT = 3;
-function _analyzeUsageKey() { return `aurexis_analyze_${new Date().toISOString().slice(0,10)}`; }
+function _analyzeUsageKey() { const d = new Date(); return `aurexis_analyze_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getAnalyzeUsedToday() { return parseInt(localStorage.getItem(_analyzeUsageKey()) || "0", 10); }
 function incrementAnalyzeUsage() { localStorage.setItem(_analyzeUsageKey(), String(getAnalyzeUsedToday() + 1)); }
 function analyzeRemaining(plan) {
