@@ -238,6 +238,12 @@ async function apiFetch(path, options) {
   const t = hasSignal ? null : withTimeoutMs(DEFAULT_TIMEOUT_MS);
   const signal = hasSignal ? opt.signal : t.signal;
 
+  // Auto-inject auth token if present and not already set
+  const _tok = localStorage.getItem("aurexis_token");
+  const existingAuth = (opt.headers instanceof Headers ? opt.headers.get("Authorization") : (opt.headers || {})["Authorization"]);
+  const authHeaders = (_tok && !existingAuth) ? { Authorization: `Bearer ${_tok}` } : {};
+  const mergedHeaders = { ...(opt.headers && typeof opt.headers === "object" ? opt.headers : {}), ...authHeaders };
+
   const method = String(opt.method || "GET").toUpperCase();
   const t0 = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
 
@@ -245,7 +251,7 @@ async function apiFetch(path, options) {
   let text = "";
 
   try {
-    res = await fetch(url, { ...opt, signal });
+    res = await fetch(url, { ...opt, signal, headers: mergedHeaders });
     text = await res.text();
   } catch (err) {
     const isAbort = String(err?.name || "").toLowerCase().includes("abort");
@@ -3401,7 +3407,11 @@ async function loadBestPick() {
         }
       }, 90000);
       try {
-        const res = await fetch(url, { signal: controller.signal });
+        const _tok = localStorage.getItem("aurexis_token");
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: _tok ? { Authorization: `Bearer ${_tok}` } : {},
+        });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -7348,10 +7358,11 @@ async function loadWatchlistLive() {
       try {
         const controller = new AbortController();
         const t = window.setTimeout(() => controller.abort(), 90000);
-        const res = await fetch(
-          `${API_BASE_URL}/best_pick_v2?allow_llm_news=false`,
-          { signal: controller.signal }
-        );
+        const _tok = localStorage.getItem("aurexis_token");
+        const res = await fetch(`${API_BASE_URL}/best_pick_v2?allow_llm_news=false`, {
+          signal: controller.signal,
+          headers: _tok ? { Authorization: `Bearer ${_tok}` } : {},
+        });
         window.clearTimeout(t);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const raw = await res.json();
