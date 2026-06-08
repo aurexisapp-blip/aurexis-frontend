@@ -2352,38 +2352,119 @@ function EliteFakePreview() {
 
 function PlanGate({ requires, userPlan, children, setTab }) {
   if (canAccess(userPlan, requires)) return children;
-  const label = requires.charAt(0).toUpperCase() + requires.slice(1);
-  const prices = { starter: "$9", pro: "$29", elite: "$99" };
-  const taglines = {
-    starter: "entry & stop targets, edge signals, picks history",
-    pro: "screener, portfolio tracker & advanced analytics",
-    elite: "options flow, insider activity & elite signals",
-  };
+  const cfg = {
+    starter: {
+      label: "Starter", price: "$9",
+      accentRgb: "0,180,80", accent: "#4ade80",
+      headline: "See the full trade plan every day",
+      features: [
+        "Entry price, stop loss & profit targets",
+        "Edge signal breakdown for every pick",
+        "Full picks history with outcomes",
+      ],
+    },
+    pro: {
+      label: "Pro", price: "$29",
+      accentRgb: "96,165,250", accent: "#60a5fa",
+      headline: "Screen & track like a pro",
+      features: [
+        "Live screener across 1,200+ stocks",
+        "Portfolio tracker with P&L analytics",
+        "Advanced filtering & custom signals",
+      ],
+    },
+    elite: {
+      label: "Elite", price: "$99",
+      accentRgb: "167,139,250", accent: "#a78bfa",
+      headline: "Institutional-grade intelligence",
+      features: [
+        "Real-time unusual options flow",
+        "Insider buying & institutional activity",
+        "Elite signals & dark pool data",
+      ],
+    },
+  }[requires];
+
   const fakePreview = requires === "pro" ? <ProFakePreview /> : requires === "elite" ? <EliteFakePreview /> : <StarterFakePreview />;
+  const btnGrad = {
+    starter: "linear-gradient(135deg,#00c853,#15803d)",
+    pro:     "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+    elite:   "linear-gradient(135deg,#8b5cf6,#6d28d9)",
+  }[requires];
+
   return (
     <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none", opacity: 0.6 }}>{fakePreview}</div>
+      {/* Content visible at top, fading + blurring toward bottom */}
       <div style={{
-        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "flex-end", padding: "0 24px 32px",
-        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.55) 40%, rgba(7,9,16,0.95) 100%)",
+        filter: "blur(4px)",
+        pointerEvents: "none", userSelect: "none",
+        WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 25%, transparent 72%)",
+        maskImage: "linear-gradient(to bottom, black 0%, black 25%, transparent 72%)",
+      }}>{fakePreview}</div>
+
+      {/* Gradient darkening layer */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "linear-gradient(to bottom, rgba(7,9,15,0) 15%, rgba(7,9,15,0.50) 45%, rgba(7,9,15,0.98) 72%)",
+      }} />
+
+      {/* Floating upgrade card */}
+      <div style={{
+        position: "absolute", inset: 0,
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        padding: "0 20px 24px",
       }}>
-        <div style={{ textAlign: "center", maxWidth: 360 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.28)", borderRadius: 20, padding: "3px 12px", marginBottom: 10 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label} · {prices[requires]}/mo</span>
+        <div style={{
+          width: "100%", maxWidth: 400,
+          background: "rgba(12,16,28,0.72)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 16, padding: "20px 22px 18px",
+          backdropFilter: "blur(20px)",
+          boxShadow: `0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(${cfg.accentRgb},0.06)`,
+        }}>
+          {/* Plan badge */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              background: `rgba(${cfg.accentRgb},0.10)`,
+              border: `1px solid rgba(${cfg.accentRgb},0.22)`,
+              borderRadius: 20, padding: "3px 11px",
+            }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: cfg.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                {cfg.label} · {cfg.price}/mo
+              </span>
+            </div>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)", letterSpacing: "0.02em" }}>Cancel anytime</span>
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5, letterSpacing: "-0.01em" }}>
-            Unlock {taglines[requires]}
+
+          {/* Headline */}
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 12, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+            {cfg.headline}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginBottom: 18, lineHeight: 1.6 }}>
-            This is a live preview of what {label} members see.
+
+          {/* Feature bullets */}
+          <div style={{ marginBottom: 16 }}>
+            {cfg.features.map(f => (
+              <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 7 }}>
+                <span style={{ color: cfg.accent, fontSize: 12, lineHeight: "18px", flexShrink: 0, fontWeight: 700 }}>✓</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.52)", lineHeight: "18px" }}>{f}</span>
+              </div>
+            ))}
           </div>
+
+          {/* CTA */}
           <button onClick={() => setTab("pricing")} style={{
-            padding: "10px 28px", borderRadius: 10, cursor: "pointer",
-            background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff",
-            border: "none", fontSize: 13, fontWeight: 700, letterSpacing: "0.02em",
-            boxShadow: "0 0 24px rgba(0,180,80,0.30)",
-          }}>Upgrade to {label} →</button>
+            width: "100%", padding: "11px 0", borderRadius: 10, cursor: "pointer",
+            background: btnGrad, color: "#fff", border: "none",
+            fontSize: 13, fontWeight: 700, letterSpacing: "0.01em",
+            boxShadow: `0 0 22px rgba(${cfg.accentRgb},0.25)`,
+            transition: "opacity 0.15s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+          >
+            Upgrade to {cfg.label} →
+          </button>
         </div>
       </div>
     </div>
@@ -7281,38 +7362,52 @@ async function loadWatchlistLive() {
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
                     <div style={{ position: "relative", marginTop: -2, borderRadius: "0 0 10px 10px", overflow: "hidden" }}>
-                      {/* Blurred preview rows */}
-                      <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none", opacity: 0.45 }}>
+                      {/* Blurred preview rows fading out */}
+                      <div style={{
+                        filter: "blur(3px)", pointerEvents: "none", userSelect: "none",
+                        WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 75%)",
+                        maskImage: "linear-gradient(to bottom, black 0%, transparent 75%)",
+                      }}>
                         <table className="table" style={{ marginTop: 0 }}>
                           <tbody>
                             {sorted.slice(FREE_MOVERS_LIMIT, FREE_MOVERS_LIMIT + 4).map(renderRow)}
                           </tbody>
                         </table>
                       </div>
-                      {/* Gradient + upgrade CTA overlay */}
+                      {/* Gradient overlay */}
+                      <div style={{
+                        position: "absolute", inset: 0, pointerEvents: "none",
+                        background: "linear-gradient(to bottom, rgba(7,9,15,0) 10%, rgba(7,9,15,0.55) 40%, rgba(7,9,15,0.98) 72%)",
+                      }} />
+                      {/* CTA card */}
                       <div style={{
                         position: "absolute", inset: 0,
-                        display: "flex", flexDirection: "column",
-                        alignItems: "center", justifyContent: "flex-end",
-                        padding: "0 24px 20px",
-                        background: "linear-gradient(to bottom, rgba(7,9,16,0) 0%, rgba(7,9,16,0.60) 35%, rgba(7,9,16,0.94) 100%)",
+                        display: "flex", alignItems: "flex-end", justifyContent: "center",
+                        padding: "0 16px 18px",
                       }}>
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.28)", borderRadius: 20, padding: "3px 12px", marginBottom: 8 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</span>
-                          </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 4, letterSpacing: "-0.01em" }}>
-                            {hiddenCount} more movers hidden
-                          </div>
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginBottom: 14, lineHeight: 1.5 }}>
-                            Upgrade to Starter for the full movers list.
+                        <div style={{
+                          width: "100%", maxWidth: 380,
+                          background: "rgba(12,16,28,0.70)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 14, padding: "16px 18px",
+                          backdropFilter: "blur(20px)",
+                          boxShadow: "0 6px 32px rgba(0,0,0,0.50), 0 0 0 1px rgba(0,180,80,0.05)",
+                          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em", marginBottom: 3 }}>
+                              {hiddenCount} more movers
+                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.4 }}>
+                              Full list unlocked on Starter · $9/mo
+                            </div>
                           </div>
                           <button onClick={() => setTab("pricing")} style={{
-                            padding: "9px 24px", borderRadius: 10, cursor: "pointer",
-                            background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff",
-                            border: "none", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em",
-                            boxShadow: "0 0 20px rgba(0,180,80,0.28)",
-                          }}>Upgrade to Starter →</button>
+                            flexShrink: 0, padding: "9px 18px", borderRadius: 9, cursor: "pointer",
+                            background: "linear-gradient(135deg,#00c853,#15803d)", color: "#fff",
+                            border: "none", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+                            boxShadow: "0 0 18px rgba(0,180,80,0.28)",
+                          }}>Upgrade →</button>
                         </div>
                       </div>
                     </div>
