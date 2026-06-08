@@ -2526,19 +2526,6 @@ function AppInner() {
   const userPlan = usePlan();
 
   // Free pick gate — free users get 1 pick per ISO week
-  const _freePickWeekKey = () => {
-    const d = new Date();
-    const jan1 = new Date(d.getFullYear(), 0, 1);
-    const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-    return `aurexis_free_pick_${d.getFullYear()}_W${week}`;
-  };
-  const [freePickRevealed, setFreePickRevealed] = React.useState(
-    () => localStorage.getItem(_freePickWeekKey()) === "used"
-  );
-  const _useFreePickNow = () => {
-    localStorage.setItem(_freePickWeekKey(), "used");
-    setFreePickRevealed(true);
-  };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([
@@ -5907,53 +5894,11 @@ async function loadWatchlistLive() {
         );
       }
 
-      // Free-user gate: 1 pick per week
       const isFreeUser = !canAccess(userPlan, "starter");
       const pickIsReal = Boolean(ticker) && (tradeDec === "HIGH_CONVICTION" || tradeDec === "LOW_CONVICTION");
-      if (isFreeUser && pickIsReal && !freePickRevealed) {
-        return (
-          <div className="card heroCard heroCard--wait" style={{ position: "relative", overflow: "hidden" }}>
-            <div style={{ filter: "blur(7px)", pointerEvents: "none", userSelect: "none", opacity: 0.45, padding: "28px 28px 20px" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>TODAY'S AI PICK</div>
-              <div style={{ fontSize: 48, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 4 }}>████</div>
-              <div style={{ fontSize: 15, color: "rgba(255,255,255,0.3)" }}>$███.██ &nbsp;·&nbsp; Entry $███ · Stop $███ · Target $███</div>
-            </div>
-            <div style={{
-              position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", padding: "24px",
-              background: "linear-gradient(to bottom, rgba(7,9,16,0.1) 0%, rgba(7,9,16,0.85) 50%, rgba(7,9,16,0.97) 100%)",
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: "#00b450", marginBottom: 10, textTransform: "uppercase" }}>
-                Free Pick Available
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 6, textAlign: "center" }}>
-                Use your 1 free pick this week?
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 22, textAlign: "center", lineHeight: 1.6 }}>
-                Free members get one AI pick per week.<br/>Upgrade to Starter for unlimited daily picks.
-              </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-                <button onClick={_useFreePickNow} style={{
-                  padding: "10px 28px", borderRadius: 10, cursor: "pointer", fontWeight: 700,
-                  fontSize: 14, background: "#00b450", color: "#fff", border: "none",
-                }}>Yes, show me today's pick →</button>
-                <button onClick={() => setTab("pricing")} style={{
-                  padding: "10px 22px", borderRadius: 10, cursor: "pointer", fontWeight: 600,
-                  fontSize: 13, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}>Upgrade for unlimited</button>
-              </div>
-            </div>
-          </div>
-        );
-      }
+      const showBlurGate = isFreeUser && pickIsReal;
 
-      if (isFreeUser && pickIsReal && freePickRevealed) {
-        // Already used free pick — show blurred upgrade for any subsequent same-week views
-        // (freePickRevealed=true means they DID see it once, so keep showing it — no double-blur)
-      }
-
-      return (
+      const heroCard = (
         <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
           <div className={`heroBg heroBg--${convStyle.bgKey}`} />
           <div className="heroBody">
@@ -6228,6 +6173,49 @@ async function loadWatchlistLive() {
               ) : null}
             </div>
             <div className="heroTrustLine">AI scans 100+ stocks daily to surface high-conviction setups</div>
+          </div>
+        </div>
+      );
+
+      if (!showBlurGate) return heroCard;
+
+      return (
+        <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none" }}>
+            {heroCard}
+          </div>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(135deg, rgba(7,9,16,0.55) 0%, rgba(7,9,16,0.80) 100%)",
+            backdropFilter: "blur(2px)",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            padding: "32px 24px", gap: 12,
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: "0.12em",
+              color: "#00b450", textTransform: "uppercase", marginBottom: 4,
+            }}>Members Only</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>
+              Unlock Today's AI Pick
+            </div>
+            <div style={{
+              fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center",
+              lineHeight: 1.6, maxWidth: 280, marginBottom: 8,
+            }}>
+              Upgrade to Starter to see the full pick with entry, stop loss, and targets every day.
+            </div>
+            <button
+              onClick={() => setTab("pricing")}
+              style={{
+                padding: "12px 32px", borderRadius: 10, cursor: "pointer",
+                fontWeight: 700, fontSize: 14,
+                background: "linear-gradient(90deg, #00b450, #00d462)",
+                color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+              }}
+            >
+              Upgrade to Starter →
+            </button>
           </div>
         </div>
       );
