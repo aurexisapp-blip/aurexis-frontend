@@ -8487,8 +8487,8 @@ async function loadWatchlistLive() {
         a: "Aurexis scans 1,200+ stocks daily using a multi-signal model — momentum, volume anomalies, options flow, short interest, and news sentiment. Each signal is weighted by its historical win rate and combined into a conviction score.",
       },
       {
-        q: "Why is performance data empty?",
-        a: "The performance tracker populates automatically as picks are made by the live scanner. It may take 24–48 hours after launch for data to appear. Historical picks show up as they are resolved (1–5 trading days).",
+        q: "When does the daily pick update?",
+        a: "The scanner runs every morning before market open. Your Best Pick card refreshes automatically — check back before 9:30 AM ET on trading days. On weekends and market holidays the card will show the last session's result or a NO_TRADE status.",
       },
       {
         q: "Is this real money trading?",
