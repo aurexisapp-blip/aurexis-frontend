@@ -2350,9 +2350,29 @@ function EliteFakePreview() {
   );
 }
 
-function PlanGate({ requires, userPlan, children, setTab }) {
+function PlanGate({ requires, userPlan, children, setTab, feature }) {
   if (canAccess(userPlan, requires)) return children;
-  const cfg = {
+
+  const featureOverrides = {
+    watchlist: {
+      headline: "Monitor your best setups",
+      features: [
+        "AI-curated watchlist candidates updated every scan",
+        "Edge scores & signal breakdown per stock",
+        "Track high-conviction setups before they trigger",
+      ],
+    },
+    tradejournal: {
+      headline: "Track every trade you make",
+      features: [
+        "Log entries, stops, and targets manually",
+        "Automatic P&L calculation on every trade",
+        "Build a record of your real trading decisions",
+      ],
+    },
+  };
+
+  const tierCfg = {
     starter: {
       label: "Starter", price: "$9",
       accentRgb: "0,180,80", accent: "#4ade80",
@@ -2383,7 +2403,11 @@ function PlanGate({ requires, userPlan, children, setTab }) {
         "Elite signals & dark pool data",
       ],
     },
-  }[requires];
+  };
+
+  const base = tierCfg[requires];
+  const override = featureOverrides[feature] || {};
+  const cfg = { ...base, ...override };
 
   const fakePreview = requires === "pro" ? <ProFakePreview /> : requires === "elite" ? <EliteFakePreview /> : <StarterFakePreview />;
   const btnGrad = {
@@ -9851,8 +9875,8 @@ const renderPage = () => {
         </PortfolioErrorBoundary>
       </PlanGate>
     );
-  if (tab === "watchlist") return <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><Watchlist /></PlanGate>;
-  if (tab === "tradejournal") return <PlanGate requires="starter" userPlan={userPlan} setTab={setTab}><TradeJournal /></PlanGate>;
+  if (tab === "watchlist") return <PlanGate requires="starter" feature="watchlist" userPlan={userPlan} setTab={setTab}><Watchlist /></PlanGate>;
+  if (tab === "tradejournal") return <PlanGate requires="starter" feature="tradejournal" userPlan={userPlan} setTab={setTab}><TradeJournal /></PlanGate>;
   if (tab === "settings") return <Settings />;
   if (tab === "support") return <Support />;
   if (tab === "pricing") return <Pricing />;
