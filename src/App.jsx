@@ -9186,18 +9186,14 @@ async function loadWatchlistLive() {
             Get notified by email when the AI finds a new pick or when an existing pick hits its target or stop.
           </div>
           {toggleRow("New pick alert", alertNewPick, () => {
-            setAlertNewPick(prev => {
-              const next = !prev;
-              _saveAlertPrefs(next, alertOutcome);
-              return next;
-            });
+            const next = !alertNewPick;
+            setAlertNewPick(next);
+            _saveAlertPrefs(next, alertOutcome);
           })}
           {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => {
-            setAlertOutcome(prev => {
-              const next = !prev;
-              _saveAlertPrefs(alertNewPick, next);
-              return next;
-            });
+            const next = !alertOutcome;
+            setAlertOutcome(next);
+            _saveAlertPrefs(alertNewPick, next);
           })}
         </div>
 
