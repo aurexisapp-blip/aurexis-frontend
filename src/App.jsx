@@ -9162,24 +9162,28 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
-          {NAV_ITEMS.map(n => (
-            <button
-              key={n.id}
-              onClick={() => setSettingsTab(n.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 9, width: "100%",
-                padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit",
-                background: settingsTab === n.id ? dm ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)" : "transparent",
-                color: settingsTab === n.id ? txt : txtS,
-                fontSize: 13, fontWeight: settingsTab === n.id ? 600 : 400,
-                transition: "background 0.13s, color 0.13s",
-                textAlign: "left",
-              }}
-            >
-              <span style={{ fontSize: 13, opacity: 0.6, flexShrink: 0 }}>{n.icon}</span>
-              {n.label}
-            </button>
-          ))}
+          {NAV_ITEMS.map(n => {
+            const active = settingsTab === n.id;
+            const av = _getAvatar(avatarId);
+            return (
+              <button
+                key={n.id}
+                onClick={() => setSettingsTab(n.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9, width: "100%",
+                  padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit",
+                  background: active ? `${av.text}18` : "transparent",
+                  color: active ? av.text : txtS,
+                  fontSize: 13, fontWeight: active ? 600 : 400,
+                  transition: "background 0.13s, color 0.13s",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 13, opacity: active ? 1 : 0.5, flexShrink: 0 }}>{n.icon}</span>
+                {n.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── Content pane ──────────────────────────────────────────────── */}
