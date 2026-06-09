@@ -1,6 +1,7 @@
 // src/App.jsx (TOP SECTION ONLY — SAFE)
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import "./App.css";
 import { AnimatePresence, animate, motion } from "framer-motion";
 
@@ -10419,82 +10420,80 @@ const renderPage = () => {
             marginTop: "auto",
             position: "relative",
           }}>
-            {/* Profile popup menu */}
-            {profileMenuOpen && (
+            {/* Profile popup — rendered via portal so sidebar overflow/stacking can't clip it */}
+            {profileMenuOpen && ReactDOM.createPortal(
               <>
-                {/* Backdrop */}
                 <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
-                <div
-                    style={{
-                      position: "fixed", bottom: profileMenuPos.bottom, left: profileMenuPos.left,
-                      width: 220,
-                      background: darkMode ? "#0f1117" : "#ffffff",
-                      border: `1px solid ${T.border2}`,
-                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-                      zIndex: 9999, overflow: "hidden",
-                    }}
-                  >
-                    {/* User info header */}
-                    <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${T.border}` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{
-                          width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-                          background: _getAvatar(avatarId).bg,
-                          border: `1.5px solid ${_getAvatar(avatarId).border}`,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 12, fontWeight: 800, color: _getAvatar(avatarId).text,
-                        }}>
-                          {(() => { const fn = userProfile?.first_name||""; const ln = userProfile?.last_name||""; const em = userProfile?.email||""; if(fn&&ln) return `${fn[0]}${ln[0]}`.toUpperCase(); if(fn) return fn.slice(0,2).toUpperCase(); if(em) return em.slice(0,2).toUpperCase(); return "AU"; })()}
+                <div style={{
+                  position: "fixed", bottom: profileMenuPos.bottom, left: profileMenuPos.left,
+                  width: 228,
+                  background: darkMode ? "#1c2035" : "#f4f6f8",
+                  border: darkMode ? "1px solid rgba(255,255,255,0.18)" : "1px solid rgba(0,0,0,0.12)",
+                  borderRadius: 14, boxShadow: darkMode ? "0 24px 64px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04)" : "0 12px 40px rgba(0,0,0,0.18)",
+                  zIndex: 9999, overflow: "hidden",
+                  fontFamily: "inherit",
+                }}>
+                  {/* User info header */}
+                  <div style={{ padding: "14px 16px 12px", borderBottom: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.08)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                        background: _getAvatar(avatarId).bg,
+                        border: `2px solid ${_getAvatar(avatarId).border}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 12, fontWeight: 800, color: _getAvatar(avatarId).text,
+                      }}>
+                        {(() => { const fn=userProfile?.first_name||""; const ln=userProfile?.last_name||""; const em=userProfile?.email||""; if(fn&&ln) return `${fn[0]}${ln[0]}`.toUpperCase(); if(fn) return fn.slice(0,2).toUpperCase(); if(em) return em.slice(0,2).toUpperCase(); return "AU"; })()}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: darkMode ? "#e8ecf4" : "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name||""}`.trim() : userProfile?.email?.split("@")[0] || "My Account"}
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name||""}`.trim() : userProfile?.email?.split("@")[0] || "My Account"}
-                          </div>
-                          <div style={{ fontSize: 11, color: T.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {userProfile?.email || ""}
-                          </div>
+                        <div style={{ fontSize: 11, color: darkMode ? "rgba(200,210,230,0.50)" : "rgba(0,0,0,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {userProfile?.email || ""}
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Menu items */}
-                    {[
-                      { icon: "⚙", label: "Settings", action: () => { setTab("settings"); setSettingsTab("profile"); setProfileMenuOpen(false); } },
-                      { icon: "◈", label: "Plan & Billing", action: () => { setTab("settings"); setSettingsTab("billing"); setProfileMenuOpen(false); } },
-                      { icon: "◎", label: "Notifications", action: () => { setTab("settings"); setSettingsTab("alerts"); setProfileMenuOpen(false); } },
-                      { icon: "⊙", label: "Support", action: () => { setTab("support"); setProfileMenuOpen(false); } },
-                    ].map(item => (
-                      <button key={item.label} onClick={item.action} style={{
-                        display: "flex", alignItems: "center", gap: 10, width: "100%",
-                        padding: "10px 16px", background: "none", border: "none", cursor: "pointer",
-                        fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: T.textSec,
-                        textAlign: "left", transition: "background 0.1s",
-                      }}
-                        onMouseEnter={e => e.currentTarget.style.background = darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "none"}
-                      >
-                        <span style={{ fontSize: 13, opacity: 0.6, width: 16, flexShrink: 0 }}>{item.icon}</span>
-                        {item.label}
-                      </button>
-                    ))}
-
-                    {/* Divider + Sign out */}
-                    <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
-                    <button onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; }} style={{
+                  {[
+                    { icon: "⚙", label: "Settings",       action: () => { setTab("settings"); setSettingsTab("profile");  setProfileMenuOpen(false); } },
+                    { icon: "◈", label: "Plan & Billing",  action: () => { setTab("settings"); setSettingsTab("billing");  setProfileMenuOpen(false); } },
+                    { icon: "◎", label: "Notifications",   action: () => { setTab("settings"); setSettingsTab("alerts");   setProfileMenuOpen(false); } },
+                    { icon: "⊙", label: "Support",         action: () => { setTab("support");  setProfileMenuOpen(false); } },
+                  ].map(item => (
+                    <button key={item.label} onClick={item.action} style={{
                       display: "flex", alignItems: "center", gap: 10, width: "100%",
-                      padding: "10px 16px 14px", background: "none", border: "none", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: "rgba(248,113,113,0.80)",
-                      textAlign: "left", transition: "background 0.1s",
+                      padding: "10px 16px", background: "none", border: "none", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                      color: darkMode ? "rgba(220,228,245,0.85)" : "rgba(30,35,55,0.85)",
+                      textAlign: "left",
                     }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.07)"}
+                      onMouseEnter={e => e.currentTarget.style.background = darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"}
                       onMouseLeave={e => e.currentTarget.style.background = "none"}
                     >
-                      <span style={{ fontSize: 13, opacity: 0.7, width: 16, flexShrink: 0 }}>↑</span>
-                      Log out
+                      <span style={{ fontSize: 13, opacity: 0.55, width: 18, flexShrink: 0 }}>{item.icon}</span>
+                      {item.label}
                     </button>
-                  </div>
-                </>
-              )}
+                  ))}
+
+                  <div style={{ height: 1, background: darkMode ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)", margin: "4px 0" }} />
+                  <button onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; }} style={{
+                    display: "flex", alignItems: "center", gap: 10, width: "100%",
+                    padding: "10px 16px 14px", background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: "rgba(248,113,113,0.90)",
+                    textAlign: "left",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.10)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "none"}
+                  >
+                    <span style={{ fontSize: 13, opacity: 0.8, width: 18, flexShrink: 0 }}>↗</span>
+                    Log out
+                  </button>
+                </div>
+              </>,
+              document.body
+            )}
 
             <motion.button
               ref={profileBtnRef}
