@@ -85,8 +85,8 @@ export default function Terms() {
         <P>
           Aurexis is an AI-powered stock signal service. For legal notices, support requests, or other
           inquiries, contact us at{" "}
-          <a href="mailto:support@aurexis.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
-            support@aurexis.com
+          <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
+            aurexis.app@gmail.com
           </a>
           . These Terms are governed by the laws of the Commonwealth of Massachusetts, without regard to
           conflict of law principles.

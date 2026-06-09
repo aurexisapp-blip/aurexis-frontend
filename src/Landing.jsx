@@ -1552,7 +1552,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   Support
                 </div>
                 {[
-                  { label: "support@aurexis.com", href: "mailto:support@aurexis.com" },
+                  { label: "aurexis.app@gmail.com", href: "mailto:aurexis.app@gmail.com" },
                   { label: "Documentation",        href: "#" },
                   { label: "Status",               href: "#" },
                 ].map(({ label, href }) => (

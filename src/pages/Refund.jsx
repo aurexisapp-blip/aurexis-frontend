@@ -18,8 +18,8 @@ export default function Refund() {
       <Section title="How to Request a Refund">
         <P>
           To request a refund, email{" "}
-          <a href="mailto:support@aurexis.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
-            support@aurexis.com
+          <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
+            aurexis.app@gmail.com
           </a>{" "}
           with your account email and date of purchase. A reason is optional but helpful.
         </P>
@@ -55,8 +55,8 @@ export default function Refund() {
       <Section title="Contact">
         <P>
           Questions about refunds? Email{" "}
-          <a href="mailto:support@aurexis.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
-            support@aurexis.com
+          <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
+            aurexis.app@gmail.com
           </a>
           .
         </P>
