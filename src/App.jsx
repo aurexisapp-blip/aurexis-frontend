@@ -9089,14 +9089,16 @@ async function loadWatchlistLive() {
     }, [alertLoaded]);
 
     async function _saveAlertPrefs(newPick, outcome) {
+      const token = localStorage.getItem("aurexis_token");
+      if (!token) return;
       try {
-        const token = localStorage.getItem("aurexis_token");
-        await fetch(`${API}/alerts/preferences`, {
+        const r = await fetch(`${API}/alerts/preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ phone: null, alerts_new_pick: newPick, alerts_outcome: outcome, alerts_channel: "email" }),
         });
-      } catch { /* silent — toggle already updated optimistically */ }
+        if (r.ok) showToast("Alert preference saved.");
+      } catch { showToast("Couldn't save — check your connection."); }
     }
 
     return (
@@ -9184,14 +9186,18 @@ async function loadWatchlistLive() {
             Get notified by email when the AI finds a new pick or when an existing pick hits its target or stop.
           </div>
           {toggleRow("New pick alert", alertNewPick, () => {
-            const next = !alertNewPick;
-            setAlertNewPick(next);
-            _saveAlertPrefs(next, alertOutcome);
+            setAlertNewPick(prev => {
+              const next = !prev;
+              _saveAlertPrefs(next, alertOutcome);
+              return next;
+            });
           })}
           {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => {
-            const next = !alertOutcome;
-            setAlertOutcome(next);
-            _saveAlertPrefs(alertNewPick, next);
+            setAlertOutcome(prev => {
+              const next = !prev;
+              _saveAlertPrefs(alertNewPick, next);
+              return next;
+            });
           })}
         </div>
 
