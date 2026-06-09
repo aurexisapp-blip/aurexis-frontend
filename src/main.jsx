@@ -118,8 +118,8 @@ createRoot(rootEl).render(
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
         <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
-        <Route path="/login"      element={<Auth defaultView="login" />} />
-        <Route path="/signup"     element={<Auth defaultView="signup" />} />
+        <Route path="/login"      element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="login" />} />
+        <Route path="/signup"     element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="signup" />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={<LandingPage />} />
       </Routes>
