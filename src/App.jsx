@@ -29,9 +29,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 const API_BASE = API_BASE_URL;
 const API = API_BASE_URL;
 
-// Module-level cache so Settings state survives Dashboard re-renders (remounts)
+// Module-level cache so Settings alert prefs survive remounts (state lives outside Settings)
 const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
-let _settingsTab = "profile";
 
 // ---------- RippleButton ----------
 function RippleButton({ children, onClick, className, style, disabled, type, ...rest }) {
@@ -2633,6 +2632,7 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
+  const [settingsTab, setSettingsTab] = useState("profile");
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
@@ -8974,8 +8974,7 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
-    const [settingsTab, _setSettingsTab] = React.useState(_settingsTab);
-    const setSettingsTab = (id) => { _settingsTab = id; _setSettingsTab(id); };
+    // settingsTab / setSettingsTab live in the outer component — survives remounts
 
     // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
