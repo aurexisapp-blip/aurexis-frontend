@@ -5434,7 +5434,7 @@ async function loadWatchlistLive() {
           background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
           border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
           boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
-          height: "100%", display: "flex", flexDirection: "column",
+          display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
           <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -5450,8 +5450,8 @@ async function loadWatchlistLive() {
             ) : null}
           </div>
 
-          {/* Rows */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          {/* Rows — capped height so card doesn't expand infinitely */}
+          <div style={{ maxHeight: 310, overflowY: "auto" }}>
             {history.length === 0 ? (
               <div style={{ padding: "32px 18px", textAlign: "center" }}>
                 <div style={{ fontSize: 28, opacity: 0.07, marginBottom: 10 }}>⊙</div>
