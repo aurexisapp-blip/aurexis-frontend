@@ -6173,7 +6173,7 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>Daily Limit</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used today's pick</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>
-                Starter includes 1 pick per day. Come back tomorrow or upgrade to Pro for unlimited picks.
+                Starter includes 2 picks per week. Come back next week or upgrade to Pro for unlimited picks.
               </div>
               <button
                 onClick={() => setTab("pricing")}
@@ -9069,11 +9069,8 @@ async function loadWatchlistLive() {
     const [compactView, setCompactView] = React.useState(false);
 
     // ── Alert preferences ──────────────────────────────────────────────────
-    const [alertPhone,    setAlertPhone]    = React.useState("");
     const [alertNewPick,  setAlertNewPick]  = React.useState(true);
     const [alertOutcome,  setAlertOutcome]  = React.useState(true);
-    const [alertChannel,  setAlertChannel]  = React.useState("email");
-    const [alertSaving,   setAlertSaving]   = React.useState(false);
     const [alertLoaded,   setAlertLoaded]   = React.useState(false);
 
     React.useEffect(() => {
@@ -9083,28 +9080,22 @@ async function loadWatchlistLive() {
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (!d) return;
-          if (d.phone)           setAlertPhone(d.phone);
           if (d.alerts_new_pick != null) setAlertNewPick(!!d.alerts_new_pick);
           if (d.alerts_outcome  != null) setAlertOutcome(!!d.alerts_outcome);
-          if (d.alerts_channel)  setAlertChannel(d.alerts_channel);
           setAlertLoaded(true);
         })
         .catch(() => setAlertLoaded(true));
     }, [alertLoaded]);
 
-    async function saveAlertPrefs() {
-      setAlertSaving(true);
+    async function _saveAlertPrefs(newPick, outcome) {
       try {
         const token = localStorage.getItem("aurexis_token");
-        const r = await fetch(`${API}/alerts/preferences`, {
+        await fetch(`${API}/alerts/preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ phone: alertPhone || null, alerts_new_pick: alertNewPick, alerts_outcome: alertOutcome, alerts_channel: alertChannel }),
+          body: JSON.stringify({ phone: null, alerts_new_pick: newPick, alerts_outcome: outcome, alerts_channel: "email" }),
         });
-        if (r.ok) showToast("Alert preferences saved.");
-        else showToast("Failed to save — try again.");
-      } catch { showToast("Network error — check your connection."); }
-      finally { setAlertSaving(false); }
+      } catch { /* silent — toggle already updated optimistically */ }
     }
 
     return (
@@ -9189,81 +9180,18 @@ async function loadWatchlistLive() {
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 4 }}>Alerts</div>
           <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.38)" : "rgba(8,10,22,0.42)", marginBottom: 18, lineHeight: 1.6 }}>
-            Get notified when the AI finds a new pick or when an existing pick hits its target or stop.
+            Get notified by email when the AI finds a new pick or when an existing pick hits its target or stop.
           </div>
-
-          {/* Toggle rows */}
-          {toggleRow("New pick alert", alertNewPick, () => setAlertNewPick(p => !p))}
-          {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => setAlertOutcome(p => !p))}
-
-          {/* Channel selector */}
-          <div style={{ marginTop: 16, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Delivery channel</div>
-            <div style={{ display: "flex", gap: 7 }}>
-              {[
-                { id: "email",   label: "Email only" },
-                { id: "sms",     label: "SMS only" },
-                { id: "both",    label: "Email + SMS" },
-              ].map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setAlertChannel(id)}
-                  style={{
-                    flex: 1, padding: "8px 6px", borderRadius: 9, fontSize: 11, fontWeight: 700,
-                    cursor: "pointer", border: "none", fontFamily: "inherit",
-                    background: alertChannel === id
-                      ? "rgba(0,180,80,0.12)"
-                      : darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                    outline: alertChannel === id
-                      ? "1px solid rgba(0,180,80,0.28)"
-                      : darkMode ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
-                    color: alertChannel === id
-                      ? "rgba(0,180,80,0.95)"
-                      : darkMode ? "rgba(255,255,255,0.45)" : "rgba(8,10,22,0.45)",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Phone input (shown when SMS or both) */}
-          {(alertChannel === "sms" || alertChannel === "both") && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 7 }}>Phone number</div>
-              <input
-                type="tel"
-                placeholder="+1 555 000 0000"
-                value={alertPhone}
-                onChange={e => setAlertPhone(e.target.value)}
-                style={{
-                  width: "100%", boxSizing: "border-box",
-                  background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                  border: darkMode ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.10)",
-                  borderRadius: 9, padding: "10px 14px", fontSize: 14,
-                  color: darkMode ? "#fff" : "#111", outline: "none", fontFamily: "inherit",
-                }}
-              />
-              <div style={{ fontSize: 11, color: darkMode ? "rgba(255,255,255,0.25)" : "rgba(8,10,22,0.35)", marginTop: 5 }}>
-                Enter in international format, e.g. +1 555 000 0000
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={saveAlertPrefs}
-            disabled={alertSaving}
-            style={{
-              width: "100%", padding: "11px 0", borderRadius: 10, border: "none",
-              background: alertSaving ? "rgba(0,180,80,0.5)" : "#00b450",
-              color: "#fff", fontWeight: 700, fontSize: 13, cursor: alertSaving ? "default" : "pointer",
-              fontFamily: "inherit", transition: "opacity 0.15s",
-            }}
-          >
-            {alertSaving ? "Saving…" : "Save Alert Preferences"}
-          </button>
+          {toggleRow("New pick alert", alertNewPick, () => {
+            const next = !alertNewPick;
+            setAlertNewPick(next);
+            _saveAlertPrefs(next, alertOutcome);
+          })}
+          {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => {
+            const next = !alertOutcome;
+            setAlertOutcome(next);
+            _saveAlertPrefs(alertNewPick, next);
+          })}
         </div>
 
         {/* Display */}
