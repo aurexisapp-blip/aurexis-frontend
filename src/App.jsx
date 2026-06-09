@@ -32,6 +32,23 @@ const API = API_BASE_URL;
 // Module-level cache so Settings alert prefs survive remounts (state lives outside Settings)
 const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
 
+// Avatar presets — gradient + accent color
+const AVATAR_PRESETS = [
+  { id: "green",   bg: "linear-gradient(135deg,rgba(0,180,80,0.55),rgba(0,100,50,0.40))",    border: "rgba(74,222,128,0.50)",  text: "#4ade80" },
+  { id: "violet",  bg: "linear-gradient(135deg,rgba(139,92,246,0.55),rgba(88,28,235,0.40))",  border: "rgba(167,139,250,0.50)", text: "#a78bfa" },
+  { id: "blue",    bg: "linear-gradient(135deg,rgba(59,130,246,0.55),rgba(29,78,216,0.40))",  border: "rgba(147,197,253,0.50)", text: "#93c5fd" },
+  { id: "cyan",    bg: "linear-gradient(135deg,rgba(6,182,212,0.55),rgba(8,145,178,0.40))",   border: "rgba(103,232,249,0.50)", text: "#67e8f9" },
+  { id: "rose",    bg: "linear-gradient(135deg,rgba(244,63,94,0.55),rgba(190,18,60,0.40))",   border: "rgba(253,164,175,0.50)", text: "#fda4af" },
+  { id: "amber",   bg: "linear-gradient(135deg,rgba(245,158,11,0.55),rgba(180,83,9,0.40))",   border: "rgba(252,211,77,0.50)",  text: "#fcd34d" },
+  { id: "indigo",  bg: "linear-gradient(135deg,rgba(99,102,241,0.55),rgba(67,56,202,0.40))",  border: "rgba(165,180,252,0.50)", text: "#a5b4fc" },
+  { id: "emerald", bg: "linear-gradient(135deg,rgba(16,185,129,0.55),rgba(6,95,70,0.40))",    border: "rgba(110,231,183,0.50)", text: "#6ee7b7" },
+  { id: "pink",    bg: "linear-gradient(135deg,rgba(236,72,153,0.55),rgba(157,23,77,0.40))",  border: "rgba(249,168,212,0.50)", text: "#f9a8d4" },
+  { id: "orange",  bg: "linear-gradient(135deg,rgba(249,115,22,0.55),rgba(194,65,12,0.40))",  border: "rgba(253,186,116,0.50)", text: "#fdba74" },
+  { id: "teal",    bg: "linear-gradient(135deg,rgba(20,184,166,0.55),rgba(15,118,110,0.40))", border: "rgba(94,234,212,0.50)",  text: "#5eead4" },
+  { id: "slate",   bg: "linear-gradient(135deg,rgba(100,116,139,0.55),rgba(51,65,85,0.40))",  border: "rgba(203,213,225,0.40)", text: "#cbd5e1" },
+];
+const _getAvatar = (id) => AVATAR_PRESETS.find(p => p.id === id) || AVATAR_PRESETS[0];
+
 // ---------- RippleButton ----------
 function RippleButton({ children, onClick, className, style, disabled, type, ...rest }) {
   const [ripples, setRipples] = React.useState([]);
@@ -2633,6 +2650,7 @@ function AppInner() {
 
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
+  const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
@@ -9132,10 +9150,10 @@ async function loadWatchlistLive() {
           {/* Avatar + name */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 8px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)", marginBottom: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-              background: "linear-gradient(135deg,rgba(0,180,80,0.35),rgba(0,120,60,0.25))",
-              border: "1.5px solid rgba(0,180,80,0.28)",
+              background: _getAvatar(avatarId).bg,
+              border: `1.5px solid ${_getAvatar(avatarId).border}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 800, color: txt }}>
+              fontSize: 12, fontWeight: 800, color: _getAvatar(avatarId).text }}>
               {initials}
             </div>
             <div style={{ minWidth: 0 }}>
@@ -9182,10 +9200,11 @@ async function loadWatchlistLive() {
               {/* Avatar */}
               <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px", background: bg, borderRadius: 12, border: bdr, marginBottom: 20 }}>
                 <div style={{ width: 64, height: 64, borderRadius: "50%", flexShrink: 0,
-                  background: "linear-gradient(135deg,rgba(0,180,80,0.30),rgba(0,120,60,0.22))",
-                  border: "2px solid rgba(0,180,80,0.28)",
+                  background: _getAvatar(avatarId).bg,
+                  border: `2px solid ${_getAvatar(avatarId).border}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 24, fontWeight: 800, color: txt }}>
+                  fontSize: 24, fontWeight: 800, color: _getAvatar(avatarId).text,
+                  boxShadow: `0 0 18px ${_getAvatar(avatarId).border}` }}>
                   {initials}
                 </div>
                 <div>
@@ -9193,6 +9212,35 @@ async function loadWatchlistLive() {
                   <div style={{ fontSize: 12, color: txtS, marginTop: 3 }}>{email}</div>
                   <div style={{ fontSize: 11, color: txtG, marginTop: 2 }}>Member since {memberSince}</div>
                 </div>
+              </div>
+
+              {/* ── Avatar picker ── */}
+              <SectionTitle>Avatar Style</SectionTitle>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+                {AVATAR_PRESETS.map(preset => {
+                  const selected = avatarId === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => { setAvatarId(preset.id); localStorage.setItem("aurexis_avatar", preset.id); }}
+                      style={{
+                        width: 46, height: 46, borderRadius: "50%", padding: 0,
+                        background: preset.bg,
+                        border: selected ? `2.5px solid ${preset.text}` : "2px solid transparent",
+                        outline: selected ? `2.5px solid ${preset.text}55` : "2px solid transparent",
+                        outlineOffset: 2,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 13, fontWeight: 800, color: preset.text,
+                        cursor: "pointer", fontFamily: "inherit",
+                        boxShadow: selected ? `0 0 14px ${preset.text}40` : "none",
+                        transition: "all 0.13s ease",
+                        transform: selected ? "scale(1.12)" : "scale(1)",
+                      }}
+                    >
+                      {initials}
+                    </button>
+                  );
+                })}
               </div>
 
               <SectionTitle>Account Info</SectionTitle>
@@ -10300,10 +10348,10 @@ const renderPage = () => {
             >
               <div style={{
                 width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, rgba(0,180,80,0.40) 0%, rgba(0,120,60,0.30) 100%)",
-                border: "1.5px solid rgba(0,180,80,0.30)",
+                background: _getAvatar(avatarId).bg,
+                border: `1.5px solid ${_getAvatar(avatarId).border}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 800, color: T.text,
+                fontSize: 11, fontWeight: 800, color: _getAvatar(avatarId).text,
               }}>{(() => {
                 const fn = userProfile?.first_name || "";
                 const ln = userProfile?.last_name || "";
