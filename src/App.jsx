@@ -10420,23 +10420,18 @@ const renderPage = () => {
             position: "relative",
           }}>
             {/* Profile popup menu */}
-            <AnimatePresence>
-              {profileMenuOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1000 }} />
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+            {profileMenuOpen && (
+              <>
+                {/* Backdrop */}
+                <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
+                <div
                     style={{
                       position: "fixed", bottom: profileMenuPos.bottom, left: profileMenuPos.left,
                       width: 220,
-                      background: darkMode ? "rgb(16,18,26)" : "rgb(255,255,255)",
+                      background: darkMode ? "#0f1117" : "#ffffff",
                       border: `1px solid ${T.border2}`,
-                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
-                      zIndex: 1001, overflow: "hidden",
+                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+                      zIndex: 9999, overflow: "hidden",
                     }}
                   >
                     {/* User info header */}
@@ -10497,10 +10492,9 @@ const renderPage = () => {
                       <span style={{ fontSize: 13, opacity: 0.7, width: 16, flexShrink: 0 }}>↑</span>
                       Log out
                     </button>
-                  </motion.div>
+                  </div>
                 </>
               )}
-            </AnimatePresence>
 
             <motion.button
               ref={profileBtnRef}
