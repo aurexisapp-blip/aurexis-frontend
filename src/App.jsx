@@ -2632,14 +2632,37 @@ function AppInner() {
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
-  const _freePickSymKey  = () => { const d = new Date(); return `aurexis_free_pick_sym_${d.getFullYear()}_M${d.getMonth() + 1}`; };
   const [freePickUsed, setFreePickUsed] = React.useState(() => localStorage.getItem(_freePickMonthKey()) === "used");
-  const [freePickViewedSym, setFreePickViewedSym] = React.useState(() => localStorage.getItem(_freePickSymKey()) || null);
-  const _useFreePick = (sym) => {
-    localStorage.setItem(_freePickMonthKey(), "used");
-    localStorage.setItem(_freePickSymKey(), sym || "");
-    setFreePickUsed(true);
-    setFreePickViewedSym(sym || "");
+  const [freePickLoading, setFreePickLoading] = React.useState(false);
+  const _useFreePick = async () => {
+    setFreePickLoading(true);
+    try {
+      const tok = localStorage.getItem("aurexis_token");
+      const res = await fetch(`${API_BASE}/best_pick_v2/unlock`, {
+        method: "POST",
+        headers: tok ? { Authorization: `Bearer ${tok}` } : {},
+      });
+      if (res.status === 403) {
+        // Already used this month server-side
+        localStorage.setItem(_freePickMonthKey(), "used");
+        setFreePickUsed(true);
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const payload = data && typeof data === "object" ? data : null;
+      const next =
+        (payload?.data && typeof payload.data === "object" ? payload.data : null) ||
+        (payload?.result && typeof payload.result === "object" ? payload.result : null) ||
+        payload;
+      setBestPickData(next);
+      localStorage.setItem(_freePickMonthKey(), "used");
+      setFreePickUsed(true);
+    } catch (e) {
+      // silent — user sees the gate still
+    } finally {
+      setFreePickLoading(false);
+    }
   };
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -3558,6 +3581,11 @@ async function loadBestPick() {
           signal: controller.signal,
           headers: _tok ? { Authorization: `Bearer ${_tok}` } : {},
         });
+        if (res.status === 403 || res.status === 401) {
+          // Free user — gate is server-side now. Silently leave bestPickData null.
+          setLoadingBestPick(false);
+          return;
+        }
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -6128,10 +6156,8 @@ async function loadWatchlistLive() {
       }
 
       const isFreeUser = !canAccess(userPlan, "starter");
-      const pickIsReal = Boolean(ticker) && (tradeDec === "HIGH_CONVICTION" || tradeDec === "LOW_CONVICTION");
-      // Gate shows if free user AND (haven't used free pick yet, OR used it on a different symbol)
-      const isViewingFreePickedSym = freePickUsed && freePickViewedSym === ticker;
-      const showBlurGate = isFreeUser && pickIsReal && !isViewingFreePickedSym;
+      // Gate shows for free users unless they unlocked this session (freePickUsed + bestPickData loaded)
+      const showBlurGate = isFreeUser && !(freePickUsed && bestPickData);
 
       const heroCard = (
         <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
@@ -6455,14 +6481,16 @@ async function loadWatchlistLive() {
             </button>
             {!freePickUsed && (
               <button
-                onClick={() => _useFreePick(ticker)}
+                onClick={_useFreePick}
+                disabled={freePickLoading}
                 style={{
                   background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
                   color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
-                  padding: "8px 20px", cursor: "pointer",
+                  padding: "8px 20px", cursor: freePickLoading ? "default" : "pointer",
+                  opacity: freePickLoading ? 0.6 : 1,
                 }}
               >
-                Use my free pick for this month
+                {freePickLoading ? "Unlocking…" : "Use my free pick for this month"}
               </button>
             )}
           </div>
