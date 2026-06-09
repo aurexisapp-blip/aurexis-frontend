@@ -29,6 +29,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 const API_BASE = API_BASE_URL;
 const API = API_BASE_URL;
 
+// Module-level cache so Settings alert prefs survive Dashboard re-renders (remounts)
+const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
+
 // ---------- RippleButton ----------
 function RippleButton({ children, onClick, className, style, disabled, type, ...rest }) {
   const [ripples, setRipples] = React.useState([]);
@@ -9069,23 +9072,28 @@ async function loadWatchlistLive() {
     const [compactView, setCompactView] = React.useState(false);
 
     // ── Alert preferences ──────────────────────────────────────────────────
-    const [alertNewPick,  setAlertNewPick]  = React.useState(true);
-    const [alertOutcome,  setAlertOutcome]  = React.useState(true);
-    const [alertLoaded,   setAlertLoaded]   = React.useState(false);
+    // Initial state from module-level cache so remounts don't reset the toggle
+    const [alertNewPick,  setAlertNewPick]  = React.useState(_alertPrefsCache.newPick);
+    const [alertOutcome,  setAlertOutcome]  = React.useState(_alertPrefsCache.outcome);
 
     React.useEffect(() => {
+      if (_alertPrefsCache.loaded) return; // already fetched — don't overwrite user's toggle
       const token = localStorage.getItem("aurexis_token");
-      if (!token || alertLoaded) return;
+      if (!token) return;
       fetch(`${API}/alerts/preferences`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (!d) return;
-          if (d.alerts_new_pick != null) setAlertNewPick(!!d.alerts_new_pick);
-          if (d.alerts_outcome  != null) setAlertOutcome(!!d.alerts_outcome);
-          setAlertLoaded(true);
+          const np = d.alerts_new_pick != null ? !!d.alerts_new_pick : _alertPrefsCache.newPick;
+          const oc = d.alerts_outcome  != null ? !!d.alerts_outcome  : _alertPrefsCache.outcome;
+          _alertPrefsCache.loaded = true;
+          _alertPrefsCache.newPick = np;
+          _alertPrefsCache.outcome = oc;
+          setAlertNewPick(np);
+          setAlertOutcome(oc);
         })
-        .catch(() => setAlertLoaded(true));
-    }, [alertLoaded]);
+        .catch(() => { _alertPrefsCache.loaded = true; });
+    }, []);
 
     async function _saveAlertPrefs(newPick, outcome) {
       const token = localStorage.getItem("aurexis_token");
@@ -9186,11 +9194,13 @@ async function loadWatchlistLive() {
           </div>
           {toggleRow("New pick alert", alertNewPick, () => {
             const next = !alertNewPick;
+            _alertPrefsCache.newPick = next;
             setAlertNewPick(next);
             _saveAlertPrefs(next, alertOutcome);
           })}
           {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => {
             const next = !alertOutcome;
+            _alertPrefsCache.outcome = next;
             setAlertOutcome(next);
             _saveAlertPrefs(alertNewPick, next);
           })}
