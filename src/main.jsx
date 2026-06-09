@@ -9,6 +9,7 @@ import Privacy from "./pages/Privacy";
 import Disclaimer from "./pages/Disclaimer";
 import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
+import Legal from "./pages/Legal";
 import "./index.css";
 
 function MobileBlock() {
@@ -112,6 +113,7 @@ createRoot(rootEl).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
+        <Route path="/legal"      element={<Legal />} />
         <Route path="/terms"      element={<Terms />} />
         <Route path="/privacy"    element={<Privacy />} />
         <Route path="/disclaimer" element={<Disclaimer />} />

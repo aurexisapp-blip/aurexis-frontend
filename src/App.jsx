@@ -2682,7 +2682,6 @@ function AppInner() {
   const [lastAnalyzeClickAt, setLastAnalyzeClickAt] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
-  const [showLegalModal, setShowLegalModal] = useState(false);
 
   const [apiOnline, setApiOnline] = useState(false);
   const debugEnabled = (() => {
@@ -10336,80 +10335,17 @@ const renderPage = () => {
 
       </div>
       <div className="persistentRiskFooter">
-        <span
-          onClick={() => setShowLegalModal(true)}
-          style={{ cursor: "pointer", textDecoration: "none", transition: "color 0.15s, text-decoration 0.15s" }}
+        <a
+          href="/legal"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "inherit", textDecoration: "none", transition: "color 0.15s" }}
           onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
           onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.color = ""; }}
         >
           For educational and paper-trading use only. Not investment advice. Verify all trades independently.
-        </span>
+        </a>
       </div>
-
-      {showLegalModal && (
-        <div
-          onClick={() => setShowLegalModal(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 9000,
-            background: "rgba(0,0,0,0.72)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: "#0d1020", border: "1px solid rgba(255,255,255,0.09)",
-              borderRadius: 16, padding: "28px 30px", width: "100%", maxWidth: 360,
-              boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.88)", letterSpacing: "-0.01em" }}>Legal</div>
-              <button
-                onClick={() => setShowLegalModal(false)}
-                style={{
-                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)",
-                  borderRadius: 8, width: 28, height: 28, cursor: "pointer",
-                  color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.11)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-              >×</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {[
-                { label: "Terms of Service", href: "/terms" },
-                { label: "Privacy Policy",   href: "/privacy" },
-                { label: "Disclaimer",        href: "/disclaimer" },
-                { label: "Refund Policy",     href: "/refund" },
-                { label: "Cookie Policy",     href: "/cookies" },
-              ].map(({ label, href }) => (
-                <a
-                  key={href}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "11px 14px", borderRadius: 10, textDecoration: "none",
-                    color: "rgba(255,255,255,0.70)", fontSize: 13, fontWeight: 500,
-                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-                    transition: "background 0.15s, color 0.15s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.92)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "rgba(255,255,255,0.70)"; }}
-                >
-                  {label}
-                  <span style={{ fontSize: 11, opacity: 0.35 }}>↗</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
       {/* FAB toggle button */}
