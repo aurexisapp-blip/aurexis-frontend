@@ -2653,6 +2653,8 @@ function AppInner() {
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileMenuPos, setProfileMenuPos] = useState({ bottom: 60, left: 16 });
+  const profileBtnRef = useRef(null);
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
@@ -10429,7 +10431,7 @@ const renderPage = () => {
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
                     style={{
-                      position: "fixed", bottom: 60, left: sidebarCollapsed ? 64 : 16,
+                      position: "fixed", bottom: profileMenuPos.bottom, left: profileMenuPos.left,
                       width: 220,
                       background: darkMode ? "rgba(18,20,28,0.97)" : "rgba(255,255,255,0.98)",
                       border: `1px solid ${T.border2}`,
@@ -10502,7 +10504,12 @@ const renderPage = () => {
             </AnimatePresence>
 
             <motion.button
-              onClick={() => setProfileMenuOpen(o => !o)}
+              ref={profileBtnRef}
+              onClick={() => {
+                const rect = profileBtnRef.current?.getBoundingClientRect();
+                if (rect) setProfileMenuPos({ bottom: window.innerHeight - rect.top + 8, left: rect.right + 8 });
+                setProfileMenuOpen(o => !o);
+              }}
               title={sidebarCollapsed ? "Account & Settings" : undefined}
               whileHover={{ scale: 1.04 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
