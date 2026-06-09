@@ -5427,7 +5427,7 @@ async function loadWatchlistLive() {
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                 >
                   {/* Row content — blurred entirely for free users */}
-                  <div style={{ filter: isLocked ? "blur(12px)" : "none", userSelect: isLocked ? "none" : "auto", pointerEvents: isLocked ? "none" : "auto" }}>
+                  <div style={{ filter: isLocked ? "blur(20px)" : "none", opacity: isLocked ? 0.15 : 1, userSelect: isLocked ? "none" : "auto", pointerEvents: isLocked ? "none" : "auto" }}>
                     {/* Top row: avatar + symbol + verdict + score + time */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: hasTradeData ? 8 : 0 }}>
                       <div style={{ width: 34, height: 34, borderRadius: 9, background: scoreBg(item.score), border: `1px solid ${scoreBorder(item.score)}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
