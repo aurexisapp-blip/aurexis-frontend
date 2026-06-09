@@ -35,6 +35,10 @@ const GLOBAL_CSS = `
     .timeline-track { display: none; }
     .pricing-row { grid-template-columns: 1fr !important; }
     .dash-sidebar, .demo-sidebar { display: none; }
+    .landing-nav { padding: 16px 18px !important; }
+    .landing-nav-btns { gap: 8px !important; }
+    .landing-nav-login { padding: 8px 14px !important; font-size: 12px !important; }
+    .landing-nav-cta { padding: 8px 14px !important; font-size: 12px !important; letter-spacing: 0 !important; }
   }
 `;
 function GlobalStyle() { return <style>{GLOBAL_CSS}</style>; }
@@ -1010,14 +1014,16 @@ export default function Landing({ onGetStarted }) {
         {/* ── Nav ── */}
         <nav>
           <motion.div
+            className="landing-nav"
             style={S.nav}
             initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
             <div style={S.navLogo}>AUREXIS</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="landing-nav-btns" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <motion.button
+                className="landing-nav-login"
                 style={{ padding: "9px 20px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em" }}
                 whileHover={{ color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.28)" }}
                 whileTap={{ scale: 0.97 }}
@@ -1027,6 +1033,7 @@ export default function Landing({ onGetStarted }) {
                 Log In
               </motion.button>
               <motion.button
+                className="landing-nav-cta"
                 style={S.navCta}
                 whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
