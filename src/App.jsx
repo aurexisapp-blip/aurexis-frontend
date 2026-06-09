@@ -2652,6 +2652,7 @@ function AppInner() {
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
@@ -10414,9 +10415,94 @@ const renderPage = () => {
             padding: sidebarCollapsed ? "10px 0 42px" : "10px 10px 42px",
             borderTop: `1px solid ${T.border}`,
             marginTop: "auto",
+            position: "relative",
           }}>
+            {/* Profile popup menu */}
+            <AnimatePresence>
+              {profileMenuOpen && (
+                <>
+                  {/* Backdrop */}
+                  <div onClick={() => setProfileMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1000 }} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    style={{
+                      position: "absolute", bottom: "calc(100% + 8px)", left: 8,
+                      width: sidebarCollapsed ? 200 : "calc(100% - 16px)",
+                      background: darkMode ? "rgba(18,20,28,0.97)" : "rgba(255,255,255,0.98)",
+                      border: `1px solid ${T.border2}`,
+                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.40)",
+                      backdropFilter: "blur(16px)",
+                      zIndex: 1001, overflow: "hidden",
+                    }}
+                  >
+                    {/* User info header */}
+                    <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${T.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{
+                          width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+                          background: _getAvatar(avatarId).bg,
+                          border: `1.5px solid ${_getAvatar(avatarId).border}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 12, fontWeight: 800, color: _getAvatar(avatarId).text,
+                        }}>
+                          {(() => { const fn = userProfile?.first_name||""; const ln = userProfile?.last_name||""; const em = userProfile?.email||""; if(fn&&ln) return `${fn[0]}${ln[0]}`.toUpperCase(); if(fn) return fn.slice(0,2).toUpperCase(); if(em) return em.slice(0,2).toUpperCase(); return "AU"; })()}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name||""}`.trim() : userProfile?.email?.split("@")[0] || "My Account"}
+                          </div>
+                          <div style={{ fontSize: 11, color: T.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {userProfile?.email || ""}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu items */}
+                    {[
+                      { icon: "⚙", label: "Settings", action: () => { setTab("settings"); setSettingsTab("profile"); setProfileMenuOpen(false); } },
+                      { icon: "◈", label: "Plan & Billing", action: () => { setTab("settings"); setSettingsTab("billing"); setProfileMenuOpen(false); } },
+                      { icon: "◎", label: "Notifications", action: () => { setTab("settings"); setSettingsTab("alerts"); setProfileMenuOpen(false); } },
+                      { icon: "⊙", label: "Support", action: () => { setTab("support"); setProfileMenuOpen(false); } },
+                    ].map(item => (
+                      <button key={item.label} onClick={item.action} style={{
+                        display: "flex", alignItems: "center", gap: 10, width: "100%",
+                        padding: "10px 16px", background: "none", border: "none", cursor: "pointer",
+                        fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: T.textSec,
+                        textAlign: "left", transition: "background 0.1s",
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.background = darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                      >
+                        <span style={{ fontSize: 13, opacity: 0.6, width: 16, flexShrink: 0 }}>{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+
+                    {/* Divider + Sign out */}
+                    <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
+                    <button onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; }} style={{
+                      display: "flex", alignItems: "center", gap: 10, width: "100%",
+                      padding: "10px 16px 14px", background: "none", border: "none", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: "rgba(248,113,113,0.80)",
+                      textAlign: "left", transition: "background 0.1s",
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.07)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                    >
+                      <span style={{ fontSize: 13, opacity: 0.7, width: 16, flexShrink: 0 }}>↑</span>
+                      Log out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
             <motion.button
-              onClick={() => setTab("settings")}
+              onClick={() => setProfileMenuOpen(o => !o)}
               title={sidebarCollapsed ? "Account & Settings" : undefined}
               whileHover={{ scale: 1.04 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -10426,7 +10512,8 @@ const renderPage = () => {
                 justifyContent: sidebarCollapsed ? "center" : "flex-start",
                 padding: sidebarCollapsed ? "7px 0" : "7px 8px",
                 borderRadius: 10, width: "100%",
-                background: "none", border: "none", cursor: "pointer",
+                background: profileMenuOpen ? (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)") : "none",
+                border: "none", cursor: "pointer",
               }}
             >
               <div style={{
@@ -10445,7 +10532,7 @@ const renderPage = () => {
                 return "AU";
               })()}</div>
               {!sidebarCollapsed && (
-                <div style={{ overflow: "hidden", textAlign: "left" }}>
+                <div style={{ overflow: "hidden", textAlign: "left", flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: T.textSec, whiteSpace: "nowrap" }}>
                     {userProfile?.first_name || userProfile?.email?.split("@")[0] || "My Account"}
                   </div>
@@ -10454,6 +10541,7 @@ const renderPage = () => {
                   </div>
                 </div>
               )}
+              {!sidebarCollapsed && <span style={{ fontSize: 10, color: T.textFaint, flexShrink: 0 }}>⌃</span>}
             </motion.button>
           </div>
         </aside>
