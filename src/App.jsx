@@ -9295,7 +9295,23 @@ async function loadWatchlistLive() {
           )}
 
           {/* BILLING ──────────────────────────────────────────────────── */}
-          {settingsTab === "billing" && (
+          {settingsTab === "billing" && (() => {
+            const [paymentMethod, setPaymentMethod] = React.useState(null);
+            const [invoices, setInvoices]           = React.useState(null);
+            React.useEffect(() => {
+              const token = localStorage.getItem("aurexis_token");
+              if (!token || !isPaidPlan) return;
+              fetch(`${API}/stripe/payment-method`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(r => r.ok ? r.json() : null).then(d => d && setPaymentMethod(d.payment_method));
+              fetch(`${API}/stripe/invoices`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(r => r.ok ? r.json() : null).then(d => d && setInvoices(d.invoices));
+            }, []);
+            const openPortal = async () => {
+              const token = localStorage.getItem("aurexis_token");
+              const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+              if (r.ok) { const d = await r.json(); window.open(d.url, "_blank"); }
+            };
+            return (
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
@@ -9338,6 +9354,54 @@ async function loadWatchlistLive() {
                 )}
               </div>
 
+              {/* Payment method */}
+              {isPaidPlan && (
+                <>
+                  <SectionTitle>Payment</SectionTitle>
+                  <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "16px 18px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: dm ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: bdr, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💳</div>
+                      <div>
+                        {paymentMethod ? (
+                          <>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: txt }}>{paymentMethod.brand} ···· {paymentMethod.last4}</div>
+                            <div style={{ fontSize: 11, color: txtG, marginTop: 1 }}>Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}</div>
+                          </>
+                        ) : (
+                          <div style={{ fontSize: 13, color: txtS }}>Loading payment method…</div>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={openPortal} style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: bdr, background: "transparent", color: txtS, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                      Update
+                    </button>
+                  </div>
+
+                  <SectionTitle>Invoices</SectionTitle>
+                  <div style={{ background: bg, border: bdr, borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
+                    {invoices === null ? (
+                      <div style={{ padding: "18px 18px", fontSize: 13, color: txtG }}>Loading invoices…</div>
+                    ) : invoices.length === 0 ? (
+                      <div style={{ padding: "18px 18px", fontSize: 13, color: txtG }}>No invoices yet.</div>
+                    ) : (
+                      <>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 50px", gap: 8, padding: "10px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)" }}>
+                          {["Date","Total","Status",""].map(h => <div key={h} style={{ fontSize: 10, fontWeight: 700, color: txtG, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</div>)}
+                        </div>
+                        {invoices.map((inv, i) => (
+                          <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 50px", gap: 8, padding: "11px 18px", alignItems: "center", borderBottom: i < invoices.length - 1 ? (dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)") : "none" }}>
+                            <div style={{ fontSize: 13, color: txtS }}>{inv.date}</div>
+                            <div style={{ fontSize: 13, color: txt, fontWeight: 600 }}>{inv.amount}</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#4ade80" : txtG }}>{inv.status}</div>
+                            <div>{inv.url ? <a href={inv.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none" }}>View</a> : null}</div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
               <SectionTitle>Plan Features</SectionTitle>
               {[
                 { label: "Daily AI pick", free: "Ticker only", starter: "Full plan", pro: "Full plan", elite: "Full plan" },
@@ -9368,7 +9432,8 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ALERTS ───────────────────────────────────────────────────── */}
           {settingsTab === "alerts" && (
