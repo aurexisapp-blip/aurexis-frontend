@@ -31,6 +31,7 @@ const API = API_BASE_URL;
 
 // Module-level cache so Settings alert prefs survive remounts (state lives outside Settings)
 const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
+const _billingCache = { fetched: false, paymentMethod: undefined, invoices: undefined };
 
 // Avatar presets — gradient + accent color + RGB for CSS variable
 const AVATAR_PRESETS = [
@@ -9066,24 +9067,23 @@ async function loadWatchlistLive() {
     const [alertOutcome, setAlertOutcome] = React.useState(_alertPrefsCache.outcome);
 
     // ── Billing tab data ──────────────────────────────────────────────────
-    const [paymentMethod, setPaymentMethod] = React.useState(undefined); // undefined=loading, null=none
-    const [invoices, setInvoices]           = React.useState(undefined);
-    const [billingFetched, setBillingFetched] = React.useState(false);
+    const [paymentMethod, setPaymentMethod] = React.useState(_billingCache.paymentMethod);
+    const [invoices, setInvoices]           = React.useState(_billingCache.invoices);
 
     React.useEffect(() => {
-      if (settingsTab !== "billing" || billingFetched) return;
-      setBillingFetched(true);
+      if (settingsTab !== "billing" || _billingCache.fetched) return;
+      _billingCache.fetched = true;
       const token = localStorage.getItem("aurexis_token");
       if (!token) return;
       fetch(`${API}/stripe/payment-method`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(d => setPaymentMethod(d?.payment_method ?? null))
-        .catch(() => setPaymentMethod(null));
+        .then(d => { const v = d?.payment_method ?? null; _billingCache.paymentMethod = v; setPaymentMethod(v); })
+        .catch(() => { _billingCache.paymentMethod = null; setPaymentMethod(null); });
       fetch(`${API}/stripe/invoices`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(d => setInvoices(d?.invoices ?? []))
-        .catch(() => setInvoices([]));
-    }, [settingsTab, billingFetched]);
+        .then(d => { const v = d?.invoices ?? []; _billingCache.invoices = v; setInvoices(v); })
+        .catch(() => { _billingCache.invoices = []; setInvoices([]); });
+    }, [settingsTab]);
 
     const openPortal = async () => {
       const token = localStorage.getItem("aurexis_token");
