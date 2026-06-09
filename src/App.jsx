@@ -9165,7 +9165,14 @@ async function loadWatchlistLive() {
         </div>
 
         {/* ── Content pane ──────────────────────────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 0, padding: "28px 30px", overflowY: "auto" }}>
+        <div style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
+        <motion.div
+          key={settingsTab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.13, ease: "easeOut" }}
+          style={{ padding: "28px 30px" }}
+        >
 
           {/* PROFILE ──────────────────────────────────────────────────── */}
           {settingsTab === "profile" && (
@@ -9428,6 +9435,7 @@ async function loadWatchlistLive() {
             </div>
           )}
 
+        </motion.div>
         </div>
       </div>
     );
