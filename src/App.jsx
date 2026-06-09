@@ -10429,8 +10429,8 @@ const renderPage = () => {
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
                     style={{
-                      position: "absolute", bottom: "calc(100% + 8px)", left: 8,
-                      width: sidebarCollapsed ? 200 : "calc(100% - 16px)",
+                      position: "fixed", bottom: 60, left: sidebarCollapsed ? 64 : 16,
+                      width: 220,
                       background: darkMode ? "rgba(18,20,28,0.97)" : "rgba(255,255,255,0.98)",
                       border: `1px solid ${T.border2}`,
                       borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.40)",
