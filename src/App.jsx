@@ -7533,9 +7533,7 @@ async function loadWatchlistLive() {
                     <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)" }}>
                       {/* All hidden rows blurred — fills remaining screen space */}
                       <div style={{
-                        filter: "blur(6px)", pointerEvents: "none", userSelect: "none",
-                        WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 20%, transparent 55%)",
-                        maskImage: "linear-gradient(to bottom, black 0%, black 20%, transparent 55%)",
+                        filter: "blur(8px)", opacity: 0.35, pointerEvents: "none", userSelect: "none",
                       }}>
                         <table className="table" style={{ marginTop: 0 }}>
                           <tbody>
@@ -7543,10 +7541,10 @@ async function loadWatchlistLive() {
                           </tbody>
                         </table>
                       </div>
-                      {/* Gradient overlay */}
+                      {/* Gradient overlay — covers from top so even first hidden row is mostly hidden */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, rgba(7,9,15,0) 10%, rgba(7,9,15,0.65) 35%, rgba(7,9,15,0.98) 58%)",
+                        background: "linear-gradient(to bottom, rgba(7,9,15,0.55) 0%, rgba(7,9,15,0.85) 40%, rgba(7,9,15,0.99) 70%)",
                       }} />
                       {/* CTA card */}
                       <div style={{
