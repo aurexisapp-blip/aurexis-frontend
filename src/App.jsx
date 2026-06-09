@@ -9065,6 +9065,34 @@ async function loadWatchlistLive() {
     const [alertNewPick, setAlertNewPick] = React.useState(_alertPrefsCache.newPick);
     const [alertOutcome, setAlertOutcome] = React.useState(_alertPrefsCache.outcome);
 
+    // ── Billing tab data ──────────────────────────────────────────────────
+    const [paymentMethod, setPaymentMethod] = React.useState(undefined); // undefined=loading, null=none
+    const [invoices, setInvoices]           = React.useState(undefined);
+    const [billingFetched, setBillingFetched] = React.useState(false);
+
+    React.useEffect(() => {
+      if (settingsTab !== "billing" || billingFetched) return;
+      setBillingFetched(true);
+      const token = localStorage.getItem("aurexis_token");
+      if (!token) return;
+      fetch(`${API}/stripe/payment-method`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setPaymentMethod(d?.payment_method ?? null))
+        .catch(() => setPaymentMethod(null));
+      fetch(`${API}/stripe/invoices`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setInvoices(d?.invoices ?? []))
+        .catch(() => setInvoices([]));
+    }, [settingsTab, billingFetched]);
+
+    const openPortal = async () => {
+      const token = localStorage.getItem("aurexis_token");
+      try {
+        const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) { const d = await r.json(); window.open(d.url, "_blank"); }
+      } catch { showToast("Couldn't open billing portal."); }
+    };
+
     React.useEffect(() => {
       if (_alertPrefsCache.loaded) return;
       const token = localStorage.getItem("aurexis_token");
@@ -9295,23 +9323,7 @@ async function loadWatchlistLive() {
           )}
 
           {/* BILLING ──────────────────────────────────────────────────── */}
-          {settingsTab === "billing" && (() => {
-            const [paymentMethod, setPaymentMethod] = React.useState(null);
-            const [invoices, setInvoices]           = React.useState(null);
-            React.useEffect(() => {
-              const token = localStorage.getItem("aurexis_token");
-              if (!token || !isPaidPlan) return;
-              fetch(`${API}/stripe/payment-method`, { headers: { Authorization: `Bearer ${token}` } })
-                .then(r => r.ok ? r.json() : null).then(d => d && setPaymentMethod(d.payment_method));
-              fetch(`${API}/stripe/invoices`, { headers: { Authorization: `Bearer ${token}` } })
-                .then(r => r.ok ? r.json() : null).then(d => d && setInvoices(d.invoices));
-            }, []);
-            const openPortal = async () => {
-              const token = localStorage.getItem("aurexis_token");
-              const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-              if (r.ok) { const d = await r.json(); window.open(d.url, "_blank"); }
-            };
-            return (
+          {settingsTab === "billing" && (
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
@@ -9362,14 +9374,15 @@ async function loadWatchlistLive() {
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ width: 36, height: 36, borderRadius: 8, background: dm ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: bdr, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💳</div>
                       <div>
-                        {paymentMethod ? (
-                          <>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: txt }}>{paymentMethod.brand} ···· {paymentMethod.last4}</div>
-                            <div style={{ fontSize: 11, color: txtG, marginTop: 1 }}>Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}</div>
-                          </>
-                        ) : (
-                          <div style={{ fontSize: 13, color: txtS }}>Loading payment method…</div>
-                        )}
+                        {paymentMethod === undefined
+                          ? <div style={{ fontSize: 13, color: txtG }}>Loading…</div>
+                          : paymentMethod
+                            ? <>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: txt }}>{paymentMethod.brand} ···· {paymentMethod.last4}</div>
+                                <div style={{ fontSize: 11, color: txtG, marginTop: 1 }}>Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}</div>
+                              </>
+                            : <div style={{ fontSize: 13, color: txtS }}>No payment method on file</div>
+                        }
                       </div>
                     </div>
                     <button onClick={openPortal} style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: bdr, background: "transparent", color: txtS, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
@@ -9379,7 +9392,7 @@ async function loadWatchlistLive() {
 
                   <SectionTitle>Invoices</SectionTitle>
                   <div style={{ background: bg, border: bdr, borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
-                    {invoices === null ? (
+                    {invoices === undefined ? (
                       <div style={{ padding: "18px 18px", fontSize: 13, color: txtG }}>Loading invoices…</div>
                     ) : invoices.length === 0 ? (
                       <div style={{ padding: "18px 18px", fontSize: 13, color: txtG }}>No invoices yet.</div>
@@ -9432,8 +9445,7 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
               </div>
             </div>
-            );
-          })()}
+          )}
 
           {/* ALERTS ───────────────────────────────────────────────────── */}
           {settingsTab === "alerts" && (
