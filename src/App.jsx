@@ -6416,12 +6416,12 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-          <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none" }}>
+          <div style={{ filter: "blur(18px)", opacity: 0.25, pointerEvents: "none", userSelect: "none" }}>
             {heroCard}
           </div>
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(135deg, rgba(7,9,16,0.55) 0%, rgba(7,9,16,0.80) 100%)",
+            background: "linear-gradient(135deg, rgba(7,9,16,0.70) 0%, rgba(7,9,16,0.92) 100%)",
             backdropFilter: "blur(2px)",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
