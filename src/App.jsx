@@ -2715,6 +2715,7 @@ function AppInner() {
     try { return JSON.parse(localStorage.getItem("aurexis_best_pick_log") || "[]"); } catch { return []; }
   });
   const [bestPickData, setBestPickData] = useState(null);
+  const [bestPickDailyLimit, setBestPickDailyLimit] = useState(false);
   const [analyzeSymbol, setAnalyzeSymbol] = useState("");
 
   const [portfolioLive, setPortfolioLive] = useState(null);
@@ -3582,6 +3583,15 @@ async function loadBestPick() {
           // Free user — gate is server-side now. Silently leave bestPickData null.
           setLoadingBestPick(false);
           return;
+        }
+        if (res.status === 429) {
+          const body = await res.json().catch(() => ({}));
+          if (body?.detail === "daily_limit_reached") {
+            setBestPickDailyLimit(true);
+            setLoadingBestPick(false);
+            return;
+          }
+          throw new Error("HTTP 429");
         }
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
@@ -6142,6 +6152,44 @@ async function loadWatchlistLive() {
       const isFreeUser = !canAccess(userPlan, "starter");
       // Gate shows for free users unless they unlocked this session (freePickUsed + bestPickData loaded)
       const showBlurGate = isFreeUser && !(freePickUsed && bestPickData);
+
+      if (bestPickDailyLimit && !canAccess(userPlan, "pro")) {
+        return (
+          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none" }}>
+              <div className="card heroCard heroCard--bull">
+                <div className="heroBg heroBg--bull" />
+                <div className="heroBody" style={{ minHeight: 220 }} />
+              </div>
+            </div>
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(135deg, rgba(7,9,16,0.70) 0%, rgba(7,9,16,0.92) 100%)",
+              backdropFilter: "blur(2px)",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              padding: "32px 24px", gap: 12,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>Daily Limit</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used today's pick</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>
+                Starter includes 1 pick per day. Come back tomorrow or upgrade to Pro for unlimited picks.
+              </div>
+              <button
+                onClick={() => setTab("pricing")}
+                style={{
+                  padding: "12px 32px", borderRadius: 10, cursor: "pointer",
+                  fontWeight: 700, fontSize: 14,
+                  background: "linear-gradient(90deg, #00b450, #00d462)",
+                  color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+                }}
+              >
+                Upgrade to Pro for unlimited picks →
+              </button>
+            </div>
+          </div>
+        );
+      }
 
       const heroCard = (
         <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
