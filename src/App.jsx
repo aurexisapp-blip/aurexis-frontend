@@ -10433,10 +10433,9 @@ const renderPage = () => {
                     style={{
                       position: "fixed", bottom: profileMenuPos.bottom, left: profileMenuPos.left,
                       width: 220,
-                      background: darkMode ? "rgba(18,20,28,0.97)" : "rgba(255,255,255,0.98)",
+                      background: darkMode ? "rgb(16,18,26)" : "rgb(255,255,255)",
                       border: `1px solid ${T.border2}`,
-                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.40)",
-                      backdropFilter: "blur(16px)",
+                      borderRadius: 14, boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
                       zIndex: 1001, overflow: "hidden",
                     }}
                   >
