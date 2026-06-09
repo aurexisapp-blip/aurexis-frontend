@@ -4857,7 +4857,7 @@ async function loadWatchlistLive() {
         <div className="card">
           <div className="cardHead">
             <div>
-              <div className="cardTitle">News &amp; Sentiment</div>
+              <div className="cardTitle">News & Sentiment</div>
               <div className="cardSub">Direction, summary, catalysts, and risk flags.</div>
             </div>
           </div>
@@ -6166,7 +6166,7 @@ async function loadWatchlistLive() {
             <div className="heroTop">
               <div className="heroLeft">
                 <div className="aiPickLabel">
-                  {isLowConviction ? "Today's AI Pick" : "Today's AI Pick"}
+                  Today's AI Pick
                   {isLowConviction && (
                     <span style={{
                       display: "inline-block", marginLeft: 10,
@@ -6433,7 +6433,7 @@ async function loadWatchlistLive() {
                 </RippleButton>
               ) : null}
             </div>
-            <div className="heroTrustLine">AI scans 100+ stocks daily to surface high-conviction setups</div>
+            <div className="heroTrustLine">AI scans 1,200+ stocks daily to surface high-conviction setups</div>
           </div>
         </div>
       );
@@ -7257,7 +7257,7 @@ async function loadWatchlistLive() {
                   <th>Symbol</th>
                   <th>Entry</th>
                   <th>Current</th>
-                  <th>P&amp;L</th>
+                  <th>P&L</th>
                   <th>Stop</th>
                   <th>Target</th>
                   <th>Status</th>
@@ -9108,7 +9108,7 @@ async function loadWatchlistLive() {
         <div style={{ ...settingsSection }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <div style={settingsSectionTitle}>Plan &amp; Billing</div>
+              <div style={settingsSectionTitle}>Plan & Billing</div>
               <div style={{ ...settingsSectionSub, marginTop: 4 }}>
                 {isPaidPlan
                   ? isCancelling
@@ -9273,7 +9273,7 @@ async function loadWatchlistLive() {
 
         {/* Data & Privacy */}
         <div style={{ ...settingsSection }}>
-          <div style={settingsSectionTitle}>Data &amp; Privacy</div>
+          <div style={settingsSectionTitle}>Data & Privacy</div>
           <div style={{ ...settingsSectionSub, marginTop: 6, marginBottom: 16 }}>Your data is never sold or shared with third parties. Aurexis does not store personal trading positions.</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {[
@@ -10102,7 +10102,7 @@ const renderPage = () => {
                 >
                   <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
                   {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{n.label}</span>}
-                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 9, opacity: 0.6 }}>🔒</span>}
+                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 4, padding: "1px 5px", letterSpacing: "0.04em", flexShrink: 0 }}>{navMinPlan === "pro" ? "PRO" : "STARTER"}</span>}
                 </motion.button>
               );
             })}
@@ -10134,7 +10134,7 @@ const renderPage = () => {
                 >
                   <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
                   {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{n.label}</span>}
-                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 9, opacity: 0.6 }}>🔒</span>}
+                  {!sidebarCollapsed && navLocked && <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 4, padding: "1px 5px", letterSpacing: "0.04em", flexShrink: 0 }}>{navMinPlan === "pro" ? "PRO" : "STARTER"}</span>}
                 </motion.button>
               );
             })}
