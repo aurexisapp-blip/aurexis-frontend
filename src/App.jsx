@@ -29,8 +29,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 const API_BASE = API_BASE_URL;
 const API = API_BASE_URL;
 
-// Module-level cache so Settings alert prefs survive Dashboard re-renders (remounts)
+// Module-level cache so Settings state survives Dashboard re-renders (remounts)
 const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
+let _settingsTab = "profile";
 
 // ---------- RippleButton ----------
 function RippleButton({ children, onClick, className, style, disabled, type, ...rest }) {
@@ -8973,7 +8974,8 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
-    const [settingsTab, setSettingsTab] = React.useState("profile");
+    const [settingsTab, _setSettingsTab] = React.useState(_settingsTab);
+    const setSettingsTab = (id) => { _settingsTab = id; _setSettingsTab(id); };
 
     // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
@@ -9124,7 +9126,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div style={{ display: "flex", minHeight: 560, gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+      <div style={{ display: "flex", height: "calc(100vh - 80px)", minHeight: 560, gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
