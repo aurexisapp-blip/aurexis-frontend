@@ -32,20 +32,20 @@ const API = API_BASE_URL;
 // Module-level cache so Settings alert prefs survive remounts (state lives outside Settings)
 const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
 
-// Avatar presets — gradient + accent color
+// Avatar presets — gradient + accent color + RGB for CSS variable
 const AVATAR_PRESETS = [
-  { id: "green",   bg: "linear-gradient(135deg,rgba(0,180,80,0.55),rgba(0,100,50,0.40))",    border: "rgba(74,222,128,0.50)",  text: "#4ade80" },
-  { id: "violet",  bg: "linear-gradient(135deg,rgba(139,92,246,0.55),rgba(88,28,235,0.40))",  border: "rgba(167,139,250,0.50)", text: "#a78bfa" },
-  { id: "blue",    bg: "linear-gradient(135deg,rgba(59,130,246,0.55),rgba(29,78,216,0.40))",  border: "rgba(147,197,253,0.50)", text: "#93c5fd" },
-  { id: "cyan",    bg: "linear-gradient(135deg,rgba(6,182,212,0.55),rgba(8,145,178,0.40))",   border: "rgba(103,232,249,0.50)", text: "#67e8f9" },
-  { id: "rose",    bg: "linear-gradient(135deg,rgba(244,63,94,0.55),rgba(190,18,60,0.40))",   border: "rgba(253,164,175,0.50)", text: "#fda4af" },
-  { id: "amber",   bg: "linear-gradient(135deg,rgba(245,158,11,0.55),rgba(180,83,9,0.40))",   border: "rgba(252,211,77,0.50)",  text: "#fcd34d" },
-  { id: "indigo",  bg: "linear-gradient(135deg,rgba(99,102,241,0.55),rgba(67,56,202,0.40))",  border: "rgba(165,180,252,0.50)", text: "#a5b4fc" },
-  { id: "emerald", bg: "linear-gradient(135deg,rgba(16,185,129,0.55),rgba(6,95,70,0.40))",    border: "rgba(110,231,183,0.50)", text: "#6ee7b7" },
-  { id: "pink",    bg: "linear-gradient(135deg,rgba(236,72,153,0.55),rgba(157,23,77,0.40))",  border: "rgba(249,168,212,0.50)", text: "#f9a8d4" },
-  { id: "orange",  bg: "linear-gradient(135deg,rgba(249,115,22,0.55),rgba(194,65,12,0.40))",  border: "rgba(253,186,116,0.50)", text: "#fdba74" },
-  { id: "teal",    bg: "linear-gradient(135deg,rgba(20,184,166,0.55),rgba(15,118,110,0.40))", border: "rgba(94,234,212,0.50)",  text: "#5eead4" },
-  { id: "slate",   bg: "linear-gradient(135deg,rgba(100,116,139,0.55),rgba(51,65,85,0.40))",  border: "rgba(203,213,225,0.40)", text: "#cbd5e1" },
+  { id: "green",   rgb: "74,222,128",   bg: "linear-gradient(135deg,rgba(0,180,80,0.55),rgba(0,100,50,0.40))",    border: "rgba(74,222,128,0.50)",  text: "#4ade80" },
+  { id: "violet",  rgb: "167,139,250",  bg: "linear-gradient(135deg,rgba(139,92,246,0.55),rgba(88,28,235,0.40))",  border: "rgba(167,139,250,0.50)", text: "#a78bfa" },
+  { id: "blue",    rgb: "147,197,253",  bg: "linear-gradient(135deg,rgba(59,130,246,0.55),rgba(29,78,216,0.40))",  border: "rgba(147,197,253,0.50)", text: "#93c5fd" },
+  { id: "cyan",    rgb: "103,232,249",  bg: "linear-gradient(135deg,rgba(6,182,212,0.55),rgba(8,145,178,0.40))",   border: "rgba(103,232,249,0.50)", text: "#67e8f9" },
+  { id: "rose",    rgb: "253,164,175",  bg: "linear-gradient(135deg,rgba(244,63,94,0.55),rgba(190,18,60,0.40))",   border: "rgba(253,164,175,0.50)", text: "#fda4af" },
+  { id: "amber",   rgb: "252,211,77",   bg: "linear-gradient(135deg,rgba(245,158,11,0.55),rgba(180,83,9,0.40))",   border: "rgba(252,211,77,0.50)",  text: "#fcd34d" },
+  { id: "indigo",  rgb: "165,180,252",  bg: "linear-gradient(135deg,rgba(99,102,241,0.55),rgba(67,56,202,0.40))",  border: "rgba(165,180,252,0.50)", text: "#a5b4fc" },
+  { id: "emerald", rgb: "110,231,183",  bg: "linear-gradient(135deg,rgba(16,185,129,0.55),rgba(6,95,70,0.40))",    border: "rgba(110,231,183,0.50)", text: "#6ee7b7" },
+  { id: "pink",    rgb: "249,168,212",  bg: "linear-gradient(135deg,rgba(236,72,153,0.55),rgba(157,23,77,0.40))",  border: "rgba(249,168,212,0.50)", text: "#f9a8d4" },
+  { id: "orange",  rgb: "253,186,116",  bg: "linear-gradient(135deg,rgba(249,115,22,0.55),rgba(194,65,12,0.40))",  border: "rgba(253,186,116,0.50)", text: "#fdba74" },
+  { id: "teal",    rgb: "94,234,212",   bg: "linear-gradient(135deg,rgba(20,184,166,0.55),rgba(15,118,110,0.40))", border: "rgba(94,234,212,0.50)",  text: "#5eead4" },
+  { id: "slate",   rgb: "203,213,225",  bg: "linear-gradient(135deg,rgba(100,116,139,0.55),rgba(51,65,85,0.40))",  border: "rgba(203,213,225,0.40)", text: "#cbd5e1" },
 ];
 const _getAvatar = (id) => AVATAR_PRESETS.find(p => p.id === id) || AVATAR_PRESETS[0];
 
@@ -2651,6 +2651,9 @@ function AppInner() {
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent-rgb", _getAvatar(avatarId).rgb);
+  }, [avatarId]);
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
