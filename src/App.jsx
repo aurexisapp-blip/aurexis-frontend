@@ -9171,15 +9171,16 @@ async function loadWatchlistLive() {
                 onClick={() => setSettingsTab(n.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: 9, width: "100%",
-                  padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit",
-                  background: active ? `${av.text}18` : "transparent",
+                  padding: "8px 10px 8px 8px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit",
+                  background: active ? `${av.text}22` : "transparent",
                   color: active ? av.text : txtS,
                   fontSize: 13, fontWeight: active ? 600 : 400,
                   transition: "background 0.13s, color 0.13s",
                   textAlign: "left",
+                  borderLeft: active ? `3px solid ${av.text}` : "3px solid transparent",
                 }}
               >
-                <span style={{ fontSize: 13, opacity: active ? 1 : 0.5, flexShrink: 0 }}>{n.icon}</span>
+                <span style={{ fontSize: 13, opacity: active ? 1 : 0.45, flexShrink: 0 }}>{n.icon}</span>
                 {n.label}
               </button>
             );
