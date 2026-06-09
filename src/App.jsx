@@ -2711,9 +2711,6 @@ function AppInner() {
   const [analyzeData, setAnalyzeData] = useState(null);
   const [analyzeIsLowConviction, setAnalyzeIsLowConviction] = useState(false);
   const [analysisBySymbol, setAnalysisBySymbol] = useState({});
-  const [analyzeHistory, setAnalyzeHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("aurexis_analyze_history") || "[]"); } catch { return []; }
-  });
   const [bestPickLog, setBestPickLog] = useState(() => {
     try { return JSON.parse(localStorage.getItem("aurexis_best_pick_log") || "[]"); } catch { return []; }
   });
@@ -3995,19 +3992,6 @@ async function loadWatchlistLive() {
       setAnalyzeIsLowConviction(isLowConv);
 
       setAnalyzeData(mappedData);
-
-      // Save to analyze history
-      (() => {
-        const toScore100 = (v) => { const n = Number(v); if (!Number.isFinite(n)) return null; return Math.max(0, Math.min(100, n <= 10 ? n * 10 : n)); };
-        const rawScore = mappedData?.score ?? mappedData?.ai_score ?? mappedData?.aiScore ?? mappedData?.technicals?.ai_score;
-        const entry = { symbol: s, score: toScore100(rawScore), decision: String(mappedData?.trade_decision || mappedData?.classification || "").toUpperCase() || null, ts: Date.now() };
-        setAnalyzeHistory(prev => {
-          const filtered = (Array.isArray(prev) ? prev : []).filter(x => x.symbol !== s);
-          const next = [entry, ...filtered].slice(0, 10);
-          try { localStorage.setItem("aurexis_analyze_history", JSON.stringify(next)); } catch {}
-          return next;
-        });
-      })();
 
       lastValidAnalysisRef.current = mappedData;
 
@@ -8287,9 +8271,10 @@ async function loadWatchlistLive() {
       if (!sym || !/^[A-Z]{1,10}$/.test(sym)) return;
       setFetchingSymbol(true);
       try {
+        const _tok = localStorage.getItem("aurexis_token");
         const res = await fetch(
           `${API_BASE_URL}/analyze/${encodeURIComponent(sym)}?budget=1000&risk=medium&timeframe=swing`,
-          { signal: AbortSignal.timeout(20000) }
+          { signal: AbortSignal.timeout(20000), headers: _tok ? { Authorization: `Bearer ${_tok}` } : {} }
         );
         if (!res.ok) return;
         const raw = await res.json();
