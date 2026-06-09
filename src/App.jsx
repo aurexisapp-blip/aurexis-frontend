@@ -7896,9 +7896,10 @@ async function loadWatchlistLive() {
       const controller = new AbortController();
       const t = window.setTimeout(() => controller.abort(), 30000);
       try {
+        const _tok = localStorage.getItem("aurexis_token");
         const res = await fetch(
           `${API_BASE_URL}/analyze/${encodeURIComponent(sym)}?budget=1000&risk=medium&timeframe=swing`,
-          { signal: controller.signal }
+          { signal: controller.signal, headers: _tok ? { Authorization: `Bearer ${_tok}` } : {} }
         );
         window.clearTimeout(t);
         if (!res.ok) return { symbol: sym, error: true };
