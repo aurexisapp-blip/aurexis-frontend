@@ -2651,9 +2651,6 @@ function AppInner() {
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
-  useEffect(() => {
-    document.documentElement.style.setProperty("--accent-rgb", _getAvatar(avatarId).rgb);
-  }, [avatarId]);
   const userPlan = usePlan();
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
@@ -10240,10 +10237,12 @@ const renderPage = () => {
             {NAV.main.map((n) => {
               const navMinPlan = { screener: "pro" }[n.key];
               const navLocked = navMinPlan && !canAccess(userPlan, navMinPlan);
+              const isActive = tab === n.key;
+              const av = _getAvatar(avatarId);
               return (
                 <motion.button
                   key={n.key}
-                  className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
+                  className={`sideItem ${isActive ? "sideItem--active" : ""}`}
                   onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
                   title={sidebarCollapsed ? (navLocked ? `${n.label} (${navMinPlan}+)` : n.label) : undefined}
                   whileHover={{ scale: 1.04 }}
@@ -10255,6 +10254,7 @@ const renderPage = () => {
                     padding: sidebarCollapsed ? "9px 0" : "9px 10px",
                     borderRadius: 8, width: "100%", whiteSpace: "nowrap",
                     opacity: navLocked ? 0.55 : 1,
+                    ...(isActive ? { background: `rgba(${av.rgb},0.10)`, borderColor: `rgba(${av.rgb},0.22)`, color: av.text } : {}),
                   }}
                 >
                   <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
@@ -10272,10 +10272,12 @@ const renderPage = () => {
             {NAV.trading.map((n) => {
               const navMinPlan = { watchlist: "starter", tradejournal: "starter" }[n.key];
               const navLocked = navMinPlan && !canAccess(userPlan, navMinPlan);
+              const isActive = tab === n.key;
+              const av = _getAvatar(avatarId);
               return (
                 <motion.button
                   key={n.key}
-                  className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
+                  className={`sideItem ${isActive ? "sideItem--active" : ""}`}
                   onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
                   title={sidebarCollapsed ? (navLocked ? `${n.label} (${navMinPlan}+)` : n.label) : undefined}
                   whileHover={{ scale: 1.04 }}
@@ -10287,6 +10289,7 @@ const renderPage = () => {
                     padding: sidebarCollapsed ? "9px 0" : "9px 10px",
                     borderRadius: 8, width: "100%", whiteSpace: "nowrap",
                     opacity: navLocked ? 0.55 : 1,
+                    ...(isActive ? { background: `rgba(${av.rgb},0.10)`, borderColor: `rgba(${av.rgb},0.22)`, color: av.text } : {}),
                   }}
                 >
                   <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
@@ -10301,10 +10304,12 @@ const renderPage = () => {
             {!sidebarCollapsed && (
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.textGhost, padding: "0 8px 5px" }}>Account</div>
             )}
-            {NAV.account.map((n) => (
-              <motion.button
+            {NAV.account.map((n) => {
+              const isActive = tab === n.key;
+              const av = _getAvatar(avatarId);
+              return (<motion.button
                 key={n.key}
-                className={`sideItem ${tab === n.key ? "sideItem--active" : ""}`}
+                className={`sideItem ${isActive ? "sideItem--active" : ""}`}
                 onClick={(e) => { animate(e.currentTarget, { scale: [1, 0.85, 1.15, 1] }, { duration: 0.3, ease: "easeOut" }); setTab(n.key); }}
                 title={sidebarCollapsed ? n.label : undefined}
                 whileHover={{ scale: 1.04 }}
@@ -10318,12 +10323,13 @@ const renderPage = () => {
                   borderRadius: 8,
                   width: "100%",
                   whiteSpace: "nowrap",
+                  ...(isActive ? { background: `rgba(${av.rgb},0.10)`, borderColor: `rgba(${av.rgb},0.22)`, color: av.text } : {}),
                 }}
               >
                 <span style={{ fontSize: 14, opacity: 0.75, flexShrink: 0 }}>{n.icon}</span>
                 {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{n.label}</span>}
               </motion.button>
-            ))}
+            );})}
           </nav>
 
           {/* Account avatar — pinned to bottom of sidebar */}
