@@ -8973,17 +8973,18 @@ async function loadWatchlistLive() {
   };
 
   const Settings = () => {
+    const [settingsTab, setSettingsTab] = React.useState("profile");
+
     // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
       const token = localStorage.getItem("aurexis_token");
       if (!token) return;
-      // Refresh JWT so usePlan() picks up the latest plan from the DB
       fetch(`${API}/auth/refresh-token`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data?.access_token) {
             localStorage.setItem("aurexis_token", data.access_token);
-            window.dispatchEvent(new Event("storage")); // wake up usePlan()
+            window.dispatchEvent(new Event("storage"));
           }
         })
         .catch(() => {});
@@ -8994,18 +8995,24 @@ async function loadWatchlistLive() {
     }, []);
 
     const firstName = userProfile?.first_name || "";
-    const lastName = userProfile?.last_name || "";
-    const email = userProfile?.email || "";
-    const plan = userProfile?.plan || "free";
+    const lastName  = userProfile?.last_name  || "";
+    const email     = userProfile?.email      || "";
+    const plan      = userProfile?.plan       || "free";
     const memberSince = userProfile?.created_at
-      ? new Date(userProfile.created_at).getFullYear()
-      : new Date().getFullYear();
-    const isPaidPlan = plan !== "free" && userProfile?.subscription_status === "active";
-    const isCancelling = userProfile?.cancel_at_period_end;
+      ? new Date(userProfile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+      : "—";
+    const isPaidPlan    = plan !== "free" && userProfile?.subscription_status === "active";
+    const isCancelling  = userProfile?.cancel_at_period_end;
     const periodEndDate = userProfile?.current_period_end
       ? new Date(userProfile.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
       : null;
     const planLabel = plan === "free" ? "Free" : plan.charAt(0).toUpperCase() + plan.slice(1);
+    const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : email || "Aurexis User";
+    const initials = firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : firstName ? firstName.slice(0, 2).toUpperCase()
+      : email    ? email.slice(0, 2).toUpperCase()
+      : "AU";
 
     const [cancelLoading, setCancelLoading] = React.useState(false);
 
@@ -9014,9 +9021,7 @@ async function loadWatchlistLive() {
       setCancelLoading(true);
       try {
         const token = localStorage.getItem("aurexis_token");
-        const r = await fetch(`${API}/stripe/cancel-subscription`, {
-          method: "POST", headers: { Authorization: `Bearer ${token}` },
-        });
+        const r = await fetch(`${API}/stripe/cancel-subscription`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) throw new Error();
         const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
         setUserProfile(me);
@@ -9029,9 +9034,7 @@ async function loadWatchlistLive() {
       setCancelLoading(true);
       try {
         const token = localStorage.getItem("aurexis_token");
-        const r = await fetch(`${API}/stripe/reactivate-subscription`, {
-          method: "POST", headers: { Authorization: `Bearer ${token}` },
-        });
+        const r = await fetch(`${API}/stripe/reactivate-subscription`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) throw new Error();
         const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
         setUserProfile(me);
@@ -9039,45 +9042,12 @@ async function loadWatchlistLive() {
       } catch { showToast("Something went wrong. Please try again."); }
       finally { setCancelLoading(false); }
     }
-    const displayName = firstName || lastName
-      ? `${firstName} ${lastName}`.trim()
-      : email || "Aurexis User";
-    const initials = firstName && lastName
-      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-      : firstName
-        ? firstName.slice(0, 2).toUpperCase()
-        : email
-          ? email.slice(0, 2).toUpperCase()
-          : "AU";
-    const toggleRow = (label, enabled, onChange) => (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: darkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
-        <span style={{ fontSize: 13, color: darkMode ? "rgba(255,255,255,0.65)" : "rgba(8,10,22,0.62)" }}>{label}</span>
-        <button
-          onClick={onChange}
-          style={{
-            width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer",
-            background: enabled ? "rgba(0,180,80,0.75)" : darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.10)",
-            position: "relative", transition: "background 0.2s", flexShrink: 0,
-          }}
-        >
-          <span style={{
-            position: "absolute", top: 3, left: enabled ? 20 : 3,
-            width: 16, height: 16, borderRadius: "50%", background: "#fff",
-            transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
-          }} />
-        </button>
-      </div>
-    );
 
-    const [compactView, setCompactView] = React.useState(false);
-
-    // ── Alert preferences ──────────────────────────────────────────────────
-    // Initial state from module-level cache so remounts don't reset the toggle
-    const [alertNewPick,  setAlertNewPick]  = React.useState(_alertPrefsCache.newPick);
-    const [alertOutcome,  setAlertOutcome]  = React.useState(_alertPrefsCache.outcome);
+    const [alertNewPick, setAlertNewPick] = React.useState(_alertPrefsCache.newPick);
+    const [alertOutcome, setAlertOutcome] = React.useState(_alertPrefsCache.outcome);
 
     React.useEffect(() => {
-      if (_alertPrefsCache.loaded) return; // already fetched — don't overwrite user's toggle
+      if (_alertPrefsCache.loaded) return;
       const token = localStorage.getItem("aurexis_token");
       if (!token) return;
       fetch(`${API}/alerts/preferences`, { headers: { Authorization: `Bearer ${token}` } })
@@ -9086,11 +9056,8 @@ async function loadWatchlistLive() {
           if (!d) return;
           const np = d.alerts_new_pick != null ? !!d.alerts_new_pick : _alertPrefsCache.newPick;
           const oc = d.alerts_outcome  != null ? !!d.alerts_outcome  : _alertPrefsCache.outcome;
-          _alertPrefsCache.loaded = true;
-          _alertPrefsCache.newPick = np;
-          _alertPrefsCache.outcome = oc;
-          setAlertNewPick(np);
-          setAlertOutcome(oc);
+          _alertPrefsCache.loaded = true; _alertPrefsCache.newPick = np; _alertPrefsCache.outcome = oc;
+          setAlertNewPick(np); setAlertOutcome(oc);
         })
         .catch(() => { _alertPrefsCache.loaded = true; });
     }, []);
@@ -9104,202 +9071,362 @@ async function loadWatchlistLive() {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ phone: null, alerts_new_pick: newPick, alerts_outcome: outcome, alerts_channel: "email" }),
         });
-        if (r.ok) showToast("Alert preference saved.");
+        if (r.ok) showToast("Saved.");
       } catch { showToast("Couldn't save — check your connection."); }
     }
 
+    // ── Shared sub-components ──────────────────────────────────────────────
+    const dm = darkMode;
+    const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+    const bdr  = dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
+    const txt  = dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)";
+    const txtS = dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)";
+    const txtG = dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)";
+
+    const FieldRow = ({ label, value, action }) => (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
+          {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
+        </div>
+        {action}
+      </div>
+    );
+
+    const Toggle = ({ enabled, onChange }) => (
+      <button
+        onClick={onChange}
+        style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
+          background: enabled ? "rgba(0,180,80,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          position: "relative", transition: "background 0.2s" }}
+      >
+        <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
+          background: "#fff", transition: "left 0.18s", boxShadow: "0 1px 4px rgba(0,0,0,0.35)" }} />
+      </button>
+    );
+
+    const SectionTitle = ({ children }) => (
+      <div style={{ fontSize: 11, fontWeight: 700, color: txtG, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
+        {children}
+      </div>
+    );
+
+    // ── Sidebar nav items ──────────────────────────────────────────────────
+    const NAV_ITEMS = [
+      { id: "profile",     icon: "◉", label: "Profile" },
+      { id: "account",     icon: "⊙", label: "Account" },
+      { id: "billing",     icon: "◈", label: "Plan & Billing" },
+      { id: "alerts",      icon: "◎", label: "Notifications" },
+      { id: "appearance",  icon: "⬡", label: "Appearance" },
+      { id: "privacy",     icon: "⊛", label: "Privacy" },
+    ];
+
+    const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
+
     return (
-      <div className="pageGrid">
-        {/* Account profile card */}
-        <div style={{
-          background: darkMode
-            ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)"
-            : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-          border: darkMode ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
-          borderRadius: 16, padding: "24px 26px",
-          display: "flex", alignItems: "center", gap: 20,
-        }}>
-          <div style={{
-            width: 58, height: 58, borderRadius: "50%", flexShrink: 0,
-            background: "linear-gradient(135deg, rgba(0,180,80,0.3) 0%, rgba(0,140,60,0.25) 100%)",
-            border: "2px solid rgba(0,180,80,0.30)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 800, color: darkMode ? "rgba(255,255,255,0.9)" : "rgba(8,10,22,0.85)",
-            letterSpacing: "-0.01em",
-          }}>{initials}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: darkMode ? "#fff" : "rgba(8,10,22,0.90)", letterSpacing: "-0.02em" }}>{displayName}</div>
-            <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.40)", marginTop: 3 }}>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan · Member since {memberSince}</div>
+      <div style={{ display: "flex", minHeight: 560, gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+
+        {/* ── Sidebar ───────────────────────────────────────────────────── */}
+        <div style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Avatar + name */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 8px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)", marginBottom: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+              background: "linear-gradient(135deg,rgba(0,180,80,0.35),rgba(0,120,60,0.25))",
+              border: "1.5px solid rgba(0,180,80,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 12, fontWeight: 800, color: txt }}>
+              {initials}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: txt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firstName || email?.split("@")[0] || "Account"}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: planBadgeColor, textTransform: "uppercase", letterSpacing: "0.06em" }}>{planLabel}</div>
+            </div>
           </div>
-          <div style={{
-            padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-            background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)",
-            color: "rgba(0,180,80,0.90)", letterSpacing: "0.04em",
-          }}>{plan.toUpperCase()}</div>
+
+          {NAV_ITEMS.map(n => (
+            <button
+              key={n.id}
+              onClick={() => setSettingsTab(n.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 9, width: "100%",
+                padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit",
+                background: settingsTab === n.id ? dm ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)" : "transparent",
+                color: settingsTab === n.id ? txt : txtS,
+                fontSize: 13, fontWeight: settingsTab === n.id ? 600 : 400,
+                transition: "background 0.13s, color 0.13s",
+                textAlign: "left",
+              }}
+            >
+              <span style={{ fontSize: 13, opacity: 0.6, flexShrink: 0 }}>{n.icon}</span>
+              {n.label}
+            </button>
+          ))}
         </div>
 
-        {/* Plan */}
-        <div style={{ ...settingsSection }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        {/* ── Content pane ──────────────────────────────────────────────── */}
+        <div style={{ flex: 1, minWidth: 0, padding: "28px 30px", overflowY: "auto" }}>
+
+          {/* PROFILE ──────────────────────────────────────────────────── */}
+          {settingsTab === "profile" && (
             <div>
-              <div style={settingsSectionTitle}>Plan & Billing</div>
-              <div style={{ ...settingsSectionSub, marginTop: 4 }}>
-                {isPaidPlan
-                  ? isCancelling
-                    ? <>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.75)" : "rgba(8,10,22,0.75)" }}>{planLabel}</b> plan. Cancels on <b style={{ color: "#f87171" }}>{periodEndDate}</b> — you'll keep full access until then.</>
-                    : <>You're on the <b style={{ color: "#4ade80" }}>{planLabel}</b> plan. Your subscription renews automatically.</>
-                  : <>You're on the <b style={{ color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>Free</b> plan. Upgrade to unlock full picks, analysis, and scanner access.</>
-                }
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Profile</div>
+
+              {/* Avatar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px", background: bg, borderRadius: 12, border: bdr, marginBottom: 20 }}>
+                <div style={{ width: 64, height: 64, borderRadius: "50%", flexShrink: 0,
+                  background: "linear-gradient(135deg,rgba(0,180,80,0.30),rgba(0,120,60,0.22))",
+                  border: "2px solid rgba(0,180,80,0.28)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 24, fontWeight: 800, color: txt }}>
+                  {initials}
+                </div>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: txt, letterSpacing: "-0.02em" }}>{displayName}</div>
+                  <div style={{ fontSize: 12, color: txtS, marginTop: 3 }}>{email}</div>
+                  <div style={{ fontSize: 11, color: txtG, marginTop: 2 }}>Member since {memberSince}</div>
+                </div>
+              </div>
+
+              <SectionTitle>Account Info</SectionTitle>
+              <FieldRow label="Full name" value={displayName} />
+              <FieldRow label="Email address" value={email} />
+              <FieldRow label="Plan" value={`${planLabel} plan`} action={
+                !isPaidPlan && (
+                  <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#00b450", color: "#fff" }}>
+                    Upgrade
+                  </button>
+                )
+              } />
+              <FieldRow label="Member since" value={memberSince} />
+            </div>
+          )}
+
+          {/* ACCOUNT ──────────────────────────────────────────────────── */}
+          {settingsTab === "account" && (
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Account</div>
+
+              <SectionTitle>Session</SectionTitle>
+              <FieldRow label="Sign out" value="End your current session on this device" action={
+                <button
+                  onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); localStorage.removeItem("aurexis_force_onboarding"); window.location.href = "/"; }}
+                  style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: bdr, background: "transparent", color: txtS, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+                >
+                  Sign out
+                </button>
+              } />
+
+              <div style={{ marginTop: 28 }}>
+                <SectionTitle>Danger Zone</SectionTitle>
+                <div style={{ background: "rgba(251,113,133,0.04)", border: "1px solid rgba(251,113,133,0.12)", borderRadius: 12, padding: "18px 20px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(251,113,133,0.75)", marginBottom: 6 }}>Delete account</div>
+                  <div style={{ fontSize: 13, color: txtS, lineHeight: 1.6, marginBottom: 16 }}>
+                    Permanently deletes your account and all associated data. This cannot be undone.
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Are you sure? This cannot be undone.")) {
+                        const token = localStorage.getItem("aurexis_token");
+                        fetch(`${API}/auth/delete-account`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} })
+                          .finally(() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; });
+                      }
+                    }}
+                    style={{ padding: "7px 16px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "1px solid rgba(251,113,133,0.22)", background: "rgba(251,113,133,0.07)", color: "rgba(251,113,133,0.75)", cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    Delete my account
+                  </button>
+                </div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 16 }}>
-              {isPaidPlan && isCancelling && (
-                <button
-                  className="btn btn--primary"
-                  style={{ fontSize: 11, padding: "5px 12px" }}
-                  onClick={handleReactivateSubscription}
-                  disabled={cancelLoading}
-                >
-                  {cancelLoading ? "…" : "Reactivate"}
-                </button>
-              )}
-              {isPaidPlan && !isCancelling && (
-                <button
-                  className="btn btn--ghost"
-                  style={{ fontSize: 11, padding: "5px 12px", color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }}
-                  onClick={handleCancelSubscription}
-                  disabled={cancelLoading}
-                >
-                  {cancelLoading ? "…" : "Cancel Plan"}
-                </button>
-              )}
-              {!isPaidPlan && (
-                <button
-                  className="btn btn--primary"
-                  style={{ fontSize: 11, padding: "5px 12px" }}
-                  onClick={() => setTab("pricing")}
-                >
-                  Upgrade
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+          )}
 
-        {/* Alerts */}
-        <div style={{ ...settingsSection }}>
-          <div style={{ ...settingsSectionTitle, marginBottom: 4 }}>Alerts</div>
-          <div style={{ fontSize: 12, color: darkMode ? "rgba(255,255,255,0.38)" : "rgba(8,10,22,0.42)", marginBottom: 18, lineHeight: 1.6 }}>
-            Get notified by email when the AI finds a new pick or when an existing pick hits its target or stop.
-          </div>
-          {toggleRow("New pick alert", alertNewPick, () => {
-            const next = !alertNewPick;
-            _alertPrefsCache.newPick = next;
-            setAlertNewPick(next);
-            _saveAlertPrefs(next, alertOutcome);
-          })}
-          {toggleRow("Pick outcome alert (win/loss)", alertOutcome, () => {
-            const next = !alertOutcome;
-            _alertPrefsCache.outcome = next;
-            setAlertOutcome(next);
-            _saveAlertPrefs(alertNewPick, next);
-          })}
-        </div>
+          {/* BILLING ──────────────────────────────────────────────────── */}
+          {settingsTab === "billing" && (
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
-        {/* Display */}
-        <div style={{ ...settingsSection }}>
-          <div style={{ ...settingsSectionTitle, marginBottom: 12 }}>Display</div>
-          {toggleRow("Compact card view", compactView, () => setCompactView(p => !p))}
-          <div style={{ paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Appearance</div>
-            <div style={{ display: "flex", gap: 8 }}>
+              {/* Current plan card */}
+              <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "20px 22px", marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: txtG, marginBottom: 4 }}>Current plan</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: txt, letterSpacing: "-0.02em" }}>{planLabel}</div>
+                  </div>
+                  <div style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)", color: "rgba(0,180,80,0.90)" }}>
+                    {isPaidPlan ? (isCancelling ? "CANCELLING" : "ACTIVE") : "FREE"}
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, color: txtS, lineHeight: 1.65 }}>
+                  {isPaidPlan
+                    ? isCancelling
+                      ? <>Access ends on <b style={{ color: "#f87171" }}>{periodEndDate}</b>. You can reactivate any time before then.</>
+                      : <>Your subscription renews automatically. Cancel any time from this page.</>
+                    : <>You're on the Free plan. Upgrade to unlock full picks, unlimited analysis, and scanner access.</>
+                  }
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+                {isPaidPlan && isCancelling && (
+                  <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={handleReactivateSubscription} disabled={cancelLoading}>
+                    {cancelLoading ? "…" : "Reactivate subscription"}
+                  </button>
+                )}
+                {isPaidPlan && !isCancelling && (
+                  <button style={{ padding: "8px 18px", borderRadius: 9, fontSize: 12, fontWeight: 600, border: "1px solid rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.06)", color: "rgba(248,113,113,0.70)", cursor: "pointer", fontFamily: "inherit" }} onClick={handleCancelSubscription} disabled={cancelLoading}>
+                    {cancelLoading ? "…" : "Cancel subscription"}
+                  </button>
+                )}
+                {!isPaidPlan && (
+                  <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={() => setTab("pricing")}>
+                    View plans →
+                  </button>
+                )}
+              </div>
+
+              <SectionTitle>Plan Features</SectionTitle>
               {[
-                { id: true,  label: "Dark",  icon: "🌙" },
-                { id: false, label: "Light", icon: "☀️" },
-              ].map(({ id, label, icon }) => (
-                <button
-                  key={String(id)}
-                  onClick={() => setDarkMode(id)}
-                  style={{
-                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    padding: "10px 16px", borderRadius: 10, cursor: "pointer",
-                    fontWeight: 700, fontSize: 13,
-                    background: darkMode === id
-                      ? "rgba(0,180,80,0.12)"
-                      : darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                    border: darkMode === id
-                      ? "1px solid rgba(0,180,80,0.28)"
-                      : darkMode ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)",
-                    color: darkMode === id
-                      ? "rgba(0,180,80,0.95)"
-                      : darkMode ? "rgba(255,255,255,0.45)" : "rgba(8,10,22,0.45)",
-                    transition: "background 0.18s, border 0.18s, color 0.18s",
-                  }}
-                >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
-                  {label}
-                </button>
+                { label: "Daily AI pick", free: "Ticker only", starter: "Full plan", pro: "Full plan", elite: "Full plan" },
+                { label: "Entry, stop & targets", free: "—", starter: "✓", pro: "✓", elite: "✓" },
+                { label: "AI analysis", free: "3/day", starter: "Unlimited", pro: "Unlimited", elite: "Unlimited" },
+                { label: "Trade Journal & Watchlist", free: "—", starter: "✓", pro: "✓", elite: "✓" },
+                { label: "Multi-ticker screener", free: "—", starter: "—", pro: "✓", elite: "✓" },
+                { label: "Options flow & Insider data", free: "—", starter: "—", pro: "—", elite: "✓" },
+              ].map(row => (
+                <div key={row.label} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "9px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)", alignItems: "center" }}>
+                  <div style={{ fontSize: 13, color: txtS }}>{row.label}</div>
+                  {["free","starter","pro","elite"].map(p => (
+                    <div key={p} style={{ fontSize: 12, color: plan === p ? "#4ade80" : txtG, fontWeight: plan === p ? 700 : 400, textAlign: "center" }}>
+                      {row[p]}
+                    </div>
+                  ))}
+                </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Data & Privacy */}
-        <div style={{ ...settingsSection }}>
-          <div style={settingsSectionTitle}>Data & Privacy</div>
-          <div style={{ ...settingsSectionSub, marginTop: 6, marginBottom: 16 }}>Your data is never sold or shared with third parties. Aurexis does not store personal trading positions.</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              { label: "Data storage", val: "Local device only" },
-              { label: "Analytics", val: "Anonymous usage" },
-              { label: "API keys", val: "Never stored" },
-              { label: "Trade data", val: "Not collected" },
-            ].map(({ label, val }) => (
-              <div key={label} style={{ padding: "10px 14px", borderRadius: 8, background: darkMode ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.03)", border: darkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.07)" }}>
-                <div style={{ fontSize: 11, color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(8,10,22,0.38)", marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: darkMode ? "rgba(255,255,255,0.6)" : "rgba(8,10,22,0.65)" }}>{val}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "6px 0" }}>
+                <div />
+                {["Free","Starter","Pro","Elite"].map(p => (
+                  <div key={p} style={{ fontSize: 10, fontWeight: 700, color: plan === p.toLowerCase() ? "#4ade80" : txtG, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p}</div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Danger zone */}
-        <div style={{ ...settingsSection, borderColor: "rgba(251,113,133,0.12)", background: "rgba(251,113,133,0.02)" }}>
-          <div style={{ ...settingsSectionTitle, color: "rgba(251,113,133,0.7)" }}>Account Actions</div>
-          <div style={{ ...settingsSectionSub, marginTop: 4, marginBottom: 16 }}>Irreversible actions — proceed with care.</div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              className="btn btn--ghost"
-              style={{ fontSize: 12, padding: "7px 16px", color: darkMode ? "rgba(255,255,255,0.38)" : "rgba(8,10,22,0.40)", borderColor: darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.09)" }}
-              onClick={() => {
-                localStorage.removeItem("aurexis_token");
-                localStorage.removeItem("aurexis_user_email");
-                localStorage.removeItem("aurexis_force_onboarding");
-                window.location.href = "/";
-              }}
-            >
-              Sign out
-            </button>
-            <button
-              className="btn btn--ghost"
-              style={{ fontSize: 12, padding: "7px 16px", color: "rgba(251,113,133,0.5)", borderColor: "rgba(251,113,133,0.12)" }}
-              onClick={() => {
-                if (window.confirm("Are you sure? This cannot be undone.")) {
-                  const token = localStorage.getItem("aurexis_token");
-                  fetch(`${API}/auth/delete-account`, {
-                    method: "DELETE",
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                  }).finally(() => {
-                    localStorage.removeItem("aurexis_token");
-                    localStorage.removeItem("aurexis_user_email");
-                    window.location.href = "/";
-                  });
+              <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: txtS, marginBottom: 4 }}>7-day money-back guarantee</div>
+                <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
+              </div>
+            </div>
+          )}
+
+          {/* ALERTS ───────────────────────────────────────────────────── */}
+          {settingsTab === "alerts" && (
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 6 }}>Notifications</div>
+              <div style={{ fontSize: 13, color: txtS, marginBottom: 24, lineHeight: 1.6 }}>
+                Choose what Aurexis emails you about. Unsubscribe any time.
+              </div>
+
+              <SectionTitle>Email Alerts</SectionTitle>
+              <FieldRow
+                label="New pick alert"
+                value="Get emailed when the AI selects a new high-conviction stock"
+                action={<Toggle enabled={alertNewPick} onChange={() => { const n = !alertNewPick; _alertPrefsCache.newPick = n; setAlertNewPick(n); _saveAlertPrefs(n, alertOutcome); }} />}
+              />
+              <FieldRow
+                label="Pick outcome"
+                value="Get emailed when a pick hits its target or stop loss"
+                action={<Toggle enabled={alertOutcome} onChange={() => { const n = !alertOutcome; _alertPrefsCache.outcome = n; setAlertOutcome(n); _saveAlertPrefs(alertNewPick, n); }} />}
+              />
+
+              <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
+                  Alerts are sent to <span style={{ color: txtS, fontWeight: 600 }}>{email || "your account email"}</span>. To change your email address, contact aurexis.app@gmail.com.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* APPEARANCE ───────────────────────────────────────────────── */}
+          {settingsTab === "appearance" && (
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Appearance</div>
+
+              <SectionTitle>Theme</SectionTitle>
+              <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+                {[
+                  { id: true,  label: "Dark",  sub: "Easy on the eyes at night", preview: "#07090f" },
+                  { id: false, label: "Light", sub: "Clean and bright", preview: "#f8fafc" },
+                ].map(({ id, label, sub, preview }) => (
+                  <button
+                    key={String(id)}
+                    onClick={() => setDarkMode(id)}
+                    style={{
+                      flex: 1, padding: "14px 16px", borderRadius: 12, cursor: "pointer", border: "none", fontFamily: "inherit", textAlign: "left",
+                      background: darkMode === id ? "rgba(0,180,80,0.10)" : bg,
+                      outline: darkMode === id ? "1.5px solid rgba(0,180,80,0.35)" : bdr,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <div style={{ width: "100%", height: 48, borderRadius: 8, background: preview, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 10 }} />
+                    <div style={{ fontSize: 13, fontWeight: 600, color: darkMode === id ? "#4ade80" : txt }}>{label}</div>
+                    <div style={{ fontSize: 11, color: txtG, marginTop: 2 }}>{sub}</div>
+                  </button>
+                ))}
+              </div>
+
+              <SectionTitle>Density</SectionTitle>
+              <FieldRow
+                label="Compact view"
+                value="Reduce card padding and spacing across the dashboard"
+                action={
+                  <div style={{ fontSize: 11, color: txtG, fontStyle: "italic" }}>Coming soon</div>
                 }
-              }}
-            >
-              Delete account
-            </button>
-          </div>
+              />
+            </div>
+          )}
+
+          {/* PRIVACY ──────────────────────────────────────────────────── */}
+          {settingsTab === "privacy" && (
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 6 }}>Privacy</div>
+              <div style={{ fontSize: 13, color: txtS, marginBottom: 24, lineHeight: 1.6 }}>
+                Your data is never sold. We store only what's needed to run the service.
+              </div>
+
+              <SectionTitle>What we store</SectionTitle>
+              {[
+                { label: "Account email", val: "Required for login and alerts" },
+                { label: "Payment info", val: "Handled by Stripe — we never see card numbers" },
+                { label: "Usage data", val: "Anonymous — which features you use" },
+                { label: "Trade journal", val: "Stored locally on your device only" },
+                { label: "Watchlist", val: "Stored locally on your device only" },
+              ].map(({ label, val }) => (
+                <FieldRow key={label} label={label} value={val} />
+              ))}
+
+              <div style={{ marginTop: 28 }}>
+                <SectionTitle>Your Rights</SectionTitle>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
+                    { label: "Delete account & all data", action: "Settings → Account → Delete account" },
+                    { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
+                    { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#4ade80", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
+                  ].map(({ label, action }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", background: bg, borderRadius: 10, border: bdr }}>
+                      <div style={{ fontSize: 13, color: txt, fontWeight: 500 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: txtS }}>{action}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 24, padding: "14px 16px", background: "rgba(34,197,94,0.04)", borderRadius: 10, border: "1px solid rgba(34,197,94,0.12)" }}>
+                <div style={{ fontSize: 12, color: "rgba(134,239,172,0.75)", lineHeight: 1.65 }}>
+                  Aurexis does not use advertising cookies, does not track you across other websites, and does not sell personal information to third parties.
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     );
