@@ -460,7 +460,7 @@ a:hover{
 .dashCell--metrics{ grid-area: metrics; }
 .dashCell--movers{ grid-area: movers; }
 .dashCell--performance{ grid-area: perf; }
-.dashCell--picks{ grid-area: picks; }
+.dashCell--picks{ grid-area: picks; align-self: start; }
 /* legacy cells — kept so old code doesn't error if referenced */
 .dashCell--best{ grid-area: best; }
 .dashCell--ticker{ grid-area: ticker; }
