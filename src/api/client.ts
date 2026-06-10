@@ -115,6 +115,15 @@ function extractErrorMessage(data: unknown, status: number) {
   return "Request failed";
 }
 
+function getAuthHeaders(): Record<string, string> {
+  try {
+    const tok = typeof localStorage !== "undefined" ? localStorage.getItem("aurexis_token") : null;
+    return tok ? { Authorization: `Bearer ${tok}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: string, body?: unknown, options?: RequestInit & { timeoutMs?: number }): Promise<ApiResult<T>> {
   const url = buildUrl(path);
   const opt = options && typeof options === "object" ? options : {};
@@ -139,15 +148,21 @@ async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: 
   const to = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const authHeaders = getAuthHeaders();
     const init: RequestInit = {
       ...opt,
       method,
       signal: controller.signal,
+      headers: {
+        ...authHeaders,
+        ...(opt.headers && typeof opt.headers === "object" ? (opt.headers as any) : null),
+      },
     };
 
     if (method === "POST") {
       init.headers = {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...(opt.headers && typeof opt.headers === "object" ? (opt.headers as any) : null),
       };
       init.body = body === undefined ? undefined : JSON.stringify(body);
