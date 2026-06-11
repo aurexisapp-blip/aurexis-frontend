@@ -7647,22 +7647,22 @@ async function loadWatchlistLive() {
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
                     <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)", overflow: "hidden" }}>
-                      {/* Blurred rows — readable structure, unreadable text */}
-                      <div style={{ filter: "blur(5px)", opacity: 0.65, pointerEvents: "none", userSelect: "none" }}>
-                        <table className="table" style={{ marginTop: 0 }}>
-                          <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
-                        </table>
-                      </div>
-                      {/* Thin dark tint to even out bright green/red cells */}
+                      {/* Real rows render unfiltered — backdrop-filter on the overlay handles blurring */}
+                      <table className="table" style={{ marginTop: 0, pointerEvents: "none", userSelect: "none" }}>
+                        <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
+                      </table>
+                      {/* Frosted glass overlay — blurs the rows behind it cleanly, row boundaries intact */}
                       <div style={{
-                        position: "absolute", top: 0, left: 0, right: 0,
-                        height: "45%", pointerEvents: "none",
-                        background: "rgba(7,9,15,0.28)",
+                        position: "absolute", top: 0, left: 0, right: 0, height: "55%",
+                        backdropFilter: "blur(5px)",
+                        WebkitBackdropFilter: "blur(5px)",
+                        background: "rgba(7,9,15,0.22)",
+                        pointerEvents: "none",
                       }} />
-                      {/* Gradient fades content into solid from 40% down */}
+                      {/* Gradient fades everything to solid below the blurred zone */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(7,9,15,0.95) 62%, rgba(7,9,15,1) 72%)",
+                        background: "linear-gradient(to bottom, transparent 0%, transparent 38%, rgba(7,9,15,0.92) 58%, rgba(7,9,15,1) 70%)",
                       }} />
                       {/* CTA centred in the locked space */}
                       <div style={{
