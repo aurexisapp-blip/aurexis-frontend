@@ -2668,6 +2668,11 @@ function AppInner() {
 
   const _freePickMonthKey = () => { const d = new Date(); return `aurexis_free_pick_${d.getFullYear()}_M${d.getMonth() + 1}`; };
   const [freePickUsed, setFreePickUsed] = React.useState(() => localStorage.getItem(_freePickMonthKey()) === "used");
+  // Session-only: true only when the unlock endpoint returned data THIS session.
+  // This is the ONLY signal that should bypass the gate — localStorage freePickUsed
+  // alone is not enough because bestPickData may be populated from a race-condition
+  // regular load while the JWT still claimed a paid plan.
+  const [freePickUnlocked, setFreePickUnlocked] = React.useState(false);
   const [freePickLoading, setFreePickLoading] = React.useState(false);
   const _useFreePick = async () => {
     setFreePickLoading(true);
@@ -2693,6 +2698,7 @@ function AppInner() {
       setBestPickData(next);
       localStorage.setItem(_freePickMonthKey(), "used");
       setFreePickUsed(true);
+      setFreePickUnlocked(true); // only set here — session gate bypass
     } catch (e) {
       // silent — user sees the gate still
     } finally {
@@ -5955,10 +5961,13 @@ async function loadWatchlistLive() {
       // null bestPickData (403 path → ticker="") fall through to NO_TRADE card.
       const isFreeUser = !canAccess(userPlan, "starter");
       const _noTradeEarly = isNoTrade || ["NO_TRADE", "MISSED_ENTRY"].includes(tradeDec);
-      // Gate unless user unlocked a real (non-NO_TRADE) pick this session
-      const showBlurGate = isFreeUser && !(freePickUsed && bestPickData && !_noTradeEarly);
-      // Free user who used their pick but today is a NO_TRADE day
-      const isNoTradeFreeDay = isFreeUser && freePickUsed && !!bestPickData && _noTradeEarly;
+      // Gate hides only when the user explicitly unlocked their free pick THIS session
+      // (freePickUnlocked is session-only state set inside _useFreePick on success).
+      // Using freePickUsed alone is not safe — it persists in localStorage and can bypass
+      // the gate if bestPickData was loaded via a race-condition paid-plan request.
+      const showBlurGate = isFreeUser && !(freePickUnlocked && bestPickData && !_noTradeEarly);
+      // Free user who unlocked this session but today is a NO_TRADE day
+      const isNoTradeFreeDay = isFreeUser && freePickUnlocked && !!bestPickData && _noTradeEarly;
 
       if (!loadingBestPick && showBlurGate) {
         const _gateTitle = isNoTradeFreeDay ? "No Trade Signal Today" : "Unlock Today's AI Pick";
