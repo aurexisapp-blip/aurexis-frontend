@@ -9480,22 +9480,41 @@ async function loadWatchlistLive() {
               </div>
 
               <SectionTitle>Email Alerts</SectionTitle>
-              <FieldRow
-                label="New pick alert"
-                value="Get emailed when the AI selects a new high-conviction stock"
-                action={<Toggle enabled={alertNewPick} onChange={() => { const n = !alertNewPick; _alertPrefsCache.newPick = n; setAlertNewPick(n); _saveAlertPrefs(n, alertOutcome); }} />}
-              />
-              <FieldRow
-                label="Pick outcome"
-                value="Get emailed when a pick hits its target or stop loss"
-                action={<Toggle enabled={alertOutcome} onChange={() => { const n = !alertOutcome; _alertPrefsCache.outcome = n; setAlertOutcome(n); _saveAlertPrefs(alertNewPick, n); }} />}
-              />
-
-              <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
-                <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
-                  Alerts are sent to <span style={{ color: txtS, fontWeight: 600 }}>{email || "your account email"}</span>. To change your email address, contact aurexis.app@gmail.com.
+              {!canAccess(userPlan, "starter") ? (
+                <div style={{ padding: "20px 20px", background: bg, borderRadius: 12, border: bdr, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                    <div style={{ fontSize: 22, marginTop: 1 }}>🔒</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: txt, marginBottom: 4 }}>Email alerts are a Starter feature</div>
+                      <div style={{ fontSize: 13, color: txtG, lineHeight: 1.6 }}>Get notified when a new high-conviction pick is selected and when it hits its target or stop loss.</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setTab("pricing")}
+                    style={{ alignSelf: "flex-start", padding: "9px 18px", borderRadius: 8, border: "none", background: "rgba(0,180,80,0.15)", color: "#4ade80", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "-0.01em" }}
+                  >
+                    Upgrade to Starter →
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <FieldRow
+                    label="New pick alert"
+                    value="Get emailed when the AI selects a new high-conviction stock"
+                    action={<Toggle enabled={alertNewPick} onChange={() => { const n = !alertNewPick; _alertPrefsCache.newPick = n; setAlertNewPick(n); _saveAlertPrefs(n, alertOutcome); }} />}
+                  />
+                  <FieldRow
+                    label="Pick outcome"
+                    value="Get emailed when a pick hits its target or stop loss"
+                    action={<Toggle enabled={alertOutcome} onChange={() => { const n = !alertOutcome; _alertPrefsCache.outcome = n; setAlertOutcome(n); _saveAlertPrefs(alertNewPick, n); }} />}
+                  />
+                  <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                    <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
+                      Alerts are sent to <span style={{ color: txtS, fontWeight: 600 }}>{email || "your account email"}</span>. To change your email address, contact aurexis.app@gmail.com.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
