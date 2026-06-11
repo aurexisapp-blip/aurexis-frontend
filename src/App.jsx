@@ -7646,39 +7646,29 @@ async function loadWatchlistLive() {
                     </tbody>
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
-                    <div style={{ position: "relative", marginTop: -2, overflow: "hidden", borderRadius: "0 0 12px 12px" }}>
-                      {/* Ghost placeholder rows — not real data, just visual structure */}
-                      <div style={{ filter: "blur(6px)", opacity: 0.13, pointerEvents: "none", userSelect: "none" }}>
-                        {[0,1,2,3].map(i => (
-                          <div key={i} style={{
-                            display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                            padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.04)",
-                          }}>
-                            {[72,48,52,40].map((w, j) => (
-                              <div key={j} style={{
-                                height: 13, borderRadius: 4, background: "rgba(255,255,255,0.18)",
-                                width: `${w - i * 4}%`,
-                              }} />
-                            ))}
-                          </div>
-                        ))}
+                    <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)", overflow: "hidden" }}>
+                      {/* Actual rows, heavily blurred so they're a hint not readable */}
+                      <div style={{ filter: "blur(14px)", opacity: 0.18, pointerEvents: "none", userSelect: "none" }}>
+                        <table className="table" style={{ marginTop: 0 }}>
+                          <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
+                        </table>
                       </div>
-                      {/* Hard gradient that kills the ghost rows immediately */}
+                      {/* Gradient kills rows within first 25% so nothing is legible */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, rgba(7,9,15,0.60) 0%, rgba(7,9,15,1) 45%)",
+                        background: "linear-gradient(to bottom, rgba(7,9,15,0.5) 0%, rgba(7,9,15,1) 25%)",
                       }} />
-                      {/* CTA — centred over the locked area */}
+                      {/* CTA centred in the locked space */}
                       <div style={{
                         position: "absolute", inset: 0,
                         display: "flex", flexDirection: "column",
                         alignItems: "center", justifyContent: "center",
-                        padding: "24px 20px 20px",
+                        padding: "0 20px",
                       }}>
                         <div style={{
                           display: "inline-flex", alignItems: "center", gap: 6,
                           background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)",
-                          borderRadius: 20, padding: "4px 12px", marginBottom: 10,
+                          borderRadius: 20, padding: "4px 12px", marginBottom: 12,
                         }}>
                           <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.10em", color: "#00d462", textTransform: "uppercase" }}>
                             {hiddenCount} more movers hidden
@@ -7687,7 +7677,7 @@ async function loadWatchlistLive() {
                         <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 6, letterSpacing: "-0.01em" }}>
                           Unlock the full leaderboard
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", textAlign: "center", marginBottom: 16, lineHeight: 1.5 }}>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>
                           Starter gives you every mover, live — updated throughout the day.
                         </div>
                         <button onClick={() => setTab("pricing")} style={{
@@ -7695,7 +7685,6 @@ async function loadWatchlistLive() {
                           background: "linear-gradient(90deg,#00b450,#00d462)",
                           color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
                           boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
-                          letterSpacing: "0.01em",
                         }}>
                           Upgrade to Starter →
                         </button>
