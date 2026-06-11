@@ -9482,16 +9482,19 @@ async function loadWatchlistLive() {
               <SectionTitle>Email Alerts</SectionTitle>
               {!canAccess(userPlan, "starter") ? (
                 <>
-                  <FieldRow
-                    label="New pick alert"
-                    value="Get emailed when the AI selects a new high-conviction stock"
-                    action={<div onClick={() => setTab("pricing")} style={{ cursor: "pointer", fontSize: 16, color: txtG, opacity: 0.6 }} title="Starter feature">🔒</div>}
-                  />
-                  <FieldRow
-                    label="Pick outcome"
-                    value="Get emailed when a pick hits its target or stop loss"
-                    action={<div onClick={() => setTab("pricing")} style={{ cursor: "pointer", fontSize: 16, color: txtG, opacity: 0.6 }} title="Starter feature">🔒</div>}
-                  />
+                  {[
+                    { label: "New pick alert", value: "Get emailed when the AI selects a new high-conviction stock" },
+                    { label: "Pick outcome",   value: "Get emailed when a pick hits its target or stop loss" },
+                  ].map(({ label, value }) => (
+                    <FieldRow key={label} label={label} value={value}
+                      action={
+                        <div onClick={() => setTab("pricing")} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+                          <span style={{ fontSize: 13, opacity: 0.5 }}>🔒</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "#4ade80", background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.22)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.01em", whiteSpace: "nowrap" }}>Upgrade</span>
+                        </div>
+                      }
+                    />
+                  ))}
                 </>
               ) : (
                 <>
