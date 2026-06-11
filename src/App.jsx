@@ -2266,6 +2266,14 @@ function usePlan() {
   React.useEffect(() => {
     const sync = () => setPlan(read());
     window.addEventListener("storage", sync);
+    // Validate JWT plan against live DB on mount so upgrades/downgrades take effect immediately
+    const tok = localStorage.getItem("aurexis_token");
+    if (tok) {
+      fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
+        .catch(() => {});
+    }
     return () => window.removeEventListener("storage", sync);
   }, []);
   return plan;
