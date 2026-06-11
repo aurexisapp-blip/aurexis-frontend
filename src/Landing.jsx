@@ -570,12 +570,15 @@ function PricingCard({ plan, index, onGetStarted }) {
       <div style={S.pricingPrice}>{price}</div>
       <div style={S.pricingPeriod}>{period}</div>
       <ul style={S.pricingFeatures}>
-        {features.map(([check, feat]) => (
-          <li key={feat} style={{ ...S.pricingFeature, ...(featuredColor ? { color: featuredColor } : {}) }}>
-            <span style={check === "✓" ? (checkColor ? { ...S.pricingCheck, color: checkColor } : S.pricingCheck) : S.pricingCheckMuted}>{check}</span>
-            <span>{feat}</span>
-          </li>
-        ))}
+        {features.map(([check, feat]) => {
+          const locked = check !== "✓";
+          return (
+            <li key={feat} style={{ ...S.pricingFeature, ...(locked ? { opacity: 0.28 } : featuredColor ? { color: featuredColor } : {}) }}>
+              <span style={locked ? S.pricingCheckMuted : (checkColor ? { ...S.pricingCheck, color: checkColor } : S.pricingCheck)}>{locked ? "—" : "✓"}</span>
+              <span>{feat}</span>
+            </li>
+          );
+        })}
       </ul>
       <motion.button
         style={btnStyle}
@@ -970,6 +973,10 @@ export default function Landing({ onGetStarted }) {
         ["✓","3 stock analyses per day"],
         ["✓","Market regime indicator"],
         ["✓","Top Movers (5 tickers)"],
+        ["—","Live entry, stop & Fibonacci targets"],
+        ["—","\"Why This Trade\" reasoning"],
+        ["—","Email alerts — new picks & outcomes"],
+        ["—","Unlimited daily AI picks"],
       ],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Started Free", featuredColor: null,
     },
@@ -991,6 +998,9 @@ export default function Landing({ onGetStarted }) {
         ["✓","Watchlist"],
         ["✓","Trade journal"],
         ["✓","Email alerts — new picks & outcomes"],
+        ["—","Unlimited daily AI picks"],
+        ["—","Portfolio tracking"],
+        ["—","Options flow feed"],
       ],
       btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Get Started", featuredColor: "rgba(255,255,255,0.72)",
     },
@@ -1002,6 +1012,9 @@ export default function Landing({ onGetStarted }) {
         ["✓","Multi-ticker screener"],
         ["✓","Portfolio tracking"],
         ["✓","Email alerts — new picks & outcomes"],
+        ["—","Options flow feed"],
+        ["—","Insider buying signals"],
+        ["—","Strategy backtesting"],
       ],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Pro", featuredColor: null,
     },
