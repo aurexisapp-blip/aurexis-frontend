@@ -9629,6 +9629,7 @@ async function loadWatchlistLive() {
         features: [
           { key: "watchlist",      label: "Watchlist" },
           { key: "trade_journal",  label: "Trade journal" },
+          { key: "email_alerts",   label: "Email alerts — new picks & outcomes" },
           { key: "screener",       label: "Multi-ticker screener" },
           { key: "portfolio",      label: "Portfolio tracking" },
         ],
@@ -9646,9 +9647,9 @@ async function loadWatchlistLive() {
 
     const PLAN_FEATURES = {
       free:    new Set(["pick_month", "analyze_limit", "market_regime", "top_movers_5"]),
-      starter: new Set(["picks_week", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal"]),
-      pro:     new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio"]),
-      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio", "options_flow", "insider", "backtesting", "priority_sup"]),
+      starter: new Set(["picks_week", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts"]),
+      pro:     new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio"]),
+      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio", "options_flow", "insider", "backtesting", "priority_sup"]),
     };
 
     const plans = [

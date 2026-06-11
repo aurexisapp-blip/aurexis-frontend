@@ -990,6 +990,7 @@ export default function Landing({ onGetStarted }) {
         ["✓","Recent picks history (30 days)"],
         ["✓","Watchlist"],
         ["✓","Trade journal"],
+        ["✓","Email alerts — new picks & outcomes"],
       ],
       btnStyle: S.pricingBtnFeatured, btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(22,163,74,0.45)" }, btnLabel: "Get Started", featuredColor: "rgba(255,255,255,0.72)",
     },
@@ -1000,6 +1001,7 @@ export default function Landing({ onGetStarted }) {
         ["✓","Unlimited daily AI picks"],
         ["✓","Multi-ticker screener"],
         ["✓","Portfolio tracking"],
+        ["✓","Email alerts — new picks & outcomes"],
       ],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Pro", featuredColor: null,
     },
@@ -1008,6 +1010,7 @@ export default function Landing({ onGetStarted }) {
       tier: "Elite", price: "$99", period: "per month",
       features: [
         ["✓","Everything in Pro"],
+        ["✓","Email alerts — new picks & outcomes"],
         ["✓","Options flow feed"],
         ["✓","Insider buying signals"],
         ["✓","Strategy backtesting"],

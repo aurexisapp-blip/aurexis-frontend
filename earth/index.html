@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protect Our Planet — Civic Action Project</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-900: #0a2e1a;
+      --green-800: #1b4332;
+      --green-700: #2d6a4f;
+      --green-600: #40916c;
+      --green-500: #52b788;
+      --green-400: #74c69d;
+      --green-300: #95d5b2;
+      --green-200: #b7e4c7;
+      --green-100: #d8f3dc;
+      --green-50:  #f0faf3;
+      --earth: #6b4226;
+      --sky: #0096c7;
+      --sky-light: #90e0ef;
+      --yellow: #f9c74f;
+      --orange: #f8961e;
+      --red: #f3722c;
+      --white: #ffffff;
+      --text: #0d1f13;
+      --muted: #4a6358;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #080f0b;
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1f13; }
+    ::-webkit-scrollbar-thumb { background: var(--green-600); border-radius: 99px; }
+
+    /* ─── PROGRESS BAR ─── */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green-500), var(--yellow));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.4s, backdrop-filter 0.4s, border-color 0.4s;
+    }
+    nav.scrolled {
+      background: rgba(8, 15, 11, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(82,183,136,0.15);
+    }
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--green-400);
+      letter-spacing: -0.3px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--green-400); }
+
+    @media (max-width: 640px) { .nav-links { display: none; } }
+
+    /* ─── HERO ─── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(64,145,108,0.25) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 80% 70%, rgba(0,150,199,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 10% 80%, rgba(249,199,79,0.08) 0%, transparent 60%);
+    }
+
+    .particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float linear infinite;
+      opacity: 0;
+    }
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.6; }
+      100% { transform: translateY(-20px) scale(1); opacity: 0; }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(82,183,136,0.15);
+      border: 1px solid rgba(82,183,136,0.3);
+      color: var(--green-400);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border-radius: 999px;
+      margin-bottom: 28px;
+      position: relative;
+      animation: fadeSlideUp 0.8s ease both;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--green-500);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+      position: relative;
+      animation: fadeSlideUp 0.8s 0.15s ease both;
+    }
+    .hero-title .line-green {
+      background: linear-gradient(135deg, var(--green-400) 0%, var(--green-300) 50%, #a8edca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: rgba(255,255,255,0.6);
+      max-width: 600px;
+      margin: 0 auto 44px;
+      line-height: 1.7;
+      position: relative;
+      animation: fadeSlideUp 0.8s 0.3s ease both;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      animation: fadeSlideUp 0.8s 0.45s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 30px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .btn:hover { transform: translateY(-3px); }
+    .btn-green {
+      background: linear-gradient(135deg, var(--green-600), var(--green-500));
+      color: var(--white);
+      box-shadow: 0 8px 30px rgba(82,183,136,0.4);
+    }
+    .btn-green:hover { box-shadow: 0 12px 40px rgba(82,183,136,0.55); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.12); }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      animation: fadeSlideUp 1s 1s ease both;
+    }
+    .scroll-wheel {
+      width: 22px; height: 36px;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      display: flex;
+      justify-content: center;
+      padding-top: 6px;
+    }
+    .scroll-wheel::after {
+      content: '';
+      width: 3px; height: 8px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 99px;
+      animation: scrollDown 1.8s ease infinite;
+    }
+    @keyframes scrollDown {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(10px); opacity: 0; }
+    }
+
+    /* ─── SECTION WRAPPER ─── */
+    .section-wrap {
+      padding: 100px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green-500);
+      margin-bottom: 12px;
+    }
+
+    h2.section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .lead {
+      font-size: 1.08rem;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.75;
+      max-width: 680px;
+      margin-bottom: 48px;
+    }
+
+    /* ─── DIVIDER ─── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(82,183,136,0.2), transparent);
+      margin: 0 24px;
+    }
+
+    /* ─── GLASS CARD ─── */
+    .glass {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s, background 0.3s, transform 0.3s;
+    }
+    .glass:hover {
+      border-color: rgba(82,183,136,0.3);
+      background: rgba(82,183,136,0.06);
+      transform: translateY(-4px);
+    }
+
+    /* ─── AFFECTED SECTION ─── */
+    .affected-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .affected-card {
+      padding: 28px 20px;
+      border-radius: 20px;
+      text-align: center;
+    }
+    .affected-card .ac-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .affected-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .affected-card p { font-size: 0.88rem; color: rgba(255,255,255,0.55); line-height: 1.6; }
+
+    /* ─── SCOPE SECTION ─── */
+    .scope-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .scope-card {
+      padding: 36px 28px;
+      border-radius: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scope-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      opacity: 0.08;
+    }
+    .scope-local { background: linear-gradient(135deg, rgba(249,199,79,0.12), rgba(248,150,30,0.06)); border: 1px solid rgba(249,199,79,0.2); }
+    .scope-local::before { background: var(--yellow); }
+    .scope-national { background: linear-gradient(135deg, rgba(0,150,199,0.12), rgba(144,224,239,0.06)); border: 1px solid rgba(0,150,199,0.2); }
+    .scope-national::before { background: var(--sky); }
+    .scope-global { background: linear-gradient(135deg, rgba(82,183,136,0.12), rgba(52,183,80,0.06)); border: 1px solid rgba(82,183,136,0.2); }
+    .scope-global::before { background: var(--green-500); }
+    .scope-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .scope-local .scope-tag { background: rgba(249,199,79,0.2); color: var(--yellow); }
+    .scope-national .scope-tag { background: rgba(0,150,199,0.2); color: var(--sky-light); }
+    .scope-global .scope-tag { background: rgba(82,183,136,0.2); color: var(--green-400); }
+    .scope-icon { font-size: 2.8rem; margin-bottom: 14px; display: block; }
+    .scope-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; }
+    .scope-card p { font-size: 0.93rem; color: rgba(255,255,255,0.6); line-height: 1.65; }
+
+    /* ─── CAUSES ─── */
+    .causes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .cause-item {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.3s, border-color 0.3s, transform 0.3s;
+      cursor: default;
+    }
+    .cause-item:hover {
+      background: rgba(82,183,136,0.07);
+      border-color: rgba(82,183,136,0.25);
+      transform: translateX(6px);
+    }
+    .cause-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      background: rgba(82,183,136,0.1);
+      border: 1px solid rgba(82,183,136,0.2);
+    }
+    .cause-text { font-size: 1rem; font-weight: 500; color: rgba(255,255,255,0.85); }
+
+    /* ─── ROOT CAUSE ─── */
+    .root-card {
+      background: linear-gradient(135deg, rgba(249,199,79,0.08), rgba(248,150,30,0.04));
+      border: 1px solid rgba(249,199,79,0.2);
+      border-radius: 24px;
+      padding: 48px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+    .root-card::before {
+      content: '"';
+      position: absolute;
+      top: -20px; left: 20px;
+      font-family: 'Playfair Display', serif;
+      font-size: 200px;
+      color: rgba(249,199,79,0.05);
+      line-height: 1;
+      pointer-events: none;
+    }
+    .root-card p {
+      font-size: 1.15rem;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.82);
+      position: relative;
+    }
+    .root-card strong { color: var(--yellow); }
+    .root-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    /* ─── STATS ─── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      padding: 28px 24px;
+      border-radius: 20px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .stat-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .stat-card p { font-size: 0.92rem; color: rgba(255,255,255,0.6); line-height: 1.65; margin: 0; }
+    .stat-card strong { color: rgba(255,255,255,0.9); font-weight: 700; display: block; margin-bottom: 4px; font-size: 1rem; }
+
+    /* ─── MATH BOX ─── */
+    .math-box {
+      background: linear-gradient(135deg, rgba(82,183,136,0.12), rgba(52,211,153,0.06));
+      border: 1px solid rgba(82,183,136,0.25);
+      border-radius: 24px;
+      padding: 44px 40px;
+      text-align: center;
+    }
+    .math-box h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--green-400);
+      margin-bottom: 8px;
+    }
+    .math-box .math-sub { color: rgba(255,255,255,0.5); font-size: 0.95rem; margin-bottom: 32px; }
+    .math-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .math-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(82,183,136,0.25);
+      border-radius: 16px;
+      padding: 18px 26px;
+      min-width: 150px;
+    }
+    .math-pill .num {
+      font-size: 1.9rem;
+      font-weight: 900;
+      color: var(--green-400);
+      display: block;
+      font-variant-numeric: tabular-nums;
+    }
+    .math-pill .lbl { font-size: 0.75rem; color: rgba(255,255,255,0.45); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .math-arrow { color: var(--green-500); font-size: 1.4rem; font-weight: 900; }
+    .math-note {
+      margin-top: 24px;
+      font-style: italic;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.9rem;
+    }
+
+    /* ─── VIEWPOINTS ─── */
+    .vp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .vp-card { padding: 30px 26px; border-radius: 20px; }
+    .vp-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .vp-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .vp-card h3 { font-size: 1rem; font-weight: 800; }
+    .vp-card p { font-size: 0.9rem; color: rgba(255,255,255,0.55); line-height: 1.65; }
+    .vp-1 { background: linear-gradient(135deg, rgba(82,183,136,0.1), rgba(82,183,136,0.04)); border: 1px solid rgba(82,183,136,0.2); }
+    .vp-1 h3 { color: var(--green-400); }
+    .vp-1 .vp-dot { background: var(--green-500); }
+    .vp-2 { background: linear-gradient(135deg, rgba(248,150,30,0.1), rgba(248,150,30,0.04)); border: 1px solid rgba(248,150,30,0.2); }
+    .vp-2 h3 { color: var(--orange); }
+    .vp-2 .vp-dot { background: var(--orange); }
+    .vp-3 { background: linear-gradient(135deg, rgba(0,150,199,0.1), rgba(0,150,199,0.04)); border: 1px solid rgba(0,150,199,0.2); }
+    .vp-3 h3 { color: var(--sky-light); }
+    .vp-3 .vp-dot { background: var(--sky); }
+
+    /* ─── PROGRESS ITEMS ─── */
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .prog-card { padding: 30px 26px; border-radius: 20px; }
+    .prog-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: 16px; }
+    .prog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .prog-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.65);
+    }
+    .prog-check {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      flex-shrink: 0;
+      font-weight: 900;
+    }
+
+    /* ─── SOLUTIONS ─── */
+    .sol-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .sol-card {
+      padding: 30px 18px;
+      border-radius: 20px;
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+    .sol-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .sol-icon { font-size: 2.2rem; margin-bottom: 12px; }
+    .sol-card p { font-size: 0.88rem; font-weight: 600; color: rgba(255,255,255,0.8); line-height: 1.45; }
+
+    /* ─── WHO CARDS ─── */
+    .who-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .who-card {
+      padding: 26px 14px;
+      border-radius: 20px;
+      text-align: center;
+      transition: transform 0.3s;
+      cursor: default;
+    }
+    .who-card:hover { transform: translateY(-6px); }
+    .who-icon { font-size: 2rem; margin-bottom: 10px; }
+    .who-card p { font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.75); line-height: 1.45; }
+
+    /* ─── STUDENT ACTIONS ─── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .action-card {
+      padding: 22px 20px;
+      border-radius: 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .action-num {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      background: rgba(82,183,136,0.15);
+      border: 1px solid rgba(82,183,136,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--green-400);
+      flex-shrink: 0;
+    }
+    .action-card p { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.55; margin: 0; padding-top: 4px; }
+
+    /* ─── VOICE SECTION ─── */
+    .voice-two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .voice-block { padding: 32px 28px; border-radius: 22px; }
+    .voice-block h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 18px; }
+    .voice-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .voice-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.65);
+    }
+    .voice-list li span { flex-shrink: 0; font-size: 1rem; }
+
+    /* ─── CTA BANNER ─── */
+    #cta {
+      padding: 80px 24px;
+    }
+    .cta-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #0a2e1a 0%, #1b4332 50%, #0d2d20 100%);
+      border: 1px solid rgba(82,183,136,0.25);
+      border-radius: 32px;
+      padding: 70px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-inner::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 250px; height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(82,183,136,0.15), transparent 70%);
+    }
+    .cta-inner::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(249,199,79,0.08), transparent 70%);
+    }
+    .cta-inner h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      font-weight: 900;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .cta-inner p {
+      color: rgba(255,255,255,0.6);
+      max-width: 500px;
+      margin: 0 auto 36px;
+      font-size: 1rem;
+      line-height: 1.7;
+      position: relative;
+    }
+    .cta-inner .cta-btns {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    /* ─── SOURCES ─── */
+    .sources-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .sources-inner {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 32px 36px;
+    }
+    .sources-inner h3 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green-500);
+      margin-bottom: 20px;
+    }
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .source-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .source-link:hover { background: rgba(82,183,136,0.08); color: var(--green-400); }
+    .source-link::before { content: '↗'; font-size: 0.75rem; color: var(--green-600); flex-shrink: 0; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.25);
+    }
+    footer strong { color: rgba(255,255,255,0.45); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── COLOR HELPERS ─── */
+    .c-green { color: var(--green-400); }
+    .c-yellow { color: var(--yellow); }
+    .c-sky { color: var(--sky-light); }
+
+    @media (max-width: 640px) {
+      .section-wrap { padding: 60px 20px; }
+      .root-card { padding: 28px 22px; }
+      .math-box { padding: 28px 20px; }
+      .cta-inner { padding: 44px 24px; }
+      .sources-inner { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SCROLL PROGRESS -->
+<div id="progress"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">🌍 Protect Our Planet</div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#facts">Facts</a></li>
+    <li><a href="#solutions">Solutions</a></li>
+    <li><a href="#action">Take Action</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="hero-eyebrow">Civic Action Project</div>
+  <h1 class="hero-title">
+    Protect<br /><span class="line-green">Our Planet.</span>
+  </h1>
+  <p class="hero-subtitle">
+    Every day, human choices shape the health of our environment — for better or for worse. Here's what's happening, why it matters, and what we can all do about it.
+  </p>
+  <div class="hero-cta">
+    <a href="#problem" class="btn btn-green">Explore the Issue ↓</a>
+    <a href="#action" class="btn btn-ghost">Take Action</a>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-wheel"></div>
+    scroll
+  </div>
+</section>
+
+<!-- ───────── AFFECTED ───────── -->
+<div class="section-divider"></div>
+<section id="problem">
+  <div class="section-wrap reveal">
+    <div class="eyebrow">🌱 The Problem</div>
+    <h2 class="section-title">Who or What Is Affected?</h2>
+    <p class="lead">This problem touches everything — plants, animals, ecosystems, and every human being on Earth. When we damage the environment, there are no winners.</p>
+    <div class="affected-grid">
+      <div class="affected-card glass">
+        <div class="ac-icon">🌿</div>
+        <h3 class="c-green">Plants</h3>
+        <p>Deforestation, pollution, and habitat loss threaten the plants that produce our oxygen and feed our wildlife.</p>
+      </div>
+      <div class="affected-card glass">
+        <div class="ac-icon">🐾</div>
+        <h3 class="c-green">Animals</h3>
+        <p>Thousands of species face extinction as pollution, habitat destruction, and climate change alter their environments.</p>
+      </div>
+      <div class="affected-card glass">
+        <div class="ac-icon">🌊</div>
+        <h3 class="c-green">Ecosystems</h3>
+        <p>Oceans, forests, wetlands, and prairies depend on balance — human activity disrupts that balance at every level.</p>
+      </div>
+      <div class="affected-card glass">
+        <div class="ac-icon">👥</div>
+        <h3 class="c-green">People</h3>
+        <p>Dirty air, contaminated water, and resource scarcity affect billions of people, especially the most vulnerable communities.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── SCOPE ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">📍 Scale</div>
+  <h2 class="section-title">Where Does This Happen?</h2>
+  <p class="lead">Environmental problems don't stop at borders. This issue exists at every level — from your own backyard to the entire planet.</p>
+  <div class="scope-grid">
+    <div class="scope-card scope-local">
+      <span class="scope-icon">🏘️</span>
+      <span class="scope-tag">Local</span>
+      <h3>Your Community</h3>
+      <p>In neighborhoods, schools, parks, rivers, and communities where litter, pollution, and waste build up every day.</p>
+    </div>
+    <div class="scope-card scope-national">
+      <span class="scope-icon">🏛️</span>
+      <span class="scope-tag">National</span>
+      <h3>Across the Country</h3>
+      <p>Through factories, transportation networks, energy systems, and national waste management challenges.</p>
+    </div>
+    <div class="scope-card scope-global">
+      <span class="scope-icon">🌐</span>
+      <span class="scope-tag">Global</span>
+      <h3>Around the World</h3>
+      <p>Environmental damage crosses every border — greenhouse gases, plastic waste, and deforestation affect all nations.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── CAUSES ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">⚠️ Causes</div>
+  <h2 class="section-title">What Causes This Problem?</h2>
+  <p class="lead">Multiple human behaviors compound to create the environmental crisis we face today.</p>
+  <div class="causes-list">
+    <div class="cause-item">
+      <div class="cause-icon">🗑️</div>
+      <span class="cause-text">Littering and throwing trash away improperly, polluting land and waterways</span>
+    </div>
+    <div class="cause-item">
+      <div class="cause-icon">🧴</div>
+      <span class="cause-text">Using too much plastic and other single-use disposable items</span>
+    </div>
+    <div class="cause-item">
+      <div class="cause-icon">🏭</div>
+      <span class="cause-text">Pollution from cars, factories, and power plants releasing harmful gases</span>
+    </div>
+    <div class="cause-item">
+      <div class="cause-icon">🌳</div>
+      <span class="cause-text">Cutting down trees and destroying natural habitats for wildlife</span>
+    </div>
+    <div class="cause-item">
+      <div class="cause-icon">💧</div>
+      <span class="cause-text">Wasting water, energy, and other finite natural resources</span>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── ROOT CAUSE ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">🔍 Root Cause</div>
+  <h2 class="section-title">The Deeper Why</h2>
+  <div class="root-card">
+    <div class="root-label">🎯 Root Cause</div>
+    <p>
+      One root cause of this problem is <strong>human overconsumption</strong>. People use too many resources, create too much waste, and rely on products and habits that harm the environment. This leads to pollution, litter, habitat destruction, and damage to natural ecosystems — all connected to the same core problem of taking more than our planet can provide.
+    </p>
+  </div>
+</div>
+
+<!-- ───────── FACTS ───────── -->
+<div class="section-divider"></div>
+<section id="facts">
+  <div class="section-wrap reveal">
+    <div class="eyebrow">📊 Evidence</div>
+    <h2 class="section-title">This Is a Real Issue</h2>
+    <p class="lead">The numbers tell a clear story. Here are five key facts that prove how serious this problem has become.</p>
+    <div class="stats-grid">
+      <div class="stat-card glass">
+        <div class="stat-icon-wrap" style="background:rgba(0,150,199,0.12);border:1px solid rgba(0,150,199,0.25);">🌊</div>
+        <div>
+          <strong>Plastic in Our Oceans</strong>
+          Millions of tons of plastic enter the environment every year — choking oceans, rivers, and harming wildlife at every level of the food chain.
+        </div>
+      </div>
+      <div class="stat-card glass">
+        <div class="stat-icon-wrap" style="background:rgba(248,150,30,0.12);border:1px solid rgba(248,150,30,0.25);">💨</div>
+        <div>
+          <strong>Dangerous Air Pollution</strong>
+          Emissions from cars, factories, and power plants make air unsafe to breathe, causing respiratory illness and long-term health problems for millions.
+        </div>
+      </div>
+      <div class="stat-card glass">
+        <div class="stat-icon-wrap" style="background:rgba(82,183,136,0.12);border:1px solid rgba(82,183,136,0.25);">🌲</div>
+        <div>
+          <strong>Deforestation Crisis</strong>
+          Cutting down trees removes animal habitats and eliminates the natural filters that clean our air and regulate our climate.
+        </div>
+      </div>
+      <div class="stat-card glass">
+        <div class="stat-icon-wrap" style="background:rgba(243,114,44,0.12);border:1px solid rgba(243,114,44,0.25);">🗑️</div>
+        <div>
+          <strong>Overflowing Landfills</strong>
+          Excess trash takes up massive amounts of land and releases harmful methane gases into the atmosphere as it decomposes.
+        </div>
+      </div>
+      <div class="stat-card glass">
+        <div class="stat-icon-wrap" style="background:rgba(249,199,79,0.12);border:1px solid rgba(249,199,79,0.25);">⚡</div>
+        <div>
+          <strong>Resource Depletion</strong>
+          Overuse of water, fossil fuels, and other finite resources leads to shortages, conflict, and long-term environmental damage.
+        </div>
+      </div>
+    </div>
+
+    <!-- MATH BOX -->
+    <div class="math-box reveal">
+      <h3>🔢 The Math of Small Changes</h3>
+      <p class="math-sub">One person reducing waste by just 1 pound per week adds up fast.</p>
+      <div class="math-row">
+        <div class="math-pill">
+          <span class="num">52</span>
+          <span class="lbl">lbs — 1 person / year</span>
+        </div>
+        <div class="math-arrow">→</div>
+        <div class="math-pill">
+          <span class="num">5,200</span>
+          <span class="lbl">lbs — 100 people / year</span>
+        </div>
+        <div class="math-arrow">→</div>
+        <div class="math-pill">
+          <span class="num">520,000</span>
+          <span class="lbl">lbs — 10,000 people / year</span>
+        </div>
+      </div>
+      <p class="math-note">Small actions create massive collective impact — this is why getting others involved matters.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── VIEWPOINTS ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">💬 Perspectives</div>
+  <h2 class="section-title">Different Points of View</h2>
+  <p class="lead">People genuinely disagree about how urgent this problem is and how to fix it. Understanding all sides helps us find common ground.</p>
+  <div class="vp-grid">
+    <div class="vp-card vp-1">
+      <div class="vp-header">
+        <div class="vp-dot"></div>
+        <h3>Act Now — It's Urgent</h3>
+      </div>
+      <p>Environmental damage is a serious, immediate crisis requiring urgent collective action from individuals, businesses, and governments worldwide.</p>
+    </div>
+    <div class="vp-card vp-2">
+      <div class="vp-header">
+        <div class="vp-dot"></div>
+        <h3>Other Priorities First</h3>
+      </div>
+      <p>Some believe economic and social issues take precedence, and that environmental reforms should be gradual to avoid disrupting livelihoods.</p>
+    </div>
+    <div class="vp-card vp-3">
+      <div class="vp-header">
+        <div class="vp-dot"></div>
+        <h3>Laws Must Change</h3>
+      </div>
+      <p>Individual recycling isn't enough — stronger government regulations and systemic policy change are the only way to solve this at scale.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── PROGRESS ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">✅ Progress</div>
+  <h2 class="section-title">What People Are Already Doing</h2>
+  <p class="lead">Change is already happening. Here's what individuals, communities, and governments are doing right now.</p>
+  <div class="progress-grid">
+    <div class="prog-card glass">
+      <h3 class="c-green">👪 Individuals &amp; Families</h3>
+      <div class="prog-list">
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(82,183,136,0.15);border:1px solid rgba(82,183,136,0.3);color:var(--green-400);">✓</div>
+          Recycling and reducing single-use plastic
+        </div>
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(82,183,136,0.15);border:1px solid rgba(82,183,136,0.3);color:var(--green-400);">✓</div>
+          Planting trees and joining community clean-ups
+        </div>
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(82,183,136,0.15);border:1px solid rgba(82,183,136,0.3);color:var(--green-400);">✓</div>
+          Saving water and energy at home
+        </div>
+      </div>
+    </div>
+    <div class="prog-card glass">
+      <h3 class="c-sky">🏛️ Governments &amp; Organizations</h3>
+      <div class="prog-list">
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(0,150,199,0.15);border:1px solid rgba(0,150,199,0.3);color:var(--sky-light);">✓</div>
+          Passing laws to limit factory emissions
+        </div>
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(0,150,199,0.15);border:1px solid rgba(0,150,199,0.3);color:var(--sky-light);">✓</div>
+          Funding renewable energy programs
+        </div>
+        <div class="prog-item">
+          <div class="prog-check" style="background:rgba(0,150,199,0.15);border:1px solid rgba(0,150,199,0.3);color:var(--sky-light);">✓</div>
+          Creating protected natural reserves
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── SOLUTIONS ───────── -->
+<div class="section-divider"></div>
+<section id="solutions">
+  <div class="section-wrap reveal">
+    <div class="eyebrow">💡 Solutions</div>
+    <h2 class="section-title">Possible Solutions</h2>
+    <p class="lead">There is no single fix — but many actions together can create real, lasting change.</p>
+    <div class="sol-grid">
+      <div class="sol-card glass">
+        <div class="sol-icon">♻️</div>
+        <p>Recycle &amp; Reuse More Items</p>
+      </div>
+      <div class="sol-card glass">
+        <div class="sol-icon">🧴</div>
+        <p>Use Less Plastic</p>
+      </div>
+      <div class="sol-card glass">
+        <div class="sol-icon">💧</div>
+        <p>Save Water &amp; Energy</p>
+      </div>
+      <div class="sol-card glass">
+        <div class="sol-icon">🌳</div>
+        <p>Plant Trees &amp; Protect Habitats</p>
+      </div>
+      <div class="sol-card glass">
+        <div class="sol-icon">📜</div>
+        <p>Stronger Anti-Pollution Laws</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── WHO HAS POWER ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">💪 Stakeholders</div>
+  <h2 class="section-title">Who Has the Power to Help?</h2>
+  <p class="lead">Change happens when everyone — from students to world leaders — decides to act.</p>
+  <div class="who-grid">
+    <div class="who-card glass">
+      <div class="who-icon">👨‍👩‍👧</div>
+      <p>Students &amp; Families</p>
+    </div>
+    <div class="who-card glass">
+      <div class="who-icon">🏫</div>
+      <p>Teachers &amp; Schools</p>
+    </div>
+    <div class="who-card glass">
+      <div class="who-icon">🏛️</div>
+      <p>Local Leaders &amp; Government</p>
+    </div>
+    <div class="who-card glass">
+      <div class="who-icon">🏭</div>
+      <p>Businesses &amp; Factories</p>
+    </div>
+    <div class="who-card glass">
+      <div class="who-icon">🌿</div>
+      <p>Environmental Organizations</p>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── STUDENT ACTION ───────── -->
+<div class="section-divider"></div>
+<section id="action">
+  <div class="section-wrap reveal">
+    <div class="eyebrow">🎒 Student Action</div>
+    <h2 class="section-title">What Can Students Do?</h2>
+    <p class="lead">You don't have to be an adult or a politician to make a difference. Here are real things students can do starting today.</p>
+    <div class="action-grid">
+      <div class="action-card glass">
+        <div class="action-num">01</div>
+        <p>Recycle and reuse items at school and home every single day</p>
+      </div>
+      <div class="action-card glass">
+        <div class="action-num">02</div>
+        <p>Bring reusable water bottles, bags, and lunch containers</p>
+      </div>
+      <div class="action-card glass">
+        <div class="action-num">03</div>
+        <p>Turn off lights, unplug devices, and save water whenever possible</p>
+      </div>
+      <div class="action-card glass">
+        <div class="action-num">04</div>
+        <p>Pick up litter and join local community clean-up events</p>
+      </div>
+      <div class="action-card glass">
+        <div class="action-num">05</div>
+        <p>Educate and inspire classmates, friends, and family to act</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── VOICE ───────── -->
+<div class="section-divider"></div>
+<div class="section-wrap reveal">
+  <div class="eyebrow">📢 Spread the Word</div>
+  <h2 class="section-title">Use Your Voice</h2>
+  <p class="lead">Awareness is the first step toward action. Here's who to reach and how to reach them.</p>
+  <div class="voice-two">
+    <div class="voice-block glass">
+      <h3 class="c-green">Who to Influence</h3>
+      <ul class="voice-list">
+        <li><span>🧑‍🎓</span> Other students and classmates</li>
+        <li><span>👩‍🏫</span> Teachers and school staff</li>
+        <li><span>👨‍👩‍👧</span> Parents and families</li>
+        <li><span>🏫</span> School administrators and leaders</li>
+        <li><span>🏘️</span> Community members and local officials</li>
+      </ul>
+    </div>
+    <div class="voice-block glass">
+      <h3 class="c-green">Ways to Take Action</h3>
+      <ul class="voice-list">
+        <li><span>🎤</span> Give a presentation or speech at school</li>
+        <li><span>🖼️</span> Make posters, flyers, or art installations</li>
+        <li><span>📱</span> Post about the issue on social media</li>
+        <li><span>💬</span> Start conversations with people you know</li>
+        <li><span>🌐</span> Make a website — just like this one!</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── CTA BANNER ───────── -->
+<section id="cta">
+  <div class="cta-inner reveal">
+    <h2>Every Action Counts 🌱</h2>
+    <p>The environment needs all of us. Start small, inspire others, and remember — when millions of people make small changes, the impact is enormous.</p>
+    <div class="cta-btns">
+      <a href="https://www.epa.gov/students" target="_blank" class="btn btn-green">EPA for Students ↗</a>
+      <a href="https://kids.nationalgeographic.com/science/article/climate-change" target="_blank" class="btn btn-ghost">Nat Geo Kids ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── SOURCES ───────── -->
+<div class="sources-wrap">
+  <div class="sources-inner reveal">
+    <h3>📚 Sources</h3>
+    <div class="sources-grid">
+      <a href="https://www.epa.gov/students" target="_blank" class="source-link">EPA — Students &amp; Youth (epa.gov/students)</a>
+      <a href="https://kids.nationalgeographic.com/science/article/climate-change" target="_blank" class="source-link">National Geographic Kids — Climate Change</a>
+      <a href="https://www.unicef.org/" target="_blank" class="source-link">UNICEF (unicef.org)</a>
+      <a href="https://www.thisisplaneted.org/img/YCAT.pdf" target="_blank" class="source-link">This Is Planet Ed — Youth Climate Action Toolkit</a>
+      <a href="https://www.vrg.org/blog/2017/03/22/guide-to-starting-a-high-school-environmental-club/amp/" target="_blank" class="source-link">VRG — Starting a High School Environmental Club</a>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── FOOTER ───────── -->
+<footer>
+  <strong>Protect Our Planet</strong> — Civic Action Project &nbsp;·&nbsp; Environmental Awareness &nbsp;·&nbsp; Made for a better world 🌍
+</footer>
+
+<script>
+  // Scroll progress bar
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+  });
+
+  // Nav scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Reveal on scroll
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => observer.observe(el));
+
+  // Particle system
+  const container = document.getElementById('particles');
+  const emojis = ['🌿','🍃','🌱','✨','💚','🌳','🌾'];
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    const size = Math.random() * 18 + 10;
+    p.style.cssText = `
+      left: ${Math.random() * 100}%;
+      width: ${size}px;
+      height: ${size}px;
+      font-size: ${size}px;
+      animation-duration: ${Math.random() * 14 + 10}s;
+      animation-delay: ${Math.random() * 12}s;
+      line-height: 1;
+      background: none;
+    `;
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    container.appendChild(p);
+  }
+
+  // Animated number counter for math pills
+  function animateCount(el, target) {
+    const duration = 1800;
+    const start = performance.now();
+    const formatted = target.toLocaleString();
+    const update = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+      el.textContent = current.toLocaleString();
+      if (progress < 1) requestAnimationFrame(update);
+      else el.textContent = formatted;
+    };
+    requestAnimationFrame(update);
+  }
+
+  const mathObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const nums = e.target.querySelectorAll('.math-pill .num');
+        const values = [52, 5200, 520000];
+        nums.forEach((n, i) => animateCount(n, values[i]));
+        mathObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  const mathBox = document.querySelector('.math-box');
+  if (mathBox) mathObserver.observe(mathBox);
+</script>
+</body>
+</html>
