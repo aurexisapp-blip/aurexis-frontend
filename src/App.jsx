@@ -7647,16 +7647,16 @@ async function loadWatchlistLive() {
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
                     <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)", overflow: "hidden" }}>
-                      {/* Actual rows, heavily blurred so they're a hint not readable */}
-                      <div style={{ filter: "blur(14px)", opacity: 0.18, pointerEvents: "none", userSelect: "none" }}>
+                      {/* Blurred rows — visible enough to tease, not readable */}
+                      <div style={{ filter: "blur(7px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
                         <table className="table" style={{ marginTop: 0 }}>
                           <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
                         </table>
                       </div>
-                      {/* Gradient kills rows within first 25% so nothing is legible */}
+                      {/* Gradient fades blurred rows out mid-section, solid below */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, rgba(7,9,15,0.5) 0%, rgba(7,9,15,1) 25%)",
+                        background: "linear-gradient(to bottom, transparent 0%, transparent 20%, rgba(7,9,15,0.85) 50%, rgba(7,9,15,1) 65%)",
                       }} />
                       {/* CTA centred in the locked space */}
                       <div style={{
