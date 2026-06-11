@@ -6273,10 +6273,10 @@ async function loadWatchlistLive() {
               alignItems: "center", justifyContent: "center",
               padding: "32px 24px", gap: 12,
             }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>Daily Limit</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used today's pick</div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>Weekly Limit</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used your 3 picks this week</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>
-                Starter includes 2 picks per week. Come back next week or upgrade to Pro for unlimited picks.
+                Resets Monday. Upgrade to Pro for unlimited daily picks.
               </div>
               <button
                 onClick={() => setTab("pricing")}
@@ -6287,7 +6287,7 @@ async function loadWatchlistLive() {
                   color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
                 }}
               >
-                Upgrade to Pro for unlimited picks →
+                Upgrade to Pro for unlimited →
               </button>
             </div>
           </div>
@@ -9595,10 +9595,12 @@ async function loadWatchlistLive() {
       {
         label: "AI Pick",
         features: [
-          { key: "daily_pick",    label: "Daily AI pick (stock + direction)" },
-          { key: "entry_targets", label: "Live entry, stop & Fibonacci targets" },
-          { key: "rr_ratio",      label: "Risk/Reward ratio" },
-          { key: "edge_signals",  label: "Edge signals" },
+          { key: "pick_month",     label: "1 AI pick per month (stock + direction)" },
+          { key: "picks_week",     label: "3 AI picks per week (stock + direction)" },
+          { key: "picks_unltd",    label: "Unlimited daily AI picks" },
+          { key: "entry_targets",  label: "Live entry, stop & Fibonacci targets" },
+          { key: "rr_ratio",       label: "Risk/Reward ratio" },
+          { key: "edge_signals",   label: "Edge signals" },
         ],
       },
       {
@@ -9642,10 +9644,10 @@ async function loadWatchlistLive() {
     ];
 
     const PLAN_FEATURES = {
-      free:    new Set(["daily_pick", "market_regime", "top_movers_5", "analyze_limit", "why_this_trade"]),
-      starter: new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal"]),
-      pro:     new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio"]),
-      elite:   new Set(["daily_pick", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio", "options_flow", "insider", "backtesting", "priority_sup"]),
+      free:    new Set(["pick_month", "analyze_limit", "market_regime", "top_movers_5"]),
+      starter: new Set(["picks_week", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal"]),
+      pro:     new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio"]),
+      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "screener", "portfolio", "options_flow", "insider", "backtesting", "priority_sup"]),
     };
 
     const plans = [
