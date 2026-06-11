@@ -5942,6 +5942,78 @@ async function loadWatchlistLive() {
         bestPayload0?.error !== null && bestPayload0?.error !== undefined
       );
 
+      // ── Free-user gate ──────────────────────────────────────────────────────
+      // Must come BEFORE the NO_TRADE early return, otherwise free users with
+      // null bestPickData (403 path → ticker="") fall through to NO_TRADE card.
+      const isFreeUser = !canAccess(userPlan, "starter");
+      const _noTradeEarly = isNoTrade || ["NO_TRADE", "MISSED_ENTRY"].includes(tradeDec);
+      // Gate unless user unlocked a real (non-NO_TRADE) pick this session
+      const showBlurGate = isFreeUser && !(freePickUsed && bestPickData && !_noTradeEarly);
+      // Free user who used their pick but today is a NO_TRADE day
+      const isNoTradeFreeDay = isFreeUser && freePickUsed && !!bestPickData && _noTradeEarly;
+
+      if (!loadingBestPick && showBlurGate) {
+        const _gateTitle = isNoTradeFreeDay ? "No Trade Signal Today" : "Unlock Today's AI Pick";
+        const _gateSub = isNoTradeFreeDay
+          ? "No qualifying setup today — the AI only signals high-conviction trades. Upgrade to see full analysis every trading day."
+          : freePickUsed
+          ? "You've used your free pick for this month. Upgrade to see every daily pick."
+          : "Upgrade to Starter for unlimited daily picks, or use your 1 free monthly pick.";
+
+        return (
+          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ filter: "blur(18px)", opacity: 0.22, pointerEvents: "none", userSelect: "none" }}>
+              <div className="card heroCard heroCard--high">
+                <div className="heroBg heroBg--high" />
+                <div className="heroBody" style={{ minHeight: 220 }}>
+                  <div className="heroTop">
+                    <div className="heroLeft">
+                      <div className="aiPickLabel">Today's AI Pick</div>
+                      <div className="heroTicker" style={{ letterSpacing: "0.04em", opacity: 0.5 }}>████</div>
+                    </div>
+                    <div className="heroRight">
+                      <div className="heroConvictionBadge" style={{ fontSize: 11, letterSpacing: "0.08em", padding: "6px 14px" }}>HIGH CONVICTION</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(135deg, rgba(7,9,16,0.70) 0%, rgba(7,9,16,0.92) 100%)",
+              backdropFilter: "blur(2px)",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              padding: "32px 24px", gap: 12,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>
+                {isNoTradeFreeDay ? "AI Signal" : "Members Only"}
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>{_gateTitle}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>{_gateSub}</div>
+              <button onClick={() => setTab("pricing")} style={{
+                padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14,
+                background: "linear-gradient(90deg, #00b450, #00d462)",
+                color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+              }}>
+                Upgrade to Starter →
+              </button>
+              {!freePickUsed && !isNoTradeFreeDay && (
+                <button onClick={_useFreePick} disabled={freePickLoading} style={{
+                  background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
+                  color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
+                  padding: "8px 20px", cursor: freePickLoading ? "default" : "pointer",
+                  opacity: freePickLoading ? 0.6 : 1,
+                }}>
+                  {freePickLoading ? "Unlocking…" : "Use my free pick for this month"}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      }
+      // ── End free-user gate ───────────────────────────────────────────────────
+
       // Only show no-trade card when there is genuinely no actionable setup —
       // i.e. no valid symbol OR entry/stop values missing.
       // LOW_CONVICTION with a real ticker falls through to the full pick card below.
@@ -6175,10 +6247,6 @@ async function loadWatchlistLive() {
           </div>
         );
       }
-
-      const isFreeUser = !canAccess(userPlan, "starter");
-      // Gate shows for free users unless they unlocked this session (freePickUsed + bestPickData loaded)
-      const showBlurGate = isFreeUser && !(freePickUsed && bestPickData);
 
       if (bestPickDailyLimit && !canAccess(userPlan, "pro")) {
         return (
@@ -6497,64 +6565,7 @@ async function loadWatchlistLive() {
         </div>
       );
 
-      if (!showBlurGate) return heroCard;
-
-      return (
-        <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-          <div style={{ filter: "blur(18px)", opacity: 0.25, pointerEvents: "none", userSelect: "none" }}>
-            {heroCard}
-          </div>
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(135deg, rgba(7,9,16,0.70) 0%, rgba(7,9,16,0.92) 100%)",
-            backdropFilter: "blur(2px)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            padding: "32px 24px", gap: 12,
-          }}>
-            <div style={{
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.12em",
-              color: "#00b450", textTransform: "uppercase", marginBottom: 4,
-            }}>Members Only</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>
-              Unlock Today's AI Pick
-            </div>
-            <div style={{
-              fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center",
-              lineHeight: 1.6, maxWidth: 280, marginBottom: 8,
-            }}>
-              {freePickUsed
-                ? "You've used your free pick for this month. Upgrade to see every daily pick."
-                : "Upgrade to Starter for unlimited daily picks, or use your 1 free pick for this month."}
-            </div>
-            <button
-              onClick={() => setTab("pricing")}
-              style={{
-                padding: "12px 32px", borderRadius: 10, cursor: "pointer",
-                fontWeight: 700, fontSize: 14,
-                background: "linear-gradient(90deg, #00b450, #00d462)",
-                color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
-              }}
-            >
-              Upgrade to Starter →
-            </button>
-            {!freePickUsed && (
-              <button
-                onClick={_useFreePick}
-                disabled={freePickLoading}
-                style={{
-                  background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
-                  color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: 500,
-                  padding: "8px 20px", cursor: freePickLoading ? "default" : "pointer",
-                  opacity: freePickLoading ? 0.6 : 1,
-                }}
-              >
-                {freePickLoading ? "Unlocking…" : "Use my free pick for this month"}
-              </button>
-            )}
-          </div>
-        </div>
-      );
+      return heroCard;
     };
 
 
