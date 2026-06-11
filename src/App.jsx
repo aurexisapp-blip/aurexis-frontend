@@ -2270,7 +2270,16 @@ function usePlan() {
     const tok = localStorage.getItem("aurexis_token");
     if (tok) {
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+          if (r.status === 401) {
+            // Session invalidated (logged in on another device) — force re-login
+            localStorage.removeItem("aurexis_token");
+            localStorage.removeItem("aurexis_user_email");
+            window.location.href = "/";
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
         .catch(() => {});
     }
