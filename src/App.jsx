@@ -6578,6 +6578,15 @@ async function loadWatchlistLive() {
                 </RippleButton>
               ) : null}
             </div>
+            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") && (() => {
+              const used = userProfile?.picks_this_week ?? 0;
+              const left = Math.max(0, 3 - used);
+              return (
+                <div style={{ fontSize: 11, color: left <= 1 ? "rgba(251,191,36,0.70)" : "rgba(255,255,255,0.30)", textAlign: "center", marginTop: 2, marginBottom: -2 }}>
+                  {left === 0 ? "No picks left this week" : `${left} pick${left === 1 ? "" : "s"} left this week`} · Resets Monday
+                </div>
+              );
+            })()}
             <div className="heroTrustLine">AI scans 1,200+ stocks daily to surface high-conviction setups</div>
           </div>
         </div>
@@ -9288,7 +9297,7 @@ async function loadWatchlistLive() {
               <FieldRow label="Full name" value={displayName} />
               <FieldRow label="Email address" value={email} />
               <FieldRow label="Plan" value={`${planLabel} plan`} action={
-                !isPaidPlan && (
+                plan !== "elite" && (
                   <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#00b450", color: "#fff" }}>
                     Upgrade
                   </button>
