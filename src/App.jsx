@@ -7646,55 +7646,35 @@ async function loadWatchlistLive() {
                     </tbody>
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
-                    <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)", overflow: "hidden" }}>
-                      {/* Real rows render unfiltered — backdrop-filter on the overlay handles blurring */}
-                      <table className="table" style={{ marginTop: 0, pointerEvents: "none", userSelect: "none" }}>
-                        <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
-                      </table>
-                      {/* Frosted glass overlay — blurs the rows behind it cleanly, row boundaries intact */}
+                    <div style={{
+                      minHeight: "calc(100vh - 340px)",
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                      display: "flex", flexDirection: "column",
+                      alignItems: "center", justifyContent: "center",
+                      padding: "40px 20px", gap: 10,
+                    }}>
                       <div style={{
-                        position: "absolute", top: 0, left: 0, right: 0, height: "55%",
-                        backdropFilter: "blur(5px)",
-                        WebkitBackdropFilter: "blur(5px)",
-                        background: "rgba(7,9,15,0.22)",
-                        pointerEvents: "none",
-                      }} />
-                      {/* Gradient fades everything to solid below the blurred zone */}
-                      <div style={{
-                        position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, transparent 0%, transparent 38%, rgba(7,9,15,0.92) 58%, rgba(7,9,15,1) 70%)",
-                      }} />
-                      {/* CTA centred in the locked space */}
-                      <div style={{
-                        position: "absolute", inset: 0,
-                        display: "flex", flexDirection: "column",
-                        alignItems: "center", justifyContent: "center",
-                        padding: "0 20px",
+                        fontSize: 11, fontWeight: 800, letterSpacing: "0.10em",
+                        color: "#00d462", textTransform: "uppercase",
+                        background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)",
+                        borderRadius: 20, padding: "4px 14px",
                       }}>
-                        <div style={{
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                          background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)",
-                          borderRadius: 20, padding: "4px 12px", marginBottom: 12,
-                        }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.10em", color: "#00d462", textTransform: "uppercase" }}>
-                            {hiddenCount} more movers hidden
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 6, letterSpacing: "-0.01em" }}>
-                          Unlock the full leaderboard
-                        </div>
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>
-                          Starter gives you every mover, live — updated throughout the day.
-                        </div>
-                        <button onClick={() => setTab("pricing")} style={{
-                          padding: "10px 26px", borderRadius: 10, cursor: "pointer",
-                          background: "linear-gradient(90deg,#00b450,#00d462)",
-                          color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
-                          boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
-                        }}>
-                          Upgrade to Starter →
-                        </button>
+                        {hiddenCount} more movers
                       </div>
+                      <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", textAlign: "center", letterSpacing: "-0.01em", marginTop: 4 }}>
+                        Unlock the full leaderboard
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", textAlign: "center", lineHeight: 1.6, maxWidth: 260, marginBottom: 6 }}>
+                        See every momentum mover, live — updated throughout the trading day.
+                      </div>
+                      <button onClick={() => setTab("pricing")} style={{
+                        padding: "11px 28px", borderRadius: 10, cursor: "pointer",
+                        background: "linear-gradient(90deg,#00b450,#00d462)",
+                        color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
+                        boxShadow: "0 4px 20px rgba(0,180,80,0.30)",
+                      }}>
+                        Upgrade to Starter →
+                      </button>
                     </div>
                   )}
                 </div>
