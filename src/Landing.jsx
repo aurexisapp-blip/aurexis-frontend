@@ -368,22 +368,25 @@ const S = {
   // Pricing
   pricingRow: {
     display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-    gap: 14, alignItems: "start",
+    gap: 14, alignItems: "stretch",
   },
   pricingCard: {
     padding: "32px 28px", borderRadius: 14,
     border: "1px solid rgba(255,255,255,0.07)",
     background: "#0a0a0a",
+    display: "flex", flexDirection: "column",
   },
   pricingCardFeatured: {
     padding: "32px 28px", borderRadius: 14,
     background: "#060d06",
     animation: "starterGlow 3.5s ease-in-out infinite",
+    display: "flex", flexDirection: "column",
   },
   pricingCardElite: {
     padding: "32px 28px", borderRadius: 14,
     background: "#0d0a04",
     animation: "eliteGlow 3.5s ease-in-out infinite",
+    display: "flex", flexDirection: "column",
   },
   pricingBadge: {
     display: "inline-block", padding: "3px 10px", borderRadius: 999,
@@ -400,7 +403,7 @@ const S = {
     color: "rgba(255,255,255,0.93)", lineHeight: 1, marginBottom: 4,
   },
   pricingPeriod: { fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 26 },
-  pricingFeatures: { listStyle: "none", padding: 0, margin: "0 0 28px", display: "grid", gap: 11 },
+  pricingFeatures: { listStyle: "none", padding: 0, margin: "0 0 28px", display: "grid", gap: 11, flex: 1, alignContent: "start" },
   pricingFeature: {
     fontSize: 13, color: "rgba(255,255,255,0.52)",
     display: "flex", alignItems: "flex-start", gap: 9, lineHeight: 1.45,
