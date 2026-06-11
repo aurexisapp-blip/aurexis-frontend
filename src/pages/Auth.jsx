@@ -62,6 +62,12 @@ export default function Auth({ defaultView = "login" }) {
   const [isNewUser, setIsNewUser] = useState(false);
   const [pendingPlan, setPendingPlan] = useState("free");
   const [pendingFirstName, setPendingFirstName] = useState("");
+  // Forgot-password flow: 0=hidden, 1=enter email, 2=enter code+new pw, 3=success
+  const [forgotStep, setForgotStep] = useState(0);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotNewPw, setForgotNewPw] = useState("");
+  const [forgotConfirmPw, setForgotConfirmPw] = useState("");
   const [error, setError] = useState(() => {
     const e = new URLSearchParams(window.location.search).get("error") || "";
     return OAUTH_ERRORS[e] || "";
@@ -192,6 +198,144 @@ export default function Auth({ defaultView = "login" }) {
     setOtpResending(false);
   }
 
+  function openForgot() {
+    setForgotStep(1);
+    setForgotEmail(email);
+    setForgotCode("");
+    setForgotNewPw("");
+    setForgotConfirmPw("");
+    setError("");
+  }
+
+  async function handleForgotSend(e) {
+    e.preventDefault();
+    setLoading(true); setError("");
+    try {
+      await fetch(`${API}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+    } catch {}
+    // Always advance — no account enumeration
+    setForgotStep(2);
+    setLoading(false);
+  }
+
+  async function handleResetPassword(e) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    if (forgotNewPw.length < 8) { setError("Password must be at least 8 characters."); setLoading(false); return; }
+    if (forgotNewPw !== forgotConfirmPw) { setError("Passwords don't match."); setLoading(false); return; }
+    try {
+      const res = await fetch(`${API}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, code: forgotCode, new_password: forgotNewPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data?.detail || "Invalid or expired code. Try again."); setLoading(false); return; }
+      setForgotStep(3);
+    } catch {
+      setError("Network error — check your connection.");
+    } finally { setLoading(false); }
+  }
+
+  // Forgot-password card (all 3 steps)
+  if (forgotStep > 0) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#07090f", fontFamily: '"Inter", -apple-system, sans-serif', padding: "0 24px" }}>
+        <div style={{ width: "100%", maxWidth: 380 }}>
+          {/* Step 1 — enter email */}
+          {forgotStep === 1 && (
+            <>
+              <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,rgba(0,180,80,0.20),rgba(0,180,80,0.05))", border: "1px solid rgba(0,180,80,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 24 }}>🔑</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 8 }}>Reset your password</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>Enter your account email and we'll send a reset code.</div>
+              </div>
+              <form onSubmit={handleForgotSend} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <input
+                  type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                  required autoFocus placeholder="Email address"
+                  style={S.input}
+                />
+                {error ? <div style={S.errorBox}>{error}</div> : null}
+                <button type="submit" style={{ ...S.submit, opacity: (loading || !forgotEmail) ? 0.5 : 1 }} disabled={loading || !forgotEmail}>
+                  {loading ? "Sending…" : "Send Reset Code →"}
+                </button>
+              </form>
+              <div style={{ marginTop: 20, textAlign: "center" }}>
+                <button type="button" onClick={() => setForgotStep(0)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>← Back to login</button>
+              </div>
+            </>
+          )}
+
+          {/* Step 2 — enter code + new password */}
+          {forgotStep === 2 && (
+            <>
+              <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,rgba(0,180,80,0.20),rgba(0,180,80,0.05))", border: "1px solid rgba(0,180,80,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 24 }}>📬</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 8 }}>Check your email</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
+                  If an account exists for <span style={{ color: "rgba(255,255,255,0.70)", fontWeight: 600 }}>{forgotEmail}</span>, we sent a reset code.
+                </div>
+              </div>
+              <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <input
+                  type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+                  value={forgotCode} onChange={e => setForgotCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="6-digit code" autoFocus
+                  style={{ ...S.input, textAlign: "center", fontSize: 28, fontWeight: 800, letterSpacing: "0.3em", padding: "16px" }}
+                />
+                <input
+                  type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
+                  placeholder="New password (min 8 characters)" autoComplete="new-password"
+                  style={S.input}
+                />
+                <input
+                  type="password" value={forgotConfirmPw} onChange={e => setForgotConfirmPw(e.target.value)}
+                  placeholder="Confirm new password" autoComplete="new-password"
+                  style={S.input}
+                />
+                {error ? <div style={S.errorBox}>{error}</div> : null}
+                <button
+                  type="submit"
+                  style={{ ...S.submit, opacity: (loading || forgotCode.length < 6 || !forgotNewPw || !forgotConfirmPw) ? 0.5 : 1 }}
+                  disabled={loading || forgotCode.length < 6 || !forgotNewPw || !forgotConfirmPw}
+                >
+                  {loading ? "Updating…" : "Set New Password →"}
+                </button>
+              </form>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+                <button type="button" onClick={() => { setForgotStep(1); setError(""); }} style={{ background: "none", border: "none", color: "rgba(0,180,80,0.75)", fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>Resend code</button>
+                <button type="button" onClick={() => setForgotStep(0)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.28)", fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>← Back to login</button>
+              </div>
+            </>
+          )}
+
+          {/* Step 3 — success */}
+          {forgotStep === 3 && (
+            <>
+              <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,rgba(0,180,80,0.20),rgba(0,180,80,0.05))", border: "1px solid rgba(0,180,80,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 24 }}>✅</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 8 }}>Password updated</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>Your password has been reset successfully. Sign in with your new password.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setForgotStep(0); setError(""); setPassword(""); }}
+                style={S.submit}
+              >
+                Back to Sign In →
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // 2FA OTP screen
   if (otpView) {
     return (
@@ -301,11 +445,20 @@ export default function Auth({ defaultView = "login" }) {
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required autoComplete="email" placeholder="Email address" style={S.input}
             />
-            <input
-              type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
-            />
+            <div>
+              <input
+                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                required autoComplete={isLogin ? "current-password" : "new-password"}
+                placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
+              />
+              {isLogin && (
+                <div style={{ textAlign: "right", marginTop: 6 }}>
+                  <button type="button" onClick={openForgot} style={{ background: "none", border: "none", color: "rgba(0,180,80,0.70)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+            </div>
 
             {!isLogin && (
               <div style={S.planRow}>
@@ -429,11 +582,20 @@ export default function Auth({ defaultView = "login" }) {
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required autoComplete="email" placeholder="Email address" style={S.input}
             />
-            <input
-              type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
-            />
+            <div>
+              <input
+                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                required autoComplete={isLogin ? "current-password" : "new-password"}
+                placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={S.input}
+              />
+              {isLogin && (
+                <div style={{ textAlign: "right", marginTop: 6 }}>
+                  <button type="button" onClick={openForgot} style={{ background: "none", border: "none", color: "rgba(0,180,80,0.70)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+            </div>
 
             {!isLogin && (
               <div style={S.planRow}>
