@@ -5979,14 +5979,15 @@ async function loadWatchlistLive() {
 
         return (
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-            <div style={{ filter: "blur(18px)", opacity: 0.22, pointerEvents: "none", userSelect: "none" }}>
+            {/* Blurred dummy card behind the overlay — strong blur, low opacity so nothing leaks */}
+            <div style={{ filter: "blur(24px)", opacity: 0.15, pointerEvents: "none", userSelect: "none", transform: "scale(1.04)" }}>
               <div className="card heroCard heroCard--high">
                 <div className="heroBg heroBg--high" />
                 <div className="heroBody" style={{ minHeight: 220 }}>
                   <div className="heroTop">
                     <div className="heroLeft">
                       <div className="aiPickLabel">Today's AI Pick</div>
-                      <div className="heroTicker" style={{ letterSpacing: "0.04em", opacity: 0.5 }}>████</div>
+                      <div className="heroTicker" style={{ letterSpacing: "0.04em" }}>████</div>
                     </div>
                     <div className="heroRight">
                       <div className="heroConvictionBadge" style={{ fontSize: 11, letterSpacing: "0.08em", padding: "6px 14px" }}>HIGH CONVICTION</div>
@@ -5997,8 +5998,8 @@ async function loadWatchlistLive() {
             </div>
             <div style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(135deg, rgba(7,9,16,0.70) 0%, rgba(7,9,16,0.92) 100%)",
-              backdropFilter: "blur(2px)",
+              background: "linear-gradient(160deg, rgba(7,9,16,0.82) 0%, rgba(7,9,16,0.97) 100%)",
+              backdropFilter: "blur(4px)",
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               padding: "32px 24px", gap: 12,
@@ -7645,52 +7646,59 @@ async function loadWatchlistLive() {
                     </tbody>
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
-                    <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)" }}>
-                      {/* All hidden rows blurred — fills remaining screen space */}
-                      <div style={{
-                        filter: "blur(8px)", opacity: 0.35, pointerEvents: "none", userSelect: "none",
-                      }}>
-                        <table className="table" style={{ marginTop: 0 }}>
-                          <tbody>
-                            {sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}
-                          </tbody>
-                        </table>
+                    <div style={{ position: "relative", marginTop: -2, overflow: "hidden", borderRadius: "0 0 12px 12px" }}>
+                      {/* Ghost placeholder rows — not real data, just visual structure */}
+                      <div style={{ filter: "blur(6px)", opacity: 0.13, pointerEvents: "none", userSelect: "none" }}>
+                        {[0,1,2,3].map(i => (
+                          <div key={i} style={{
+                            display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                            padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.04)",
+                          }}>
+                            {[72,48,52,40].map((w, j) => (
+                              <div key={j} style={{
+                                height: 13, borderRadius: 4, background: "rgba(255,255,255,0.18)",
+                                width: `${w - i * 4}%`,
+                              }} />
+                            ))}
+                          </div>
+                        ))}
                       </div>
-                      {/* Gradient overlay — covers from top so even first hidden row is mostly hidden */}
+                      {/* Hard gradient that kills the ghost rows immediately */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, rgba(7,9,15,0.55) 0%, rgba(7,9,15,0.85) 40%, rgba(7,9,15,0.99) 70%)",
+                        background: "linear-gradient(to bottom, rgba(7,9,15,0.60) 0%, rgba(7,9,15,1) 45%)",
                       }} />
-                      {/* CTA card */}
+                      {/* CTA — centred over the locked area */}
                       <div style={{
                         position: "absolute", inset: 0,
-                        display: "flex", alignItems: "flex-end", justifyContent: "center",
-                        padding: "0 16px 32px",
+                        display: "flex", flexDirection: "column",
+                        alignItems: "center", justifyContent: "center",
+                        padding: "24px 20px 20px",
                       }}>
                         <div style={{
-                          width: "100%", maxWidth: 380,
-                          background: "rgba(12,16,28,0.72)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: 14, padding: "16px 18px",
-                          backdropFilter: "blur(20px)",
-                          boxShadow: "0 6px 32px rgba(0,0,0,0.50), 0 0 0 1px rgba(0,180,80,0.05)",
-                          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)",
+                          borderRadius: 20, padding: "4px 12px", marginBottom: 10,
                         }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em", marginBottom: 3 }}>
-                              {hiddenCount} more movers
-                            </div>
-                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.4 }}>
-                              Full list unlocked on Starter · $9/mo
-                            </div>
-                          </div>
-                          <button onClick={() => setTab("pricing")} style={{
-                            flexShrink: 0, padding: "9px 18px", borderRadius: 9, cursor: "pointer",
-                            background: "linear-gradient(135deg,#00c853,#15803d)", color: "#fff",
-                            border: "none", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-                            boxShadow: "0 0 18px rgba(0,180,80,0.28)",
-                          }}>Upgrade →</button>
+                          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.10em", color: "#00d462", textTransform: "uppercase" }}>
+                            {hiddenCount} more movers hidden
+                          </span>
                         </div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 6, letterSpacing: "-0.01em" }}>
+                          Unlock the full leaderboard
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", textAlign: "center", marginBottom: 16, lineHeight: 1.5 }}>
+                          Starter gives you every mover, live — updated throughout the day.
+                        </div>
+                        <button onClick={() => setTab("pricing")} style={{
+                          padding: "10px 26px", borderRadius: 10, cursor: "pointer",
+                          background: "linear-gradient(90deg,#00b450,#00d462)",
+                          color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
+                          boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+                          letterSpacing: "0.01em",
+                        }}>
+                          Upgrade to Starter →
+                        </button>
                       </div>
                     </div>
                   )}
