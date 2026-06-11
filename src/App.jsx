@@ -7647,16 +7647,22 @@ async function loadWatchlistLive() {
                   </table>
                   {isFreeUser && hiddenCount > 0 && (
                     <div style={{ position: "relative", marginTop: -2, minHeight: "calc(100vh - 340px)", overflow: "hidden" }}>
-                      {/* Blurred rows — saturate(0) kills color variance, heavy blur creates even texture */}
-                      <div style={{ filter: "blur(18px) saturate(0)", opacity: 0.55, pointerEvents: "none", userSelect: "none" }}>
+                      {/* Blurred rows — readable structure, unreadable text */}
+                      <div style={{ filter: "blur(5px)", opacity: 0.65, pointerEvents: "none", userSelect: "none" }}>
                         <table className="table" style={{ marginTop: 0 }}>
                           <tbody>{sorted.slice(FREE_MOVERS_LIMIT).map(renderRow)}</tbody>
                         </table>
                       </div>
-                      {/* Smooth gradient — let the even blur show for first third, then fade */}
+                      {/* Thin dark tint to even out bright green/red cells */}
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0,
+                        height: "45%", pointerEvents: "none",
+                        background: "rgba(7,9,15,0.28)",
+                      }} />
+                      {/* Gradient fades content into solid from 40% down */}
                       <div style={{
                         position: "absolute", inset: 0, pointerEvents: "none",
-                        background: "linear-gradient(to bottom, transparent 0%, transparent 30%, rgba(7,9,15,0.92) 58%, rgba(7,9,15,1) 70%)",
+                        background: "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(7,9,15,0.95) 62%, rgba(7,9,15,1) 72%)",
                       }} />
                       {/* CTA centred in the locked space */}
                       <div style={{
