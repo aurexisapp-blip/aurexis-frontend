@@ -9481,34 +9481,18 @@ async function loadWatchlistLive() {
 
               <SectionTitle>Email Alerts</SectionTitle>
               {!canAccess(userPlan, "starter") ? (
-                <div style={{ borderRadius: 14, border: bdr, overflow: "hidden" }}>
-                  {/* Dimmed preview of locked features */}
-                  <div style={{ opacity: 0.38, pointerEvents: "none", userSelect: "none" }}>
-                    <FieldRow
-                      label="New pick alert"
-                      value="Get emailed when the AI selects a new high-conviction stock"
-                      action={<Toggle enabled={false} onChange={() => {}} />}
-                    />
-                    <FieldRow
-                      label="Pick outcome"
-                      value="Get emailed when a pick hits its target or stop loss"
-                      action={<Toggle enabled={false} onChange={() => {}} />}
-                    />
-                  </div>
-                  {/* Upgrade CTA */}
-                  <div style={{ padding: "18px 20px", background: "rgba(0,180,80,0.06)", borderTop: "1px solid rgba(0,180,80,0.12)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: txt, marginBottom: 3 }}>Unlock email alerts with Starter</div>
-                      <div style={{ fontSize: 12, color: txtG, lineHeight: 1.5 }}>Know the moment a new pick drops — before the market moves.</div>
-                    </div>
-                    <button
-                      onClick={() => setTab("pricing")}
-                      style={{ flexShrink: 0, padding: "9px 20px", borderRadius: 8, border: "none", background: "rgba(0,180,80,0.18)", color: "#4ade80", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}
-                    >
-                      Upgrade to Starter →
-                    </button>
-                  </div>
-                </div>
+                <>
+                  <FieldRow
+                    label="New pick alert"
+                    value="Get emailed when the AI selects a new high-conviction stock"
+                    action={<div onClick={() => setTab("pricing")} style={{ cursor: "pointer", fontSize: 16, color: txtG, opacity: 0.6 }} title="Starter feature">🔒</div>}
+                  />
+                  <FieldRow
+                    label="Pick outcome"
+                    value="Get emailed when a pick hits its target or stop loss"
+                    action={<div onClick={() => setTab("pricing")} style={{ cursor: "pointer", fontSize: 16, color: txtG, opacity: 0.6 }} title="Starter feature">🔒</div>}
+                  />
+                </>
               ) : (
                 <>
                   <FieldRow
