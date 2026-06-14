@@ -5438,14 +5438,18 @@ async function loadWatchlistLive() {
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return `${Math.floor(diff / 86400)}d ago`;
       };
-      const verdictCfg = (dec) => {
+      const verdictCfg = (dec, score) => {
+        const s = score != null ? Number(score) : null;
+        if (s !== null && Number.isFinite(s)) {
+          if (s >= 85) return { text: "VERY HIGH", color: "#00b450", bg: "rgba(0,180,80,0.12)", border: "rgba(0,180,80,0.32)" };
+          if (s >= 75) return { text: "HIGH",      color: "#22c55e", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.28)" };
+          if (s >= 62) return { text: "SOLID",     color: "#84cc16", bg: "rgba(132,204,22,0.08)", border: "rgba(132,204,22,0.25)" };
+          if (s >= 45) return { text: "MODERATE",  color: "#f59e0b", bg: "rgba(245,158,11,0.09)", border: "rgba(245,158,11,0.25)" };
+          return         { text: "LOW",       color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.22)" };
+        }
         if (!dec) return null;
-        if (dec.includes("HIGH") || dec.includes("BUY") || dec.includes("ACTION") || dec.includes("LONG"))
-          return { text: "HIGH", color: "#4ade80", bg: "rgba(74,222,128,0.10)", border: "rgba(74,222,128,0.22)" };
         if (dec.includes("NO_TRADE") || dec.includes("NOTRADE"))
           return { text: "NO TRADE", color: T.textGhost, bg: T.bg3, border: T.border };
-        if (dec.includes("LOW") || dec.includes("CONVICTION"))
-          return { text: "LOW", color: "#fbbf24", bg: "rgba(251,191,36,0.09)", border: "rgba(251,191,36,0.22)" };
         if (dec.includes("AVOID") || dec.includes("SHORT") || dec.includes("SELL"))
           return { text: "AVOID", color: "#f87171", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)" };
         return null;
@@ -5482,7 +5486,7 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 11, color: T.textGhost, marginTop: 4 }}>Analyze a ticker above to log your first pick.</div>
               </div>
             ) : history.map((item, i) => {
-              const vc = verdictCfg(item.decision);
+              const vc = verdictCfg(item.decision, item.score);
               const isLast = i === history.length - 1;
               const hasTradeData = item.entry != null || item.stop != null || item.target != null;
 
@@ -6384,8 +6388,9 @@ async function loadWatchlistLive() {
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", left: 0,
                           background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
-                          borderRadius: 8, padding: "9px 12px", width: 220, zIndex: 99,
-                          fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          borderRadius: 8, padding: "9px 12px", maxWidth: 200, zIndex: 99,
+                          fontSize: 12, fontWeight: "normal", textTransform: "none",
+                          color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
                           pointerEvents: "none",
                         }}>
@@ -6455,8 +6460,9 @@ async function loadWatchlistLive() {
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", right: 0,
                           background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
-                          borderRadius: 8, padding: "9px 12px", width: 220, zIndex: 99,
-                          fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          borderRadius: 8, padding: "9px 12px", maxWidth: 200, zIndex: 99,
+                          fontSize: 12, fontWeight: "normal", textTransform: "none",
+                          color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
                           pointerEvents: "none",
                         }}>
