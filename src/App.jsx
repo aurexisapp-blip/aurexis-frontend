@@ -6368,7 +6368,11 @@ async function loadWatchlistLive() {
                 <div className="aiPickLabel">
                   Today's AI Pick
                   {conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
-                    <span style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}>
+                    <span
+                      style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}
+                      onMouseEnter={() => setConvTipVisible(true)}
+                      onMouseLeave={() => setConvTipVisible(false)}
+                    >
                       <span style={{
                         display: "inline-block",
                         fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
@@ -6376,6 +6380,24 @@ async function loadWatchlistLive() {
                         background: convStyle.bg, border: `1px solid ${convStyle.border}`,
                         color: convStyle.color, cursor: "default",
                       }}>{convStyle.label}</span>
+                      {convTipVisible && CONV_TOOLTIP[conviction] && (
+                        <div style={{
+                          position: "absolute", top: "calc(100% + 8px)", left: 0,
+                          background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
+                          borderRadius: 8, padding: "9px 12px", width: 220, zIndex: 99,
+                          fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
+                          pointerEvents: "none",
+                        }}>
+                          <div style={{
+                            position: "absolute", top: -5, left: 16,
+                            width: 8, height: 8, background: "rgba(10,14,22,0.97)",
+                            border: `1px solid ${convStyle.border}`, borderBottom: "none", borderRight: "none",
+                            transform: "rotate(45deg)",
+                          }} />
+                          {CONV_TOOLTIP[conviction]}
+                        </div>
+                      )}
                     </span>
                   )}
                 </div>
@@ -6431,13 +6453,19 @@ async function loadWatchlistLive() {
                       </div>
                       {convTipVisible && CONV_TOOLTIP[conviction] && (
                         <div style={{
-                          position: "absolute", bottom: "calc(100% + 8px)", right: 0,
+                          position: "absolute", top: "calc(100% + 8px)", right: 0,
                           background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
                           borderRadius: 8, padding: "9px 12px", width: 220, zIndex: 99,
                           fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
                           pointerEvents: "none",
                         }}>
+                          <div style={{
+                            position: "absolute", top: -5, right: 16,
+                            width: 8, height: 8, background: "rgba(10,14,22,0.97)",
+                            border: `1px solid ${convStyle.border}`, borderBottom: "none", borderRight: "none",
+                            transform: "rotate(45deg)",
+                          }} />
                           {CONV_TOOLTIP[conviction]}
                         </div>
                       )}
