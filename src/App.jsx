@@ -5915,33 +5915,77 @@ async function loadWatchlistLive() {
         return Math.floor(b / e);
       })();
 
-      // Conviction: explicit trade_decision from API takes priority over score thresholds
+      // Conviction: use API field first, fallback to score thresholds
+      const _apiConviction = String(best0?.conviction || bestPayload0?.conviction || "").trim().toUpperCase();
       const conviction = (() => {
         if (!bestPayload0) return "WAIT";
-        if (tradeDec === "LOW_CONVICTION") return "LOW";
         if (tradeDec === "NO_TRADE") return "NO TRADE";
-        if (ai100 !== null && ai100 >= 70 && exec100 !== null && exec100 >= 65) return "HIGH";
-        if (ai100 !== null && ai100 >= 50) return "LOW";
-        if (ai100 !== null) return "NO TRADE";
+        if (_apiConviction && ["LOW","MODERATE","SOLID","HIGH","VERY HIGH"].includes(_apiConviction)) return _apiConviction;
+        if (tradeDec === "LOW_CONVICTION") return "MODERATE";
+        if (ai100 !== null && ai100 >= 85) return "VERY HIGH";
+        if (ai100 !== null && ai100 >= 75) return "HIGH";
+        if (ai100 !== null && ai100 >= 62) return "SOLID";
+        if (ai100 !== null && ai100 >= 45) return "MODERATE";
+        if (ai100 !== null) return "LOW";
         return "WAIT";
       })();
 
+      const CONV_TOOLTIP = {
+        LOW: "Score 0–45 · Weak setup — system recommends sitting out. No position recommended.",
+        MODERATE: "Score 45–62 · Setup meets basic criteria but conviction is limited. Reduce position size.",
+        SOLID: "Score 62–75 · Good setup with multiple confirming signals. Standard position size.",
+        HIGH: "Score 75–85 · Strong setup — system has high confidence. Full position size.",
+        "VERY HIGH": "Score 85+ · Highest conviction — all signals aligned. Maximum position size.",
+      };
+      const CONV_SHORT = {
+        LOW: "Sit out — weak setup",
+        MODERATE: "Reduce size — limited conviction",
+        SOLID: "Standard position size",
+        HIGH: "Full position size",
+        "VERY HIGH": "Maximum position size",
+      };
+
       const convStyle = {
-        HIGH: {
-          color: "#00d462",
-          glow: "0 0 20px rgba(0,196,90,0.32), 0 0 40px rgba(0,196,90,0.12)",
-          bg: "rgba(0,180,80,0.10)",
-          border: "rgba(0,180,80,0.28)",
-          label: "HIGH CONVICTION",
+        LOW: {
+          color: "#ef4444",
+          glow: "0 0 16px rgba(239,68,68,0.18)",
+          bg: "rgba(239,68,68,0.08)",
+          border: "rgba(239,68,68,0.22)",
+          label: "LOW",
+          bgKey: "notrade",
+        },
+        MODERATE: {
+          color: "#f59e0b",
+          glow: "0 0 20px rgba(245,158,11,0.22)",
+          bg: "rgba(245,158,11,0.09)",
+          border: "rgba(245,158,11,0.25)",
+          label: "MODERATE",
+          bgKey: "low",
+        },
+        SOLID: {
+          color: "#84cc16",
+          glow: "0 0 20px rgba(132,204,22,0.22)",
+          bg: "rgba(132,204,22,0.08)",
+          border: "rgba(132,204,22,0.25)",
+          label: "SOLID",
           bgKey: "high",
         },
-        LOW: {
-          color: "#ffca5a",
-          glow: "0 0 20px rgba(255,202,90,0.22), 0 0 40px rgba(255,202,90,0.08)",
-          bg: "rgba(255,202,90,0.09)",
-          border: "rgba(255,202,90,0.22)",
-          label: "MODERATE CONVICTION",
-          bgKey: "low",
+        HIGH: {
+          color: "#22c55e",
+          glow: "0 0 20px rgba(34,197,94,0.32), 0 0 40px rgba(34,197,94,0.12)",
+          bg: "rgba(34,197,94,0.10)",
+          border: "rgba(34,197,94,0.28)",
+          label: "HIGH",
+          bgKey: "high",
+        },
+        "VERY HIGH": {
+          color: "#00b450",
+          glow: "0 0 24px rgba(0,180,80,0.38), 0 0 48px rgba(0,180,80,0.14)",
+          bg: "rgba(0,180,80,0.12)",
+          border: "rgba(0,180,80,0.32)",
+          label: "VERY HIGH",
+          bgKey: "high",
+          pulse: true,
         },
         "NO TRADE": {
           color: "#ff6060",
@@ -5960,6 +6004,8 @@ async function loadWatchlistLive() {
           bgKey: "wait",
         },
       }[conviction] || {};
+
+      const [convTipVisible, setConvTipVisible] = React.useState(false);
 
       const hasLowOpportunity = Boolean(
         bestPayload0?.error !== null && bestPayload0?.error !== undefined
@@ -6321,14 +6367,16 @@ async function loadWatchlistLive() {
               <div className="heroLeft">
                 <div className="aiPickLabel">
                   Today's AI Pick
-                  {isLowConviction && (
-                    <span style={{
-                      display: "inline-block", marginLeft: 10,
-                      fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
-                      padding: "2px 7px", borderRadius: 4,
-                      background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.30)",
-                      color: "rgba(251,191,36,0.85)", verticalAlign: "middle",
-                    }}>MODERATE</span>
+                  {conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
+                    <span style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}>
+                      <span style={{
+                        display: "inline-block",
+                        fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+                        padding: "2px 7px", borderRadius: 4,
+                        background: convStyle.bg, border: `1px solid ${convStyle.border}`,
+                        color: convStyle.color, cursor: "default",
+                      }}>{convStyle.label}</span>
+                    </span>
                   )}
                 </div>
                 {false ? null : (
@@ -6360,20 +6408,45 @@ async function loadWatchlistLive() {
               </div>
 
               <div className="heroRight">
-                {isLowConviction ? (
-                  <div
-                    className="heroConvictionBadge"
-                    style={{
-                      color: "rgba(251,191,36,0.9)",
-                      boxShadow: "0 0 16px rgba(251,191,36,0.15)",
-                      background: "rgba(251,191,36,0.08)",
-                      borderColor: "rgba(251,191,36,0.25)",
-                      fontSize: 11,
-                      letterSpacing: "0.08em",
-                      padding: "6px 14px",
-                    }}
-                  >
-                    MODERATE
+                {convStyle.label && convStyle.label !== "AWAITING ANALYSIS" ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <div style={{ position: "relative" }}
+                      onMouseEnter={() => setConvTipVisible(true)}
+                      onMouseLeave={() => setConvTipVisible(false)}
+                    >
+                      <div
+                        className={`heroConvictionBadge${convStyle.pulse ? " convPulse" : ""}`}
+                        style={{
+                          color: convStyle.color,
+                          boxShadow: convStyle.glow,
+                          background: convStyle.bg,
+                          borderColor: convStyle.border,
+                          fontSize: 11,
+                          letterSpacing: "0.08em",
+                          padding: "6px 14px",
+                          cursor: "default",
+                        }}
+                      >
+                        {convStyle.label}
+                      </div>
+                      {convTipVisible && CONV_TOOLTIP[conviction] && (
+                        <div style={{
+                          position: "absolute", bottom: "calc(100% + 8px)", right: 0,
+                          background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
+                          borderRadius: 8, padding: "9px 12px", width: 220, zIndex: 99,
+                          fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
+                          pointerEvents: "none",
+                        }}>
+                          {CONV_TOOLTIP[conviction]}
+                        </div>
+                      )}
+                    </div>
+                    {CONV_SHORT[conviction] && (
+                      <div style={{ fontSize: 10, color: T.textFaint, letterSpacing: "0.02em", textAlign: "right" }}>
+                        {CONV_SHORT[conviction]}
+                      </div>
+                    )}
                   </div>
                 ) : marketRegime ? (
                   <div
