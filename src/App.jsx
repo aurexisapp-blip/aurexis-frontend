@@ -6388,9 +6388,10 @@ async function loadWatchlistLive() {
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", left: 0,
                           background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
-                          borderRadius: 8, padding: "9px 12px", maxWidth: 200, zIndex: 99,
+                          borderRadius: 6, padding: "8px 12px", width: 240, zIndex: 99,
                           fontSize: 12, fontWeight: "normal", textTransform: "none",
-                          color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          whiteSpace: "normal", wordWrap: "break-word",
+                          color: "rgba(255,255,255,0.75)", lineHeight: 1.4,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
                           pointerEvents: "none",
                         }}>
@@ -6460,9 +6461,10 @@ async function loadWatchlistLive() {
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", right: 0,
                           background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
-                          borderRadius: 8, padding: "9px 12px", maxWidth: 200, zIndex: 99,
+                          borderRadius: 6, padding: "8px 12px", width: 240, zIndex: 99,
                           fontSize: 12, fontWeight: "normal", textTransform: "none",
-                          color: "rgba(255,255,255,0.75)", lineHeight: 1.55,
+                          whiteSpace: "normal", wordWrap: "break-word",
+                          color: "rgba(255,255,255,0.75)", lineHeight: 1.4,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
                           pointerEvents: "none",
                         }}>
