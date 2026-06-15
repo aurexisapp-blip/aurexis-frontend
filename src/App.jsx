@@ -2668,6 +2668,7 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
+  const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileMenuPos, setProfileMenuPos] = useState({ bottom: 60, left: 16 });
@@ -9161,9 +9162,7 @@ async function loadWatchlistLive() {
     );
   };
 
-  const Settings = React.memo(() => {
-    const [settingsTab, setSettingsTab] = React.useState("profile");
-
+  const Settings = () => {
     // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
       const token = localStorage.getItem("aurexis_token");
@@ -9179,7 +9178,10 @@ async function loadWatchlistLive() {
         .catch(() => {});
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(me => { if (me?.id) setUserProfile(me); })
+        .then(me => {
+          if (me?.id && (me.id !== userProfile?.id || me.plan !== userProfile?.plan || me.subscription_status !== userProfile?.subscription_status))
+            setUserProfile(me);
+        })
         .catch(() => {});
     }, []);
 
@@ -9749,7 +9751,7 @@ async function loadWatchlistLive() {
         </div>
       </div>
     );
-  });
+  };
 
   const Pricing = () => {
     const [upgradeLoading, setUpgradeLoading] = React.useState(null);
