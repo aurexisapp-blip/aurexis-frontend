@@ -2542,6 +2542,7 @@ function AppInner() {
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
         { key: "screener", label: "Screener", icon: "⊞" },
+        { key: "intelligence", label: "Intelligence", icon: "◈" },
       ],
       trading: [
         { key: "watchlist", label: "Watchlist", icon: "◎" },
@@ -10414,6 +10415,262 @@ async function loadWatchlistLive() {
       : null);
   const marketSession = sessionFromClockOrHeuristic(clock) === "OPEN" ? "OPEN" : "CLOSED";
 
+// ------------ Intelligence / Evolution Engine Panel ------------
+const Intelligence = () => {
+  const [data, setData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    setLoading(true);
+    apiCall("/learning/status")
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const SectionTitle = ({ children }) => (
+    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase",
+      color: T.textFaint, marginBottom: 10, marginTop: 20 }}>{children}</div>
+  );
+
+  const StatBox = ({ label, value, sub, color }) => (
+    <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10,
+      padding: "14px 16px", flex: 1, minWidth: 100 }}>
+      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+        color: T.textFaint, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color: color || T.text, letterSpacing: "-0.02em" }}>{value ?? "—"}</div>
+      {sub && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+
+  const SignalBar = ({ signal, weight, wins, losses }) => {
+    const total = (wins || 0) + (losses || 0);
+    const wr = total > 0 ? wins / total : null;
+    const barColor = weight >= 1.3 ? "#22c55e" : weight >= 0.8 ? T.textMuted : "#ef4444";
+    const barW = Math.min(100, Math.max(4, (weight / 4.0) * 100));
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
+        borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ width: 140, fontSize: 11, fontWeight: 600, color: T.text,
+          fontFamily: "monospace", flexShrink: 0 }}>{signal}</div>
+        <div style={{ flex: 1, height: 6, background: T.bg3, borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${barW}%`, height: "100%", background: barColor, borderRadius: 3,
+            transition: "width 0.5s ease" }} />
+        </div>
+        <div style={{ width: 40, fontSize: 11, fontWeight: 700, color: barColor, textAlign: "right" }}>
+          {weight.toFixed(2)}×
+        </div>
+        <div style={{ width: 60, fontSize: 10, color: T.textGhost, textAlign: "right" }}>
+          {wr !== null ? `${Math.round(wr * 100)}% wr` : "no data"}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) return (
+    <div style={{ padding: 32, textAlign: "center", color: T.textFaint }}>
+      <div className="btnSpinner" style={{ width: 24, height: 24, margin: "0 auto 12px" }} />
+      <div style={{ fontSize: 12 }}>Loading model intelligence...</div>
+    </div>
+  );
+
+  if (!data || data.error) return (
+    <div style={{ padding: 32, textAlign: "center", color: T.textFaint }}>
+      <div style={{ fontSize: 28, opacity: 0.1, marginBottom: 8 }}>◈</div>
+      <div style={{ fontSize: 13, fontWeight: 600 }}>Not enough data yet</div>
+      <div style={{ fontSize: 11, marginTop: 4 }}>The model starts learning after the first picks are resolved.</div>
+    </div>
+  );
+
+  const wr = data.win_rate != null ? `${Math.round(data.win_rate * 100)}%` : "—";
+  const avgRet = data.avg_return_pct != null ? `${data.avg_return_pct > 0 ? "+" : ""}${data.avg_return_pct}%` : "—";
+  const retColor = data.avg_return_pct > 0 ? "#22c55e" : data.avg_return_pct < 0 ? "#ef4444" : T.text;
+
+  return (
+    <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 60px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em" }}>
+          Model Intelligence
+        </div>
+        <div style={{ fontSize: 12, color: T.textFaint, marginTop: 4 }}>
+          The scanner evolves every pick. Signal weights update automatically as outcomes resolve.
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <StatBox label="Picks Logged" value={data.outcomes_settled ?? 0}
+          sub={`${data.total_picks_logged ?? 0} total`} />
+        <StatBox label="Win Rate" value={wr}
+          sub={`${data.wins ?? 0}W / ${data.losses ?? 0}L`}
+          color={(data.win_rate || 0) >= 0.6 ? "#22c55e" : (data.win_rate || 0) >= 0.45 ? "#f59e0b" : "#ef4444"} />
+        <StatBox label="Avg Return" value={avgRet} color={retColor} />
+        <StatBox label="Kelly Size" value={data.kelly_position_size ? `${data.kelly_position_size}%` : "—"}
+          sub="optimal position" color="#84cc16" />
+        {data.macro_penalty_today > 0 && (
+          <StatBox label="Macro Caution" value={`-${data.macro_penalty_today}`}
+            sub="event today/tomorrow" color="#f59e0b" />
+        )}
+      </div>
+
+      {/* Dynamic thresholds */}
+      {data.dynamic_thresholds && (
+        <>
+          <SectionTitle>Adaptive Conviction Thresholds</SectionTitle>
+          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {[
+                { label: "MODERATE", val: data.dynamic_thresholds.low, color: "#f59e0b" },
+                { label: "SOLID",    val: data.dynamic_thresholds.moderate, color: "#84cc16" },
+                { label: "HIGH",     val: data.dynamic_thresholds.solid, color: "#22c55e" },
+                { label: "VERY HIGH",val: data.dynamic_thresholds.high, color: "#00b450" },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color }}>{val}+</div>
+                  <div style={{ fontSize: 9, color: T.textFaint, fontWeight: 700,
+                    letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: T.textGhost, marginTop: 10 }}>
+              Thresholds self-adjust when score ranges under- or over-perform. Defaults: 45 / 62 / 75 / 85.
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Signal weights */}
+      {(data.strongest_signals?.length > 0 || data.weakest_signals?.length > 0) && (
+        <>
+          <SectionTitle>Signal Weights — What the Model Has Learned</SectionTitle>
+          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10,
+            padding: "14px 16px" }}>
+            {data.strongest_signals?.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 6 }}>
+                  STRONGEST ↑
+                </div>
+                {data.strongest_signals.map(s => (
+                  <SignalBar key={s.signal} signal={s.signal} weight={s.weight}
+                    wins={s.wins} losses={s.losses} />
+                ))}
+              </>
+            )}
+            {data.weakest_signals?.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#ef4444",
+                  marginBottom: 6, marginTop: 14 }}>WEAKEST ↓</div>
+                {data.weakest_signals.map(s => (
+                  <SignalBar key={s.signal} signal={s.signal} weight={s.weight}
+                    wins={s.wins} losses={s.losses} />
+                ))}
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Score calibration */}
+      {data.score_calibration?.length > 0 && (
+        <>
+          <SectionTitle>Score Calibration — Are High Scores Actually Winning?</SectionTitle>
+          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10,
+            padding: "14px 16px" }}>
+            {data.score_calibration.map(row => {
+              const wr = row.win_rate;
+              const barColor = wr >= 0.6 ? "#22c55e" : wr >= 0.5 ? "#84cc16" : wr >= 0.4 ? "#f59e0b" : "#ef4444";
+              return (
+                <div key={row.bucket} style={{ display: "flex", alignItems: "center", gap: 10,
+                  padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ width: 55, fontSize: 10, fontWeight: 700, color: T.text,
+                    fontFamily: "monospace" }}>{row.bucket}</div>
+                  <div style={{ flex: 1, height: 5, background: T.bg3, borderRadius: 3 }}>
+                    <div style={{ width: `${Math.round(wr * 100)}%`, height: "100%",
+                      background: barColor, borderRadius: 3 }} />
+                  </div>
+                  <div style={{ width: 40, fontSize: 11, fontWeight: 700, color: barColor,
+                    textAlign: "right" }}>{Math.round(wr * 100)}%</div>
+                  <div style={{ width: 70, fontSize: 10, color: T.textGhost,
+                    textAlign: "right" }}>n={row.total} {row.avg_return > 0 ? `+${row.avg_return}%` : `${row.avg_return}%`}</div>
+                </div>
+              );
+            })}
+            <div style={{ fontSize: 10, color: T.textGhost, marginTop: 8 }}>
+              If a bucket consistently underperforms, conviction thresholds auto-adjust upward.
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Sector performance */}
+      {data.sector_performance?.length > 0 && (
+        <>
+          <SectionTitle>Sector Performance</SectionTitle>
+          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10,
+            padding: "14px 16px" }}>
+            {data.sector_performance.map(s => {
+              const total = s.wins + s.losses;
+              const swr = total > 0 ? s.wins / total : 0;
+              const color = swr >= 0.6 ? "#22c55e" : swr >= 0.5 ? "#84cc16" : "#f59e0b";
+              return (
+                <div key={s.sector} style={{ display: "flex", alignItems: "center", gap: 10,
+                  padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ flex: 1, fontSize: 11, fontWeight: 600, color: T.text }}>{s.sector}</div>
+                  <div style={{ fontSize: 11, color, fontWeight: 700 }}>{Math.round(swr * 100)}% wr</div>
+                  <div style={{ fontSize: 10, color: T.textGhost }}>{s.wins}W/{s.losses}L</div>
+                  <div style={{ fontSize: 11, fontWeight: 700,
+                    color: s.total_return >= 0 ? "#22c55e" : "#ef4444" }}>
+                    {s.total_return > 0 ? "+" : ""}{s.total_return}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Recent weight changes */}
+      {data.recent_weight_changes?.length > 0 && (
+        <>
+          <SectionTitle>Recent Weight Changes — Model Evolution Log</SectionTitle>
+          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 10,
+            padding: "14px 16px" }}>
+            {data.recent_weight_changes.map((c, i) => {
+              const up = c.to > c.from;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10,
+                  padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ flex: 1, fontSize: 11, fontWeight: 600, color: T.text,
+                    fontFamily: "monospace" }}>{c.signal}</div>
+                  <div style={{ fontSize: 10, color: T.textGhost }}>{c.regime}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700,
+                    color: up ? "#22c55e" : "#ef4444" }}>
+                    {c.from.toFixed(2)} → {c.to.toFixed(2)} {up ? "↑" : "↓"}
+                  </div>
+                  <div style={{ fontSize: 10, color: T.textGhost }}>
+                    {Math.round(c.win_rate * 100)}% wr
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {data.outcomes_settled === 0 && (
+        <div style={{ textAlign: "center", padding: "40px 20px", color: T.textFaint }}>
+          <div style={{ fontSize: 36, opacity: 0.06, marginBottom: 12 }}>◈</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.textMuted }}>Model is initializing</div>
+          <div style={{ fontSize: 11, marginTop: 6, lineHeight: 1.6 }}>
+            Signal weights start at 1.0×. The model begins evolving after 5+ picks resolve.<br/>
+            Check back in a few days.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ------------ Render current tab ------------
 const renderPage = () => {
   if (tab === "dashboard") return <Dashboard />;
@@ -10433,6 +10690,7 @@ const renderPage = () => {
   if (tab === "settings") return <Settings />;
   if (tab === "support") return <Support />;
   if (tab === "pricing") return <Pricing />;
+  if (tab === "intelligence") return <Intelligence />;
   return <Dashboard />;
 };
 
