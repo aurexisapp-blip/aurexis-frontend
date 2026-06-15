@@ -2668,7 +2668,6 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
-  const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileMenuPos, setProfileMenuPos] = useState({ bottom: 60, left: 16 });
@@ -9162,8 +9161,8 @@ async function loadWatchlistLive() {
     );
   };
 
-  const Settings = () => {
-    // settingsTab / setSettingsTab live in the outer component — survives remounts
+  const Settings = React.memo(() => {
+    const [settingsTab, setSettingsTab] = React.useState("profile");
 
     // Refresh token + profile from DB whenever Settings opens
     React.useEffect(() => {
@@ -9750,7 +9749,7 @@ async function loadWatchlistLive() {
         </div>
       </div>
     );
-  };
+  });
 
   const Pricing = () => {
     const [upgradeLoading, setUpgradeLoading] = React.useState(null);
