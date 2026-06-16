@@ -2542,7 +2542,6 @@ function AppInner() {
         { key: "dashboard", label: "Dashboard", icon: "⬡" },
         { key: "movers", label: "Movers", icon: "⇅" },
         { key: "screener", label: "Screener", icon: "⊞" },
-        { key: "intelligence", label: "Intelligence", icon: "◈" },
       ],
       trading: [
         { key: "watchlist", label: "Watchlist", icon: "◎" },
@@ -10690,7 +10689,6 @@ const renderPage = () => {
   if (tab === "settings") return <Settings />;
   if (tab === "support") return <Support />;
   if (tab === "pricing") return <Pricing />;
-  if (tab === "intelligence") return <Intelligence />;
   return <Dashboard />;
 };
 
