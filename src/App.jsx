@@ -10422,7 +10422,7 @@ const Intelligence = () => {
 
   React.useEffect(() => {
     setLoading(true);
-    apiCall("/learning/status")
+    apiFetch("/learning/status")
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
