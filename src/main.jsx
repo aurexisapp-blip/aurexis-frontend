@@ -10,6 +10,7 @@ import Disclaimer from "./pages/Disclaimer";
 import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Legal from "./pages/Legal";
+import Performance from "./pages/Performance";
 import "./index.css";
 
 function MobileBlock() {
@@ -119,7 +120,8 @@ createRoot(rootEl).render(
         <Route path="/disclaimer" element={<Disclaimer />} />
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
-<Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
+        <Route path="/performance" element={<Performance />} />
+        <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
         <Route path="/login"      element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="login" />} />
         <Route path="/signup"     element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="signup" />} />
         <Route path="/app/*" element={<AppGate />} />
