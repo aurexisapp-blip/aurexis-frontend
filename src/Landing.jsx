@@ -1553,7 +1553,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                 {[
                   { label: "Features",    href: "#" },
                   { label: "Pricing",     href: "#pricing" },
-                  { label: "Performance", href: "/performance" },
+                  { label: "Performance", href: "#" },
                   { label: "FAQ",         href: "#" },
                 ].map(({ label, href }) => (
                   <a key={label} href={href} style={{
