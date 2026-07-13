@@ -4622,9 +4622,9 @@ async function loadWatchlistLive() {
                       </div>
                     </div>
                   ) : null}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <AIScoreRing score={ai100} confidence={analysisObj?.confidence ?? null} loading={false} />
-                    <AIScoreRing score={exec100} label="EXECUTION" size={160} strokeWidth={14} loading={false} showConfidence={false} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+                    <AIScoreRing score={ai100} confidence={analysisObj?.confidence ?? null} size={160} strokeWidth={19} loading={false} />
+                    <AIScoreRing score={exec100} label="EXECUTION" size={160} strokeWidth={19} loading={false} showConfidence={false} />
                   </div>
                 </div>
               );
@@ -7129,18 +7129,20 @@ async function loadWatchlistLive() {
 
                   {a && (Number.isFinite(Number(a?.aiScore)) || Number.isFinite(Number(a?.executionScore))) ? (
                     <div>
-                      <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Score Rings</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 14 }}>Score Rings</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
                         <AIScoreRing
                           score={Number.isFinite(Number(a?.aiScore)) ? Number(a.aiScore) : null}
                           confidence={a?.confidence ?? null}
+                          size={150}
+                          strokeWidth={18}
                           loading={false}
                         />
                         <AIScoreRing
                           score={Number.isFinite(Number(a?.executionScore)) ? Number(a.executionScore) : null}
                           label="EXECUTION"
-                          size={108}
-                          strokeWidth={11}
+                          size={150}
+                          strokeWidth={18}
                           loading={false}
                           showConfidence={false}
                         />
