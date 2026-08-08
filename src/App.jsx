@@ -2967,242 +2967,27 @@ function AppInner() {
     showToast._t = window.setTimeout(() => { setToast(""); setToastType(""); }, 3500);
   };
 
-  const buildChatReply = React.useCallback((msg) => {
-    const q = msg.toLowerCase().trim();
-    const has = (...kws) => kws.some(k => q.includes(k));
-
-    // ── live data helpers ─────────────────────────────────────────────────
+  // What's actually on screen right now, sent alongside each chat message so
+  // the backend's system prompt can ground answers in it. Kept to a small,
+  // typed set of fields (not free text) -- the backend treats this as
+  // untrusted client input and re-validates every field before it reaches
+  // the model (see _sanitize_page_context in app.py).
+  const buildChatPageContext = React.useCallback(() => {
     const bestPayload = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
     const best = (bestPayload?.pick && typeof bestPayload.pick === "object" ? bestPayload.pick : null)
       || (bestPayload?.best_pick && typeof bestPayload.best_pick === "object" ? bestPayload.best_pick : null)
       || bestPayload;
-    const bestSym = normalizeSymbol(best?.symbol || best?.ticker || "");
-    const isNoTrade = best?.is_trade === false || bestPayload?.is_trade === false
-      || ["NO_TRADE","MISSED_ENTRY","LOW_CONVICTION"].includes(String(best?.trade_decision || bestPayload?.trade_decision || "").toUpperCase());
-    const tp = best?.trade_plan && typeof best.trade_plan === "object" ? best.trade_plan : null;
     const toScore = (v) => { const n = Number(v); return Number.isFinite(n) ? (n <= 10 ? Math.round(n * 10) : Math.round(n)) : null; };
-    const ai100 = toScore(best?.ai_score_0_10 ?? best?.ai_score);
-    const exec100 = toScore(best?.execution_score_0_10 ?? best?.execution_score);
-    const conf100 = toScore(best?.confidence_0_10 ?? best?.confidence);
     const regime = String(best?.market_regime || bestPayload?.market_regime || "").trim().toUpperCase();
-    const edgeSignals = Array.isArray(best?.edge_signals) ? best.edge_signals : Array.isArray(bestPayload?.edge_signals) ? bestPayload.edge_signals : [];
-    const perfData = typeof performanceData === "object" && performanceData ? performanceData : null;
-    const winRate = perfData?.win_rate != null ? Number(perfData.win_rate) : null;
-    const totalPicks = Number(perfData?.total_picks ?? perfData?.totalPicks ?? 0) || 0;
-    const avgReturn = perfData?.avg_return != null ? Number(perfData.avg_return) : null;
-    const topMovers5 = Array.isArray(movers) ? movers.slice(0, 5).map(m => `${m.symbol} (${Number(m.pct_change) >= 0 ? "+" : ""}${Number(m.pct_change).toFixed(1)}%)`).join(", ") : null;
-    const recentSyms = Array.isArray(recentPicksData) ? [...new Set(recentPicksData.slice(0, 6).map(p => normalizeSymbol(p?.symbol || p?.ticker || "")).filter(Boolean))] : [];
-
-    // ── SPECIFIC FEATURE EXPLANATIONS (checked before generic) ───────────
-
-    // Best Pick / Hero Card
-    if (has("best pick card", "hero card", "best pick card", "pick card") ||
-        (has("best pick") && has("explain", "what is", "tell me", "how does", "what does", "describe", "works", "work", "show", "mean")) ||
-        (has("best pick") && !has("what is the best pick", "today") && has("card", "section", "panel", "dashboard"))) {
-      return "The Best Pick card is the main attraction on the dashboard — it shows the AI scanner's single highest-conviction trade for the day. It displays the ticker symbol, AI score (0–100), execution score, confidence level, entry price, stop loss, and price targets. The color (green = high conviction, yellow = moderate, red = no trade) tells you the system's overall confidence. If the card shows NO_TRADE, it means no setup cleared the quality gates today — that's intentional risk management, not a bug.";
-    }
-
-    // Performance Card
-    if (has("performance card", "performance panel", "performance section") ||
-        (has("performance") && has("explain", "what is", "tell me", "how does", "what does", "describe", "card"))) {
-      return "The Performance card tracks every pick the AI has made. It shows your all-time win rate (% of resolved picks that hit their target before stop), total pick count, and average return per trade. The three stats — Win Rate, Picks, and Avg Return — update as picks resolve. Green means the trade hit target, red means it hit stop. This is your live track record, not simulated or backtested data.";
-    }
-
-    // Recent Picks Card
-    if (has("recent picks card", "recent picks panel") ||
-        (has("recent picks") && has("explain", "what is", "tell me", "how does", "card"))) {
-      return "The Recent Picks card lists the AI's last decisions — each row shows the ticker, date, the signal tags that triggered the pick (like BREAKOUT_STRUCTURE, RS_LEADER, SQUEEZE_POTENTIAL), and the outcome (pending or resolved return). Click any row to pull up the full analysis for that symbol. This is how you track what the system has been doing and verify its reasoning.";
-    }
-
-    // Analysis / AnalysisCard
-    if (has("analysis card", "analysis panel", "analyze card", "why this trade", "ai summary", "advanced metrics") ||
-        (has("analysis") && has("explain", "what is", "tell me", "how does", "what does", "card", "section"))) {
-      return "The Analysis panel appears on the dashboard after you run an analysis on a ticker. It has three tabs: Why This Trade (the AI's full reasoning — setup thesis, what confirms it, what breaks it), AI Summary (news sentiment, catalysts, risk flags), and Advanced Metrics (technical indicators — momentum, RSI, volume strength, trend). Use it to go deeper on any symbol, not just the daily pick.";
-    }
-
-    // Screener
-    if (has("screener") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use", "using")) {
-      return "The Screener lets you analyze multiple tickers at once. Type a comma-separated list of symbols (e.g. AAPL, NVDA, TSLA) and click Screen. The AI runs its full signal model on each one and returns a ranked table with scores, momentum indicators, signal tags, and trade setups. Use it when you have a shortlist of candidates and want to see which one the system likes best.";
-    }
-
-    // Watchlist
-    if (has("watchlist") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use", "using")) {
-      return "The Watchlist is the system's list of tickers that almost made the cut — setups the scanner detected as interesting but not yet high-conviction enough to trade. These are stocks building momentum that are worth monitoring. The scanner updates this daily. When a watchlist candidate crosses the conviction threshold on a future scan, it may become the daily pick.";
-    }
-
-    // Trade Journal
-    if (has("trade journal", "journal") && has("explain", "what is", "tell me", "how does", "how do", "what does", "describe", "work", "use")) {
-      return "The Trade Journal is where you manually log your own trades to track performance. Click '+ Add Trade Manually', fill in the symbol, entry, exit, and date. The journal calculates your P&L and builds a record of your actual trading decisions — separate from the AI's picks. Use it to see whether you're executing the AI's recommendations correctly or deviating.";
-    }
-
-    // Top Movers
-    if ((has("top mover", "movers tab", "movers page", "movers card", "movers section") ||
-         (has("mover") && has("explain", "what is", "tell me", "how does", "card", "tab"))) &&
-        !has("what's moving", "what is moving", "today")) {
-      return "The Top Movers tab shows the day's biggest percentage gainers and losers — updated from live market data. Click any row to instantly analyze that ticker. The columns show symbol, last price, % change, and volume. It's useful for finding momentum plays that the scanner might not have ranked yet, or for understanding what's driving market activity on a given day.";
-    }
-
-    // Sidebar / Navigation
-    if (has("sidebar", "navigation", "nav", "left panel", "menu") && has("explain", "what is", "tell me", "how does", "how do")) {
-      return "The left sidebar is your main navigation. The icons (top to bottom) are: Dashboard (home), Top Movers, Screener, Watchlist, Trade Journal, Settings, and Support. Click the arrow at the top to collapse it to icons-only mode for more screen space. The bottom shows your account avatar. The collapse state is saved, so it persists between sessions.";
-    }
-
-    // Settings
-    if (has("settings") && has("explain", "what is", "tell me", "how does", "what can", "how do")) {
-      return "Settings lets you configure the app's appearance and account preferences. The Display section has a Dark/Light mode toggle and compact card view option. Notifications shows alert preferences (active on the Power plan). Data & Privacy explains how data is stored (local device only, anonymous usage analytics). You can also manage your account from here.";
-    }
-
-    // Analyze / Command bar
-    if ((has("analyze", "analysis") && has("how do", "how does", "how to", "what does", "command bar", "top bar", "search bar")) ||
-        (has("command bar", "top bar", "analyze button") && has("explain", "what is", "tell me", "how"))) {
-      return "The command bar at the top lets you analyze any stock ticker. Type a symbol (e.g. NVDA) and click Analyze or press Enter. The AI runs its full signal model on that ticker — checking momentum, technical structure, news sentiment, and market context — and populates the Analysis panel on the dashboard with the full breakdown. The analysis takes 10–30 seconds.";
-    }
-
-    // AI score / scores
-    if (has("ai score", "execution score", "confidence score", "score mean", "score work", "what is a score", "scores mean", "score out of")) {
-      return "There are three scores, each out of 100: AI Score measures the overall quality of the setup (technical pattern strength, momentum alignment, historical similarity). Execution Score measures how clean the entry conditions are right now — timing precision, buy zone clarity, volume confirmation. Confidence Score reflects how certain the model is about the prediction given current market data. All three need to be high (70+) for a HIGH CONVICTION rating.";
-    }
-
-    // Edge signals / signal tags
-    if ((has("edge signal", "signal tag", "signal mean", "what are signal", "what do signal", "tag mean", "breakout", "rs_leader", "squeeze", "momentum_expansion", "float_rotation", "quiet_accumulation")) &&
-        has("explain", "what is", "what are", "what does", "mean", "tell me", "how")) {
-      return "Edge signals are the specific patterns the scanner detected for a setup. Common ones: BREAKOUT_STRUCTURE (price breaking above a key level with volume), RS_LEADER (outperforming the broader market — relative strength), SQUEEZE_POTENTIAL (price coiling in a tight range before a move), QUIET_ACCUMULATION (unusual buying volume without price spike — institutional accumulation), MOMENTUM_EXPANSION (accelerating price and volume), FLOAT_ROTATION (small float stock with heavy volume relative to shares available). Multiple signals together = higher conviction.";
-    }
-
-    // Market regime
-    if ((has("market regime") || (has("regime") && has("explain", "what is", "tell me", "mean", "how"))) && !has("what is the market regime")) {
-      return "Market regime is the AI's classification of the current macro environment: BULL means the broader market has momentum and risk-on setups have an edge, BEAR means defensive positioning is preferred and the system tightens its conviction thresholds, NEUTRAL/TRANSITIONAL means mixed signals. The regime affects how many picks the scanner surfaces and how aggressive the position sizing recommendations are. It's recalculated daily.";
-    }
-
-    // Trade plan / levels
-    if ((has("trade plan") || has("stop loss", "stop-loss") || (has("entry") && has("what is", "explain", "how")) || (has("target") && has("what is", "explain", "how"))) &&
-        has("explain", "what is", "tell me", "mean", "how does", "how do")) {
-      return "A trade plan has three components: Entry — the price zone to buy in (usually near current price or at a breakout level), Stop Loss — the price where you exit if wrong (limits your downside), and Targets (T1, T2, T3) — the price levels to take profit. The distance from entry to stop vs entry to target gives you the Risk/Reward ratio. Aurexis only takes setups with R/R of at least 2:1, meaning the potential gain is at least twice the potential loss.";
-    }
-
-    // Risk/reward
-    if (has("risk reward", "risk/reward", "r/r", "rr ratio") && has("explain", "what is", "tell me", "mean", "how")) {
-      return "Risk/Reward ratio (R/R) compares how much you stand to gain vs lose on a trade. A 2:1 R/R means if your stop is $1 away from entry, your target is $2 away. Aurexis filters out setups with R/R below 2:1 — only trades with favorable risk profiles make the cut. The AI score and R/R together determine position sizing recommendations.";
-    }
-
-    // No trade / wait mode
-    if ((has("no trade", "no pick", "wait mode", "wait state", "no setup", "low conviction") && has("explain", "what", "why", "mean")) ||
-        (has("why") && has("no trade", "no pick", "waiting", "wait"))) {
-      return "When the system shows NO_TRADE or LOW_CONVICTION, it means no setup cleared all quality gates that day. This is intentional — the AI has specific thresholds for AI score (70+), confidence (65+), and execution timing. It would rather miss a trade than take a low-quality one. Historically, being selective improves win rate significantly. Check back the next morning after the scanner runs.";
-    }
-
-    // Scanner / how scanner works
-    if ((has("scanner") && has("explain", "what is", "tell me", "how does", "how do", "how it work", "what does")) ||
-        has("how does the ai", "how does the scan", "how does aurexis pick", "how does the system")) {
-      return "The scanner runs every morning before market open (9:30 AM ET). It pulls data on thousands of stocks, applies technical pattern recognition, checks relative strength vs the market, analyzes volume profiles, reads recent news sentiment, and scores each setup. The top-scoring setup — if it clears all conviction thresholds — becomes the daily pick. If nothing clears, the system waits. The entire process is automated and produces one high-quality pick per day.";
-    }
-
-    // Position sizing
-    if (has("position size", "how much", "how many shares", "how big") && has("buy", "trade", "invest", "put", "position")) {
-      return "Position sizing in Aurexis is based on your budget (set in the Analyze command bar) and the trade's stop distance. The formula: position size = budget × risk% ÷ (entry - stop). By default it risks 1–2% of your budget per trade. You can see the estimated share count in the Best Pick card. Never risk more than you can afford to lose on a single trade.";
-    }
-
-    // ── LIVE DATA QUERIES ─────────────────────────────────────────────────
-
-    // Today's pick
-    if (has("top pick", "best pick", "what should i buy", "what to buy", "today's pick", "todays pick", "what pick", "recommend", "suggestion") ||
-        (has("what") && has("pick", "buying", "trade today", "trade now"))) {
-      if (!bestPayload) return "The scanner hasn't loaded yet — refresh the page or click Refresh on the Best Pick card.";
-      if (isNoTrade) return `No high-conviction trade today.${regime ? ` Market regime: ${regime}.` : ""} The system is in wait mode — setups didn't clear quality thresholds. Check back tomorrow morning after the 9:30 AM scan.`;
-      if (!bestSym) return "No pick data available right now. Try refreshing the Best Pick card on the dashboard.";
-      let r = `Today's top pick is ${bestSym}`;
-      if (ai100 !== null) r += ` — AI score ${ai100}/100`;
-      if (conf100 !== null) r += `, confidence ${conf100}/100`;
-      if (exec100 !== null) r += `, execution ${exec100}/100`;
-      if (tp?.entry) r += `. Entry near $${Number(tp.entry).toFixed(2)}`;
-      if (tp?.stop) r += `, stop $${Number(tp.stop).toFixed(2)}`;
-      const tgts = Array.isArray(tp?.targets) ? tp.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
-      if (tgts[0]) r += `, T1 $${tgts[0].toFixed(2)}`;
-      r += ".";
-      if (edgeSignals.length) r += ` Signals: ${edgeSignals.slice(0, 3).join(", ")}.`;
-      return r;
-    }
-
-    // Win rate / performance query
-    if (has("win rate", "accuracy", "track record", "results", "how good", "how well") ||
-        (has("performance") && !has("performance card", "performance section")) ||
-        has("how are you doing", "how have you done")) {
-      if (winRate === null && totalPicks === 0) return "Performance data hasn't loaded yet. It should appear in the Performance card on the dashboard — try refreshing.";
-      let r = winRate !== null ? `Win rate: ${winRate.toFixed(1)}%` : "";
-      if (totalPicks > 0) r += ` across ${totalPicks} picks`;
-      if (avgReturn !== null) r += `, avg return ${avgReturn >= 0 ? "+" : ""}${avgReturn.toFixed(1)}% per trade`;
-      return r || "No performance data loaded yet.";
-    }
-
-    // Market regime query
-    if (has("what is the market regime", "what's the market regime") ||
-        (has("market regime") && !has("explain", "what is market regime")) ||
-        has("market today", "market right now", "how is the market", "market condition")) {
-      if (!regime) return topMovers5 ? `No explicit regime signal right now. Top movers: ${topMovers5}.` : "No market regime data loaded yet.";
-      const desc = regime === "BULL" ? "bullish — momentum setups have edge" : regime === "BEAR" ? "bearish — defensive positioning preferred" : `${regime.toLowerCase()} — mixed signals`;
-      return `Market regime: ${regime} (${desc}).${topMovers5 ? ` Top movers: ${topMovers5}.` : ""}`;
-    }
-
-    // Edge signals query (for current pick)
-    if ((has("signal", "edge signal") && !has("explain", "what are signal", "what is signal", "what do signal")) ||
-        has("what signals", "any signal")) {
-      if (!edgeSignals.length) return bestSym ? `No specific edge signals listed for ${bestSym} right now.` : "No signal data loaded yet — check the Best Pick card.";
-      return `Edge signals for ${bestSym || "today's pick"}: ${edgeSignals.join(", ")}. These are the pattern combinations that triggered the AI's conviction.`;
-    }
-
-    // Recent picks query
-    if (has("recent pick", "past pick", "previous pick", "last pick", "what did you pick", "history of picks")) {
-      if (!recentSyms.length) return "No recent picks loaded yet. The Recent Picks card on the dashboard should show them.";
-      return `Recent picks: ${recentSyms.join(", ")}. Full details with signal tags and returns are on the Recent Picks card on the dashboard.`;
-    }
-
-    // Entry/stop/target for current pick
-    if (has("entry", "stop", "stop loss", "target", "price level", "trade level") && !has("explain", "what is", "how")) {
-      if (!bestSym) return "No active pick loaded — refresh the Best Pick card first.";
-      if (!tp) return `No trade plan data for ${bestSym} right now.`;
-      let r = `${bestSym}: entry $${Number(tp.entry).toFixed(2)}, stop $${Number(tp.stop).toFixed(2)}`;
-      const tgts = Array.isArray(tp.targets) ? tp.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
-      tgts.slice(0, 3).forEach((t, i) => { r += `, T${i+1} $${t.toFixed(2)}`; });
-      if (tp.risk_reward) r += `. R/R: ${Number(tp.risk_reward).toFixed(1)}x`;
-      return r + ".";
-    }
-
-    // Movers query
-    if ((has("mover", "what's moving", "what is moving", "biggest mover", "top gainer") && !has("explain", "what is the top mover", "what are movers")) ||
-        has("gainer today", "gainers today", "loser today", "losers today")) {
-      if (!topMovers5) return "Movers data hasn't loaded yet — check the Top Movers card on the dashboard.";
-      return `Today's top movers: ${topMovers5}. Click any row in the Top Movers card to run a full analysis.`;
-    }
-
-    // ── GENERAL / GREETING ────────────────────────────────────────────────
-
-    if (has("hello", "hi there", "hey there", "good morning", "good afternoon") || q === "hi" || q === "hey" || q === "sup" || q === "yo") {
-      return `Hey! I have live data loaded.${bestSym && !isNoTrade ? ` Today's pick: ${bestSym}${ai100 !== null ? ` (AI ${ai100}/100)` : ""}.` : " No active pick today."}${winRate !== null ? ` Win rate: ${winRate.toFixed(1)}%.` : ""} Ask me anything about the app, picks, or trading concepts.`;
-    }
-
-    if (has("thank", "nice", "perfect", "great job", "good job", "awesome", "love it")) {
-      return "Anytime. Ask me about picks, signals, performance, or how any part of the app works.";
-    }
-
-    if (has("what can you", "what do you know", "what can i ask", "help", "capabilities", "what are you")) {
-      return "I can tell you: today's top pick with full trade plan, win rate and performance stats, market regime and top movers, edge signals and what they mean, how to use any feature (Best Pick card, Screener, Watchlist, Trade Journal, Analyze command), trading concepts (stop loss, R/R, position sizing, market regime), or anything else about how Aurexis works. Just ask naturally.";
-    }
-
-    // ── GENERAL APP OVERVIEW (only if question is truly general) ─────────
-    if (has("how does this app work", "how does aurexis work", "how does stackiq work", "what is aurexis", "what is stackiq", "what is this app", "overview", "introduce yourself")) {
-      return "Aurexis is an AI stock signal platform. The scanner runs every morning, ranks thousands of setups, and surfaces the single highest-conviction trade for the day. On the dashboard you'll see the Best Pick card (today's top idea), Performance (win rate and track record), Recent Picks (past decisions), and an Analysis panel for deep-diving any ticker. Use the top command bar to analyze any stock, the Screener to compare a list, and the Watchlist to monitor candidates. Ask me anything — I have live context on all of it.";
-    }
-
-    if (has("explain") || has("how does") || has("how do i") || has("how to") || has("what is") || has("what are") || has("tell me about") || has("describe")) {
-      // Extract what they're asking about
-      const topic = q.replace(/^(can you |please |just |)?(explain|describe|tell me about|what is|what are|how does|how do|how to|how do i)\s*/i, "").trim();
-      if (topic.length > 2) {
-        return `I don't have a specific entry for "${topic}" yet — but I know the app's main features: Best Pick card, Performance, Screener, Watchlist, Trade Journal, Analysis panel, edge signals, market regime, trade plans, and AI scores. Try asking about one of those specifically and I'll give you a full breakdown.`;
-      }
-    }
-
-    return `I didn't quite catch that. I can answer questions about today's pick, trade levels, win rate, market regime, edge signals, recent picks, top movers, or how any feature of the app works. What would you like to know?`;
-  }, [bestPickData, performanceData, movers, recentPicksData]);
+    return {
+      symbol: normalizeSymbol(best?.symbol || best?.ticker || "") || null,
+      ai_score: toScore(best?.ai_score_0_10 ?? best?.ai_score),
+      confidence_score: toScore(best?.confidence_0_10 ?? best?.confidence),
+      execution_score: toScore(best?.execution_score_0_10 ?? best?.execution_score),
+      market_regime: regime || null,
+      movers: Array.isArray(movers) ? movers.slice(0, 5).map(m => String(m?.symbol || "").toUpperCase()).filter(Boolean) : [],
+    };
+  }, [bestPickData, movers]);
 
   // Auto-log real AI best picks into Personal Best Pick Log
   React.useEffect(() => {
@@ -3244,22 +3029,51 @@ function AppInner() {
     });
   }, [bestPickData]);
 
-  const sendChatMessage = React.useCallback(async () => {
-    const msg = chatInput.trim();
+  const CHAT_UNAVAILABLE_REPLY = "AI assistant is temporarily unavailable, please try again shortly.";
+
+  // Shared by the input box and the quick-chip buttons -- calls the real
+  // backend (/api/chat, GPT-4o-mini with live account context), not a local
+  // keyword matcher. On any failure (network, rate limit, LLM down) it shows
+  // an honest "unavailable" message rather than a canned/fake answer.
+  const sendChatText = React.useCallback(async (text) => {
+    const msg = String(text || "").trim();
     if (!msg || chatLoading) return;
-    const userMsg = { role: "user", content: msg };
-    const newHistory = [...chatHistory, userMsg];
+    const newHistory = [...chatHistory, { role: "user", content: msg }];
     setChatHistory(newHistory);
-    setChatInput("");
     setChatLoading(true);
     setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
-    // short delay to feel natural
-    await new Promise(r => setTimeout(r, 420 + Math.random() * 300));
-    const reply = buildChatReply(msg);
+
+    let reply = CHAT_UNAVAILABLE_REPLY;
+    try {
+      const data = await apiFetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: msg,
+          history: newHistory.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          page_context: buildChatPageContext(),
+        }),
+      });
+      if (data && typeof data.reply === "string" && data.reply.trim()) {
+        reply = data.reply.trim();
+      }
+    } catch (e) {
+      reply = e?.status === 429
+        ? "You're sending messages a bit fast — give it a few seconds and try again."
+        : CHAT_UNAVAILABLE_REPLY;
+    }
+
     setChatHistory(h => [...h, { role: "assistant", content: reply }]);
     setChatLoading(false);
     setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
-  }, [chatInput, chatHistory, chatLoading, buildChatReply]);
+  }, [chatHistory, chatLoading, buildChatPageContext]);
+
+  const sendChatMessage = React.useCallback(async () => {
+    const msg = chatInput.trim();
+    if (!msg || chatLoading) return;
+    setChatInput("");
+    await sendChatText(msg);
+  }, [chatInput, chatLoading, sendChatText]);
 
   const lastLiveDataToastRef = useRef(0);
   const lastSuccessfulDataFetchAtRef = useRef(0);
@@ -11296,18 +11110,7 @@ const renderPage = () => {
               {["Top pick?", "Win rate?", "Best signal?", "Market regime?"].map(s => (
                 <button
                   key={s}
-                  onClick={async () => {
-                    if (chatLoading) return;
-                    const newHistory = [...chatHistory, { role: "user", content: s }];
-                    setChatHistory(newHistory);
-                    setChatLoading(true);
-                    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
-                    await new Promise(r => setTimeout(r, 420 + Math.random() * 280));
-                    const reply = buildChatReply(s);
-                    setChatHistory(h => [...h, { role: "assistant", content: reply }]);
-                    setChatLoading(false);
-                    setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
-                  }}
+                  onClick={() => sendChatText(s)}
                   style={{
                     background: darkMode ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.08)",
                     color: "#818cf8",
