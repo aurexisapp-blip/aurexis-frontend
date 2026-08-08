@@ -319,9 +319,8 @@ export async function savePick(payload: Record<string, unknown>) {
 }
 
 export async function closePick(payload: { id: string }) {
-  const id = encodeURIComponent(String(payload?.id || "").trim().toUpperCase());
-  const path = CONTRACTS.portfolio.closePick.path.replace("{symbol}", id);
-  const res = await apiDelete<{ ok: boolean; id?: string; symbol?: string }>(path);
+  const path = CONTRACTS.portfolio.closePick.path;
+  const res = await apiPost<{ ok: boolean; id?: string; symbol?: string }>(path, { id: String(payload?.id || "").trim() });
   return unwrapOrThrow(res, path);
 }
 

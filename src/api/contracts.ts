@@ -20,15 +20,15 @@ export const CONTRACTS = {
   },
   portfolio: {
     get: { method: "GET" as HttpMethod, path: "/portfolio" },
-    add: { method: "POST" as HttpMethod, path: "/portfolio" },
-    remove: { method: "DELETE" as HttpMethod, path: "/portfolio/{symbol}" },
-    savePick: { method: "POST" as HttpMethod, path: "/portfolio" },
-    closePick: { method: "DELETE" as HttpMethod, path: "/portfolio/{symbol}" },
+    add: { method: "POST" as HttpMethod, path: "/portfolio/add" },
+    remove: { method: "DELETE" as HttpMethod, path: "/portfolio/remove/{symbol}" },
+    savePick: { method: "POST" as HttpMethod, path: "/portfolio/save_pick" },
+    closePick: { method: "POST" as HttpMethod, path: "/portfolio/close_pick" },
   },
   watchlist: {
     get: { method: "GET" as HttpMethod, path: "/watchlist" },
-    add: { method: "POST" as HttpMethod, path: "/watchlist" },
-    remove: { method: "DELETE" as HttpMethod, path: "/watchlist/{symbol}" },
+    add: { method: "POST" as HttpMethod, path: "/watchlist/add" },
+    remove: { method: "DELETE" as HttpMethod, path: "/watchlist/remove/{symbol}" },
   },
   account: {
     method: "GET" as HttpMethod,
