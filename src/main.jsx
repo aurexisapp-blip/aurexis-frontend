@@ -80,6 +80,13 @@ function MobileBlock() {
   );
 }
 
+// TEMPORARY QA escape hatch — lets tonight's mobile-responsive work be
+// previewed on a real phone without touching the gate's default behavior.
+// Remove this once real-device verification is done.
+function isMobilePreview() {
+  return new URLSearchParams(window.location.search).get("mobilepreview") === "1";
+}
+
 function AppGate() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
@@ -90,7 +97,7 @@ function AppGate() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  if (isMobile) return <MobileBlock />;
+  if (isMobile && !isMobilePreview()) return <MobileBlock />;
 
   // Capture OAuth token from URL before the gate check so it isn't lost
   const params = new URLSearchParams(window.location.search);
@@ -120,8 +127,8 @@ createRoot(rootEl).render(
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
         <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
-        <Route path="/login"      element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="login" />} />
-        <Route path="/signup"     element={window.innerWidth < 768 ? <MobileBlock /> : <Auth defaultView="signup" />} />
+        <Route path="/login"      element={(window.innerWidth < 768 && !isMobilePreview()) ? <MobileBlock /> : <Auth defaultView="login" />} />
+        <Route path="/signup"     element={(window.innerWidth < 768 && !isMobilePreview()) ? <MobileBlock /> : <Auth defaultView="signup" />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={<LandingPage />} />
       </Routes>
