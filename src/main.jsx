@@ -83,8 +83,15 @@ function MobileBlock() {
 // TEMPORARY QA escape hatch — lets tonight's mobile-responsive work be
 // previewed on a real phone without touching the gate's default behavior.
 // Remove this once real-device verification is done.
+// Persisted to sessionStorage so it survives internal client-side
+// navigations (login -> OTP -> /app, or /app -> /login when logged out)
+// that don't carry the query string forward.
 function isMobilePreview() {
-  return new URLSearchParams(window.location.search).get("mobilepreview") === "1";
+  if (new URLSearchParams(window.location.search).get("mobilepreview") === "1") {
+    try { sessionStorage.setItem("aurexis_mobilepreview", "1"); } catch {}
+    return true;
+  }
+  try { return sessionStorage.getItem("aurexis_mobilepreview") === "1"; } catch { return false; }
 }
 
 function AppGate() {
