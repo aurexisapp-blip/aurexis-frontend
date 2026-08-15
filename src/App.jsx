@@ -2716,6 +2716,7 @@ function AppInner() {
   };
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", content: "Hey! I'm your StackIQ AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
@@ -6190,6 +6191,7 @@ async function loadWatchlistLive() {
                       style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}
                       onMouseEnter={() => setConvTipVisible(true)}
                       onMouseLeave={() => setConvTipVisible(false)}
+                      onClick={(e) => { e.stopPropagation(); setConvTipVisible((v) => !v); }}
                     >
                       <span style={{
                         display: "inline-block",
@@ -6255,6 +6257,7 @@ async function loadWatchlistLive() {
                     <div style={{ position: "relative" }}
                       onMouseEnter={() => setConvTipVisible(true)}
                       onMouseLeave={() => setConvTipVisible(false)}
+                      onClick={(e) => { e.stopPropagation(); setConvTipVisible((v) => !v); }}
                     >
                       <div
                         className={`heroConvictionBadge${convStyle.pulse ? " convPulse" : ""}`}
@@ -6354,7 +6357,7 @@ async function loadWatchlistLive() {
             ) : canAccess(userPlan, "pro") ? (
               <div style={{ marginTop: 8, marginBottom: 4 }}>
                 {/* ── Entry + Stop row ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                   <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
@@ -6373,19 +6376,21 @@ async function loadWatchlistLive() {
                   </div>
                 </div>
 
-                {/* ── Targets row ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                {/* ── Targets row — 3-across cards on desktop; becomes a
+                     horizontal-row list on mobile via .heroTargetsGrid /
+                     .heroTargetBox__* (see App.css @767px) ── */}
+                <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
                   {[
                     { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(134,239,172,0.85)", bg: "rgba(134,239,172,0.05)", border: "rgba(134,239,172,0.15)" },
                     { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(52,211,153,0.85)", bg: "rgba(52,211,153,0.05)", border: "rgba(52,211,153,0.15)" },
                     { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(16,185,129,0.85)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
                   ].map(({ label, val, pct, note, color, bg, border }) => (
-                    <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "10px 12px" }}>
-                      <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
-                      <div style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: "-0.02em", marginBottom: 2 }}>
+                    <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "10px 12px" }}>
+                      <div className="heroTargetBox__label" style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
+                      <div className="heroTargetBox__value" style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: "-0.02em", marginBottom: 2 }}>
                         {val !== null && Number.isFinite(Number(val)) ? `$${Number(val).toFixed(2)}` : "—"}
                       </div>
-                      <div style={{ fontSize: 9, color, opacity: 0.65 }}>
+                      <div className="heroTargetBox__note" style={{ fontSize: 9, color, opacity: 0.65 }}>
                         {Number.isFinite(pct) && pct > 0 ? `+${pct.toFixed(1)}%` : note}
                       </div>
                     </div>
@@ -6493,12 +6498,6 @@ async function loadWatchlistLive() {
                     <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>2.4</span>
                   </div>
                 )
-              ) : null}
-              {positionSizePct !== null && Number.isFinite(Number(positionSizePct)) ? (
-                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>Size</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{Number(positionSizePct).toFixed(1)}%</span>
-                </div>
               ) : null}
             </div>
 
@@ -7221,7 +7220,7 @@ async function loadWatchlistLive() {
         const current = pos?.current_price ?? pos?.current ?? pos?.price ?? (sym ? portfolioPriceMapLive?.[sym] : undefined) ?? null;
         const computedPnlPct =
           Number.isFinite(Number(entry)) && Number.isFinite(Number(current)) && Number(entry) !== 0
-            ? (Number(current) - Number(entry)) / Number(entry)
+            ? ((Number(current) - Number(entry)) / Number(entry)) * 100
             : null;
         const pnlPct =
           pos?.pnl_pct ??
@@ -7257,7 +7256,7 @@ async function loadWatchlistLive() {
             <td><b>{sym || "—"}</b></td>
             <td>{entry === null || entry === undefined ? "—" : money(entry)}</td>
             <td>{current === null || current === undefined ? "—" : money(current)}</td>
-            <td className={Number(pnlPct) > 0 ? "goodTxt" : Number(pnlPct) < 0 ? "badTxt" : ""}>{pnlPct === null || pnlPct === undefined ? "—" : pct(Number(pnlPct) * (Math.abs(Number(pnlPct)) <= 1 ? 100 : 1))}</td>
+            <td className={Number(pnlPct) > 0 ? "goodTxt" : Number(pnlPct) < 0 ? "badTxt" : ""}>{pnlPct === null || pnlPct === undefined ? "—" : pct(Number(pnlPct))}</td>
             <td>{stop === null || stop === undefined ? "—" : money(stop)}</td>
             <td>{target === null || target === undefined ? "—" : money(target)}</td>
             <td>
@@ -7601,8 +7600,43 @@ async function loadWatchlistLive() {
                 );
               };
 
+              const renderCard = (m) => {
+                const status = String(m?.data_status ?? m?.dataStatus ?? "").toLowerCase();
+                const isAuthError = status === "auth_error";
+                const lastValRaw = m?.price ?? m?.last_price ?? m?.lastPrice ?? m?.last;
+                const lastVal = isAuthError ? null : lastValRaw;
+                const priorClose = m?.prior_close ?? m?.priorClose ?? m?.prev_close ?? m?.prevClose;
+                const chgValRaw = m?.pct_change ?? m?.change_percent ?? m?.pctChange ?? m?.change_pct ?? m?.changePct;
+                const chgVal0 = isAuthError ? null : chgValRaw;
+                const chgVal = Number(chgVal0) === 0 && Number.isFinite(Number(priorClose)) && Number.isFinite(Number(lastVal)) && Number(priorClose) !== 0
+                  ? ((Number(lastVal) - Number(priorClose)) / Number(priorClose)) * 100
+                  : chgVal0;
+                const volValRaw = m?.volume;
+                const volVal = isAuthError ? null : volValRaw;
+                const chg = fmtSignedPct(chgVal);
+                return (
+                  <div key={`mvr_card_${m.symbol}`} className="moversCard" onClick={() => onSelectMover(m.symbol)}>
+                    <div className="moversCard__top">
+                      <span className="moversCard__symbol">{m?.symbol ?? "—"}</span>
+                      <span className={`moversCard__chg ${chg.cls}`}>{chg.text}</span>
+                    </div>
+                    <div className="moversCard__stats">
+                      <div>
+                        <div className="moversCard__statLabel">Last</div>
+                        <div className="moversCard__statValue">{lastVal === null || lastVal === undefined || !Number.isFinite(Number(lastVal)) || Number(lastVal) <= 0 ? "—" : money(lastVal)}</div>
+                      </div>
+                      <div>
+                        <div className="moversCard__statLabel">Volume</div>
+                        <div className="moversCard__statValue">{volVal === null || volVal === undefined || !Number.isFinite(Number(volVal)) || Number(volVal) <= 0 ? "—" : fmtVol(volVal)}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              };
+
               return (
                 <div style={{ position: "relative" }}>
+                  <div className="moversTableWrap">
                   <table className="table">
                     <thead>
                       <tr>
@@ -7616,6 +7650,11 @@ async function loadWatchlistLive() {
                       {visibleMovers.map(renderRow)}
                     </tbody>
                   </table>
+                  </div>
+
+                  <div className="moversCards" style={loadingMovers ? { opacity: 0.65 } : undefined}>
+                    {visibleMovers.map(renderCard)}
+                  </div>
                   {isFreeUser && hiddenCount > 0 && (
                     <div style={{
                       minHeight: "calc(100vh - 340px)",
@@ -8105,7 +8144,7 @@ async function loadWatchlistLive() {
                   placeholder="AAPL, NVDA, MSFT, TSLA…"
                   style={{
                     flex: 1, background: "none", border: "none", outline: "none",
-                    color: T.text, fontSize: 13, fontWeight: 500,
+                    color: T.text, fontSize: 16, fontWeight: 500,
                     padding: "12px 0", fontFamily: "inherit", letterSpacing: "0.02em",
                   }}
                 />
@@ -8142,7 +8181,8 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 13, color: T.textFaint }}>Add tickers above and click Screen</div>
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
+            <>
+            <div className="screenerTableWrap" style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
@@ -8290,6 +8330,81 @@ async function loadWatchlistLive() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile card list -- same data as the table above, shown
+                instead of it below 767px (see .screenerTableWrap /
+                .screenerCards in App.css). A 7-column table has no
+                reasonable CSS-only collapse into a phone-width layout;
+                this restructures each row into a stacked card. */}
+            <div className="screenerCards">
+              {sortedResults.map((row, i) => {
+                const ds = dirStyle(row.direction);
+                return (
+                  <div
+                    key={`scr_card_${row.symbol}_${i}`}
+                    className="screenerCard"
+                    onClick={() => {
+                      if (!row.error) { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); }
+                    }}
+                  >
+                    <div className="screenerCard__top">
+                      <span className="screenerCard__symbol" style={{ color: row.error ? T.textGhost : T.text }}>
+                        {row.symbol}
+                      </span>
+                      {row.error ? (
+                        <span style={{ fontSize: 11, color: "rgba(248,113,113,0.55)", fontWeight: 500 }}>unavailable</span>
+                      ) : (
+                        <span className="screenerCard__bias" style={{ color: ds.color, background: ds.bg, border: `1px solid ${ds.border}` }}>
+                          {row.direction === "BULLISH" ? "▲" : row.direction === "BEARISH" ? "▼" : "●"}{" "}{row.direction}
+                        </span>
+                      )}
+                    </div>
+                    {!row.error && (
+                      <div className="screenerCard__stats">
+                        <div className="screenerCard__stat">
+                          <div className="screenerCard__statLabel">AI Score</div>
+                          <div className="screenerCard__statValue" style={{ color: row.aiScore === null ? T.textGhost : scoreColor(row.aiScore) }}>
+                            {row.aiScore === null ? "—" : row.aiScore}
+                          </div>
+                        </div>
+                        <div className="screenerCard__stat">
+                          <div className="screenerCard__statLabel">Momentum</div>
+                          <div className="screenerCard__statValue" style={{ color: row.momentum === null ? T.textGhost : scoreColor(row.momentum) }}>
+                            {row.momentum === null ? "—" : row.momentum}
+                          </div>
+                        </div>
+                        <div className="screenerCard__stat">
+                          <div className="screenerCard__statLabel">Trend</div>
+                          <div className="screenerCard__statValue" style={{ color: row.trend === null ? T.textGhost : scoreColor(row.trend) }}>
+                            {row.trend === null ? "—" : row.trend}
+                          </div>
+                        </div>
+                        <div className="screenerCard__stat">
+                          <div className="screenerCard__statLabel">Confidence</div>
+                          <div className="screenerCard__statValue" style={{ color: row.confidence === null ? T.textGhost : scoreColor(row.confidence * 10) }}>
+                            {row.confidence === null ? "—" : row.confidence.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {!row.error && (
+                      <button
+                        className="screenerCard__analyzeBtn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSymbol(row.symbol);
+                          setTab("dashboard");
+                          runAnalyze(row.symbol);
+                        }}
+                      >
+                        Analyze →
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            </>
           )}
         </div>
       </div>
@@ -8407,7 +8522,7 @@ async function loadWatchlistLive() {
 
     const inp = {
       background: T.bg2, border: `1px solid ${T.border2}`,
-      borderRadius: 6, color: T.text, fontSize: 13,
+      borderRadius: 6, color: T.text, fontSize: 16,
       padding: "7px 10px", outline: "none", fontFamily: "inherit",
     };
 
@@ -8521,7 +8636,8 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, color: T.textGhost }}>Click "+ Add Trade Manually" above to log your first entry.</div>
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
+              <>
+              <div className="journalTableWrap" style={{ overflowX: "auto" }}>
                 <table className="table" style={{ margin: 0, minWidth: 900 }}>
                   <thead>
                     <tr>
@@ -8621,6 +8737,100 @@ async function loadWatchlistLive() {
                   </tbody>
                 </table>
               </div>
+
+              <div className="journalCards">
+                {journalTrades.map(trade => {
+                  const isClosing = journalCloseId === trade.id;
+                  const statusClass = trade.status === "won" ? "pill--good"
+                    : trade.status === "lost" ? "pill--bad" : "pill--neutral";
+                  return (
+                    <div key={`jc_${trade.id}`} className="journalCard">
+                      <div className="journalCard__top">
+                        <span className="journalCard__symbol">{trade.symbol}</span>
+                        <span className={`pill ${statusClass}`} style={{ fontSize: 10 }}>{trade.status}</span>
+                      </div>
+                      <div className="journalCard__meta">{fmtD(trade.enteredAt)}</div>
+                      <div className="journalCard__stats">
+                        <div>
+                          <div className="journalCard__statLabel">Entry</div>
+                          <div className="journalCard__statValue">{fmtP(trade.entryPrice)}</div>
+                        </div>
+                        <div>
+                          <div className="journalCard__statLabel">Stop</div>
+                          <div className="journalCard__statValue" style={{ color: "rgba(248,113,113,0.75)" }}>{fmtP(trade.stopPrice)}</div>
+                        </div>
+                        <div>
+                          <div className="journalCard__statLabel">Target</div>
+                          <div className="journalCard__statValue" style={{ color: "rgba(74,222,128,0.75)" }}>{fmtP(trade.targetPrice)}</div>
+                        </div>
+                        <div>
+                          <div className="journalCard__statLabel">Return</div>
+                          <div className="journalCard__statValue" style={{
+                            color: trade.returnPct !== null
+                              ? (trade.returnPct >= 0 ? "#4ade80" : "#f87171")
+                              : "rgba(255,255,255,0.25)",
+                          }}>
+                            {trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : "—"}
+                          </div>
+                        </div>
+                      </div>
+                      <textarea
+                        className="journalCard__notes"
+                        value={trade.notes}
+                        onChange={e => updateNote(trade.id, e.target.value)}
+                        placeholder="Add note…"
+                      />
+                      <div className="journalCard__actions">
+                        {trade.status === "open" ? (
+                          isClosing ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                              <input
+                                style={{ ...inp, flex: 1, padding: "12px 9px" }}
+                                placeholder="Exit $"
+                                value={journalClosePrice}
+                                autoFocus
+                                onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") submitClose(trade.id);
+                                  if (e.key === "Escape") { setJournalCloseId(null); setJournalClosePrice(""); }
+                                }}
+                              />
+                              <button
+                                title="Confirm close"
+                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#4ade80", borderColor: "rgba(74,222,128,0.28)", fontSize: 16, lineHeight: 1 }}
+                                onClick={() => submitClose(trade.id)}
+                              >✓</button>
+                              <button
+                                title="Cancel"
+                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: T.textFaint, fontSize: 16, lineHeight: 1 }}
+                                onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                              >✕</button>
+                            </div>
+                          ) : (
+                            <RippleButton
+                              className="btn btn--ghost"
+                              style={{ fontSize: 13, padding: "13px 14px", flex: 1 }}
+                              onClick={() => { setJournalCloseId(trade.id); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                            >
+                              Close Trade
+                            </RippleButton>
+                          )
+                        ) : (
+                          <span style={{ fontSize: 11, color: T.textGhost }}>
+                            Closed {fmtD(trade.exitedAt)}
+                          </span>
+                        )}
+                        <button
+                          title="Delete trade"
+                          style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 16, padding: "12px 14px" }}
+                          onClick={() => deleteTrade(trade.id)}
+                        >⌫</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              </>
             )}
             {journalCloseErr && (
               <div style={{ padding: "8px 20px", fontSize: 12, color: "#f87171", borderTop: `1px solid ${T.border}` }}>{journalCloseErr}</div>
@@ -9158,12 +9368,12 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
-        <div style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Avatar + name */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 8px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)", marginBottom: 10 }}>
+          <div className="settingsSidebar__profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 8px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)", marginBottom: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
               background: _getAvatar(avatarId).bg,
               border: `1.5px solid ${_getAvatar(avatarId).border}`,
@@ -9177,12 +9387,14 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
+          <div className="settingsSidebar__nav">
           {NAV_ITEMS.map(n => {
             const active = settingsTab === n.id;
             const av = _getAvatar(avatarId);
             return (
               <button
                 key={n.id}
+                className="settingsNavItem"
                 onClick={() => setSettingsTab(n.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: 9, width: "100%",
@@ -9200,10 +9412,11 @@ async function loadWatchlistLive() {
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* ── Content pane ──────────────────────────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "28px 30px" }}>
+        <div className="settingsContent" style={{ flex: 1, minWidth: 0, overflowY: "auto", padding: "28px 30px" }}>
 
           {/* PROFILE ──────────────────────────────────────────────────── */}
           {settingsTab === "profile" && (
@@ -9403,6 +9616,8 @@ async function loadWatchlistLive() {
               )}
 
               <SectionTitle>Plan Features</SectionTitle>
+              <div style={{ overflowX: "auto" }}>
+              <div style={{ minWidth: 480 }}>
               {[
                 { label: "Daily AI pick", free: "Ticker only", starter: "Full plan", pro: "Full plan", elite: "Full plan" },
                 { label: "Entry, stop & targets", free: "—", starter: "✓", pro: "✓", elite: "✓" },
@@ -9425,6 +9640,8 @@ async function loadWatchlistLive() {
                 {["Free","Starter","Pro","Elite"].map(p => (
                   <div key={p} style={{ fontSize: 10, fontWeight: 700, color: plan === p.toLowerCase() ? "#4ade80" : txtG, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p}</div>
                 ))}
+              </div>
+              </div>
               </div>
 
               <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
@@ -10806,6 +11023,72 @@ const renderPage = () => {
           </div>
         </aside>
 
+        {/* Mobile bottom tab bar — replaces the sidebar below 768px (see
+            .mobileBottomNav in App.css). Renders unconditionally; hidden via
+            CSS rather than JS so there's no layout-shift flash on resize.
+            Primary bar surfaces the 4 sections used every session (Dashboard
+            covers ticker analysis inline, so there's no separate "Analyze"
+            tab); everything else is one tap away in More, never buried
+            behind a hamburger or back/forward. */}
+        {(() => {
+          const MOBILE_NAV_MIN_PLAN = { watchlist: "starter", tradejournal: "starter" };
+          const primaryKeys = ["dashboard", "screener", "tradejournal", "settings"];
+          const primaryItems = primaryKeys.map((k) => NAV_ALL.find((n) => n.key === k)).filter(Boolean);
+          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key));
+          return (
+            <>
+              <nav className="mobileBottomNav" aria-label="Primary">
+                {primaryItems.map((n) => {
+                  const isActive = tab === n.key && !mobileMoreOpen;
+                  const navLocked = MOBILE_NAV_MIN_PLAN[n.key] && !canAccess(userPlan, MOBILE_NAV_MIN_PLAN[n.key]);
+                  return (
+                    <button
+                      key={n.key}
+                      className={`mobileBottomNav__item ${isActive ? "mobileBottomNav__item--active" : ""}`}
+                      onClick={() => { setMobileMoreOpen(false); setTab(n.key); }}
+                    >
+                      <span className="mobileBottomNav__iconWrap">
+                        <span className="mobileBottomNav__icon">{n.icon}</span>
+                        {navLocked && <span className="mobileBottomNav__lockDot" />}
+                      </span>
+                      <span className="mobileBottomNav__label">{n.label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  className={`mobileBottomNav__item ${mobileMoreOpen ? "mobileBottomNav__item--active" : ""}`}
+                  onClick={() => setMobileMoreOpen((o) => !o)}
+                >
+                  <span className="mobileBottomNav__icon">☰</span>
+                  <span className="mobileBottomNav__label">More</span>
+                </button>
+              </nav>
+
+              {mobileMoreOpen && (
+                <>
+                  <div className="mobileMoreSheet__backdrop" onClick={() => setMobileMoreOpen(false)} />
+                  <div className="mobileMoreSheet">
+                    <div className="mobileMoreSheet__handle" />
+                    {moreItems.map((n) => {
+                      const navLocked = MOBILE_NAV_MIN_PLAN[n.key] && !canAccess(userPlan, MOBILE_NAV_MIN_PLAN[n.key]);
+                      return (
+                        <button
+                          key={n.key}
+                          className={`mobileMoreSheet__item ${tab === n.key ? "mobileMoreSheet__item--active" : ""}`}
+                          onClick={() => { setMobileMoreOpen(false); setTab(n.key); }}
+                        >
+                          <span className="mobileMoreSheet__icon">{n.icon}</span>
+                          <span className="mobileMoreSheet__label">{n.label}</span>
+                          {navLocked && <span className="mobileMoreSheet__lock">{MOBILE_NAV_MIN_PLAN[n.key] === "pro" ? "PRO" : "STARTER"}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </>
+          );
+        })()}
 
         <main className="main" style={{ flex: 1, minWidth: 0 }}>
           {tab === "dashboard" && marketDataFailure ? (
@@ -10975,6 +11258,7 @@ const renderPage = () => {
       {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
       {/* FAB toggle button */}
       <button
+        className="chatFab"
         onClick={() => { setChatOpen(o => !o); setTimeout(() => chatInputRef.current?.focus(), 80); }}
         title={chatOpen ? "Close AI chat" : "Ask AI"}
         style={{
@@ -11005,7 +11289,7 @@ const renderPage = () => {
 
       {/* Chat panel */}
       {chatOpen && (
-        <div style={{
+        <div className="chatPanel" style={{
           position: "fixed",
           bottom: 108,
           right: 20,
@@ -11147,7 +11431,7 @@ const renderPage = () => {
                 background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                 border: `1px solid ${T.border2}`,
                 borderRadius: 10,
-                color: T.text, fontSize: 12.5, padding: "8px 11px",
+                color: T.text, fontSize: 16, padding: "8px 11px",
                 fontFamily: "inherit", lineHeight: 1.45, outline: "none",
                 maxHeight: 80, overflow: "auto",
                 transition: "border-color 0.15s",

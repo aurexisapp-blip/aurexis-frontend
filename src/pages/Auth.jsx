@@ -733,7 +733,7 @@ const S = {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.09)",
     borderRadius: 10, padding: "13px 14px",
-    fontSize: 14, color: "rgba(255,255,255,0.90)",
+    fontSize: 16, color: "rgba(255,255,255,0.90)",
     outline: "none", width: "100%", boxSizing: "border-box",
     fontFamily: "inherit",
   },

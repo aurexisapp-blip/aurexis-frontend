@@ -866,12 +866,312 @@ a:hover{
 
 @media (max-width: 560px){
   .page{ padding: 12px 12px 14px; }
-  .layout{ grid-template-columns: 1fr; }
-  .sidebar{ height: auto; overflow: visible; z-index: 30; border-right: none; border-bottom: 1px solid var(--line); }
-  .sideNav{ flex-direction: row; flex-wrap: wrap; gap: 8px; }
-  .sideItem{ width: auto; }
   .cmdInput{ width: 160px; }
 }
+
+/* ---------- Mobile shell: bottom tab bar replaces the sidebar ----------
+   767px matches the JS mobile-gate breakpoint in main.jsx exactly, since
+   this is the boundary that gate controls. Below it, the sidebar (a
+   vertical-nav pattern that doesn't work well touch-first) is replaced by
+   a fixed bottom tab bar -- the standard native-app navigation pattern,
+   and the one Capacitor-wrapped screens will feel most at home with.
+   The sidebar's own horizontal-row fallback (previously here at 560px)
+   is removed: it's now unreachable dead code below 767px, superseded by
+   this bar, and would otherwise render on top of it. */
+.mobileBottomNav, .mobileMoreSheet, .mobileMoreSheet__backdrop{ display: none; }
+
+@media (max-width: 767px){
+  .sidebar{ display: none !important; }
+  .page{ padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+
+  .mobileBottomNav{
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 1100;
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
+    padding: 6px 4px env(safe-area-inset-bottom, 0px);
+    background: rgba(8, 9, 13, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.28);
+  }
+  .mobileBottomNav__item{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.40);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s ease;
+    /* 58px tall x 1/5 of viewport wide comfortably clears Apple's 44pt
+       minimum touch target on any phone this app reasonably supports. */
+  }
+  .mobileBottomNav__item--active{ color: #00d462; }
+  .mobileBottomNav__iconWrap{ position: relative; display: inline-flex; }
+  .mobileBottomNav__item--active .mobileBottomNav__iconWrap::before{
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 34px; height: 26px;
+    border-radius: 9px;
+    background: rgba(0, 212, 98, 0.14);
+    z-index: -1;
+  }
+  .mobileBottomNav__icon{ font-size: 18px; line-height: 1; display: block; }
+  .mobileBottomNav__lockDot{
+    position: absolute; top: -2px; right: -4px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(251, 191, 36, 0.90);
+    border: 1.5px solid rgba(8, 9, 13, 0.96);
+  }
+  .mobileBottomNav__label{ font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .mobileBottomNav__item--active .mobileBottomNav__label{ font-weight: 700; }
+
+  .mobileMoreSheet__backdrop{
+    position: fixed; inset: 0; z-index: 1150;
+    background: rgba(0,0,0,0.45);
+  }
+  .mobileMoreSheet{
+    position: fixed;
+    left: 0; right: 0;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    z-index: 1160;
+    background: var(--panelSolid);
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    padding: 8px 8px calc(12px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -12px 32px rgba(0,0,0,0.35);
+  }
+  .mobileMoreSheet__handle{
+    width: 36px; height: 4px; border-radius: 999px;
+    background: rgba(255,255,255,0.16);
+    margin: 6px auto 10px;
+  }
+  .mobileMoreSheet__item{
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    padding: 13px 14px;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px; font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mobileMoreSheet__item--active{ background: rgba(255,255,255,0.06); }
+  .mobileMoreSheet__icon{ font-size: 16px; opacity: 0.8; width: 20px; text-align: center; }
+  .mobileMoreSheet__label{ flex: 1; }
+  .mobileMoreSheet__lock{
+    font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+}
+
+/* ---------- Screener: card list replaces the table below 767px ----------
+   A 7-column table (symbol, AI score, momentum, trend, confidence, bias,
+   analyze button) has no reasonable CSS-only collapse into a phone-width
+   layout -- the table and the card list render the same data from the
+   same array; only one is visible at a time. */
+.screenerCards{ display: none; }
+@media (max-width: 767px){
+  .screenerTableWrap{ display: none; }
+  .screenerCards{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+  .screenerCard{
+    border-radius: var(--r12);
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.01);
+    padding: 14px;
+    cursor: pointer;
+  }
+  .screenerCard__top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .screenerCard__symbol{ font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .screenerCard__bias{
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;
+  }
+  .screenerCard__stats{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .screenerCard__statLabel{ font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .screenerCard__statValue{ font-size: 15px; font-weight: 700; }
+  .screenerCard__analyzeBtn{
+    width: 100%;
+    padding: 13px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.65);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+}
+
+/* ---------- Movers: card list replaces the table below 767px ---------- */
+.moversCards{ display: none; }
+@media (max-width: 767px){
+  .moversTableWrap{ display: none; }
+  .moversCards{ display: flex; flex-direction: column; gap: 10px; }
+  .moversCard{
+    border-radius: var(--r12);
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.01);
+    padding: 14px;
+    cursor: pointer;
+  }
+  .moversCard__top{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .moversCard__symbol{ font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .moversCard__chg{ font-size: 14px; font-weight: 800; }
+  .moversCard__stats{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .moversCard__statLabel{ font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .moversCard__statValue{ font-size: 15px; font-weight: 700; }
+}
+
+/* ---------- Trade Journal: card list replaces the table below 767px ---------- */
+.journalCards{ display: none; }
+@media (max-width: 767px){
+  .journalTableWrap{ display: none; }
+  .journalCards{ display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+  .journalCard{
+    border-radius: var(--r12);
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.01);
+    padding: 14px;
+  }
+  .journalCard__top{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 3px; }
+  .journalCard__symbol{ font-size: 15px; font-weight: 700; letter-spacing: 0.03em; }
+  .journalCard__meta{ font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .journalCard__stats{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .journalCard__statLabel{ font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .journalCard__statValue{ font-size: 13px; font-weight: 700; font-family: monospace; }
+  .journalCard__notes{
+    width: 100%; min-height: 44px; max-height: 100px; resize: vertical;
+    border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02); color: var(--text);
+    font-size: 16px; padding: 8px 10px; line-height: 1.45; margin-bottom: 10px;
+  }
+  .journalCard__actions{ display: flex; align-items: center; gap: 6px; }
+}
+
+/* ---------- Analyze hero: Entry/Stop/Targets tuned for a real phone below 767px ----------
+   Entry/Stop stay 2-up (comfortably fits at 390px+), but the 3-across
+   Targets grid becomes a horizontal-row list -- three vertically-stacked
+   cards each with their own label/value/note was the "cramped" look
+   flagged from a real device; a row list reads the same info in far
+   less vertical rhythm-breaking space. */
+@media (max-width: 767px){
+  .heroEntryStopGrid{ gap: 8px !important; }
+  .heroTargetsGrid{ grid-template-columns: 1fr !important; gap: 6px !important; }
+  .heroTargetBox{
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas: "label value" "note value" !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    padding: 10px 14px !important;
+  }
+  .heroTargetBox__label{ grid-area: label; margin-bottom: 0 !important; font-size: 10px !important; }
+  .heroTargetBox__value{ grid-area: value; font-size: 19px !important; margin-bottom: 0 !important; text-align: right; }
+  .heroTargetBox__note{ grid-area: note; font-size: 10px !important; }
+}
+
+/* ---------- Settings: sidebar rail collapses to a horizontal tab strip below 767px ---------- */
+@media (max-width: 767px){
+  .settingsShell{ flex-direction: column; border-radius: 12px; }
+  .settingsSidebar{ width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07); padding: 12px 12px 8px !important; }
+  .settingsSidebar__profile{ display: none; }
+  .settingsSidebar__nav{ display: flex; flex-direction: row; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .settingsNavItem{ width: auto !important; white-space: nowrap; flex-shrink: 0; border-left: none !important; border-radius: 999px !important; padding: 10px 15px !important; }
+  .settingsContent{ padding: 20px 16px !important; }
+}
+
+/* ---------- Chat FAB: lift above the mobile bottom nav so they don't overlap ----------
+   Desktop keeps bottom:52/108 (defined inline). Below 767px the bottom nav
+   (58px + safe-area) occupies the same corner, so both get pushed up by that
+   amount plus a small gap. */
+@media (max-width: 767px){
+  .chatFab{ bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 14px) !important; }
+  .chatPanel{ bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 70px) !important; }
+}
+
+/* ---------- Shared modal shell (Analyze / Paper Trade / Feedback) ---------- */
+.modal{
+  background: var(--panelSolid);
+  border: 1px solid var(--line);
+  border-radius: var(--r16);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.modalHead{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modalTitle{
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.modalBody{
+  padding: 20px;
+  color: var(--text);
+}
+.feedbackBox{
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 16px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+@media (max-width: 767px){
+  .modalOverlay{ padding: 12px; }
+  .modal{ max-height: calc(100vh - 24px); }
+  .modalHead{ padding: 16px; }
+  .modalBody{ padding: 16px; }
+}
+
 
 .heatTile{
   border-radius: var(--r12);
@@ -1557,7 +1857,7 @@ a:hover{
   background: rgba(0,0,0,0.12);
   color: rgba(255,255,255,0.92);
   outline: none;
-  font-size: 13px;
+  font-size: 16px;
 }
 .cmdInput:focus { border-color: rgba(var(--accent-rgb), 0.16); box-shadow: var(--focus); }
 .cmdInput::placeholder{ color: rgba(255,255,255,0.40); }
@@ -2186,8 +2486,11 @@ a:hover{
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.60);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
   z-index: 9999;
 }
 
