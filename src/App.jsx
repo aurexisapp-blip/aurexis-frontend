@@ -7516,6 +7516,7 @@ async function loadWatchlistLive() {
     // standalone TopMoversCard into one list — both read the same `movers`
     // state and showed overlapping data as two separate cards.
     const TodaysLeadersCard = () => {
+      const isOpen = sessionFromClockOrHeuristic(clock) === "OPEN";
       const eligible = (Array.isArray(movers) ? movers : []).filter((m) => {
         const price = Number(m?.price ?? m?.last_price ?? m?.last);
         const vol = m?.volume;
