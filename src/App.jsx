@@ -8418,6 +8418,73 @@ async function loadWatchlistLive() {
       );
     };
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: `${NATIVE_SPACE.l}px` }}>
+          <div style={NATIVE_TYPE.screenTitle}>Watchlist</div>
+
+          {/* ── Saved ── */}
+          <div>
+            <div style={{ ...NATIVE_TYPE.label, marginBottom: NATIVE_SPACE.s }}>Saved</div>
+            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
+              {loadingWatchlist && watchlistLive.length === 0 ? (
+                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Loading…</div>
+              ) : watchlistLive.length === 0 ? (
+                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Symbols you save will appear here.</div>
+              ) : watchlistLive.map((sym, i) => (
+                <NativeListRow
+                  key={sym}
+                  avatar={sym.slice(0, 2)}
+                  title={sym}
+                  onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
+                  trailing={
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeFromWatchlistLive(sym); }}
+                      style={{ background: "none", border: "none", color: NATIVE_COLOR.textFaint, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 0" }}
+                    >Remove</button>
+                  }
+                  last={i === watchlistLive.length - 1}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* ── System Watchlist ── */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
+              <div style={NATIVE_TYPE.label}>Building momentum</div>
+              <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", ...NATIVE_TYPE.label, marginBottom: 0, cursor: "pointer" }}>
+                {loadingCandidates ? "Scanning…" : "Refresh"}
+              </button>
+            </div>
+            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
+              {loadingCandidates ? (
+                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Scanning market for close candidates…</div>
+              ) : candidatesError ? (
+                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>{candidatesError}</div>
+              ) : systemCandidates.length === 0 ? (
+                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>No close candidates right now — this fills in as stocks build momentum.</div>
+              ) : systemCandidates.map((c, i) => {
+                const progress = c.score !== null ? Math.min(100, Math.round((c.score / AI_SCORE_THRESHOLD) * 100)) : null;
+                const tier = progress === null ? "LOW" : progress >= 90 ? "HIGH" : progress >= 72 ? "MODERATE" : "LOW";
+                return (
+                  <NativeListRow
+                    key={c.symbol}
+                    avatar={c.symbol.slice(0, 2)}
+                    title={c.symbol}
+                    subtitle={c.edgeSignals.length > 0 ? c.edgeSignals.slice(0, 2).map(fmt).join(" · ") : (c.noTradeReason || "Edge signals detected")}
+                    trailing={<NativeScorePill label={c.score !== null ? `${c.score.toFixed(1)}/${AI_SCORE_THRESHOLD.toFixed(1)}` : "—"} tier={tier} />}
+                    onClick={() => { setSymbol(c.symbol); setTab("dashboard"); runAnalyze(c.symbol); }}
+                    last={i === systemCandidates.length - 1}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
 
@@ -8658,6 +8725,55 @@ async function loadWatchlistLive() {
     };
 
     const loadingSymCount = (screenerInputRef.current?.value || "").split(/[,\s]+/).filter((s) => s.trim()).length;
+
+    if (isNative) {
+      const scoreTier = (s) => (s === null ? "LOW" : s >= 70 ? "HIGH" : s >= 50 ? "MODERATE" : "LOW");
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l }}>
+          <div style={NATIVE_TYPE.screenTitle}>Screener</div>
+
+          <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l }}>
+            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "0 14px", gap: 8, marginBottom: NATIVE_SPACE.m }}>
+              <span style={{ fontSize: 12, color: NATIVE_COLOR.textFaint, flexShrink: 0 }}>⊞</span>
+              <input
+                ref={screenerInputRef}
+                defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
+                onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
+                placeholder="AAPL, NVDA, MSFT, TSLA…"
+                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: NATIVE_COLOR.text, fontSize: 15, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
+              />
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={runScreen}
+              disabled={loading}
+              style={{ width: "100%", padding: "12px 0", borderRadius: 12, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+            >
+              {loading ? `Screening ${loadingSymCount} symbol${loadingSymCount !== 1 ? "s" : ""}…` : "Screen"}
+            </motion.button>
+          </div>
+
+          {!loading && hasScreened && results.length > 0 && (
+            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
+              {sortedResults.map((row, i) => (
+                <NativeListRow
+                  key={`scr_${row.symbol}_${i}`}
+                  avatar={row.symbol.slice(0, 2)}
+                  title={row.symbol}
+                  subtitle={row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
+                  trailing={row.error ? null : <NativeScorePill label={row.aiScore ?? "—"} tier={scoreTier(row.aiScore)} />}
+                  onClick={row.error ? undefined : () => { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); }}
+                  last={i === sortedResults.length - 1}
+                />
+              ))}
+            </div>
+          )}
+          {!loading && (!hasScreened || results.length === 0) && (
+            <div style={{ ...NATIVE_TYPE.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.xl}px 0` }}>Add tickers above and tap Screen.</div>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className="pageGrid">
@@ -9081,11 +9197,112 @@ async function loadWatchlistLive() {
       { label: "Best Trade",    value: bestTrade ? `${bestTrade.symbol} +${bestRet.toFixed(1)}%` : "—", colored: bestRet },
     ];
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l }}>
+          <div style={NATIVE_TYPE.screenTitle}>Trade Journal</div>
+
+          {total > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l }}>
+              {summaryStats.map(({ label, value, colored }) => (
+                <div key={label} style={{ flex: "1 1 45%", marginBottom: NATIVE_SPACE.s }}>
+                  <div style={NATIVE_TYPE.label}>{label}</div>
+                  <div style={{
+                    fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", marginTop: 4,
+                    color: colored !== null && colored !== undefined
+                      ? (colored >= 0 ? NATIVE_COLOR.accent : NATIVE_COLOR.negative)
+                      : NATIVE_COLOR.text,
+                  }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => journalAddOpen ? closeForm() : setJournalAddOpen(true)}
+            style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: journalAddOpen ? "transparent" : NATIVE_COLOR.accentBase, border: journalAddOpen ? `0.5px solid ${NATIVE_COLOR.divider}` : "none", color: journalAddOpen ? NATIVE_COLOR.text : "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+          >
+            {journalAddOpen ? "Cancel" : "+ Add Trade"}
+          </motion.button>
+
+          {journalAddOpen && (
+            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l, display: "flex", flexDirection: "column", gap: NATIVE_SPACE.s }}>
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={symRef}
+                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none", paddingRight: fetchingSymbol ? 28 : undefined }}
+                  placeholder="Symbol"
+                  onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
+                  onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+                {fetchingSymbol && <span className="btnSpinner" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />}
+              </div>
+              {[
+                { ref: entryRef, placeholder: "Entry $", fkey: "entry" },
+                { ref: stopRef, placeholder: "Stop $", fkey: "stop" },
+                { ref: targetRef, placeholder: "Target $", fkey: "target" },
+                { ref: notesRef, placeholder: "Notes (optional)", fkey: "notes" },
+              ].map(({ ref, placeholder, fkey }) => (
+                <input
+                  key={fkey} ref={ref}
+                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none" }}
+                  placeholder={placeholder}
+                  onChange={e => saveField(fkey, e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+              ))}
+              {journalAddErr && <div style={{ fontSize: 12, color: NATIVE_COLOR.negative }}>{journalAddErr}</div>}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={submitAdd} style={{ padding: "12px 0", borderRadius: 12, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Submit</motion.button>
+            </div>
+          )}
+
+          <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: journalTrades.length ? `0 ${NATIVE_SPACE.l}px` : NATIVE_SPACE.l }}>
+            {journalTrades.length === 0 ? (
+              <div style={{ ...NATIVE_TYPE.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.m}px 0` }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
+            ) : journalTrades.map((trade, i) => {
+              const isClosing = journalCloseId === trade.id;
+              const statusColor = trade.status === "won" ? NATIVE_COLOR.accent : trade.status === "lost" ? NATIVE_COLOR.negative : NATIVE_COLOR.textLabel;
+              return (
+                <div key={trade.id}>
+                  <NativeListRow
+                    avatar={trade.symbol.slice(0, 2)}
+                    title={trade.symbol}
+                    subtitle={`${fmtD(trade.enteredAt)} · ${trade.status[0].toUpperCase()}${trade.status.slice(1)}`}
+                    trailing={trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : (trade.status === "open" ? "Open" : "—")}
+                    trailingColor={trade.returnPct !== null ? statusColor : NATIVE_COLOR.textLabel}
+                    onClick={trade.status === "open" ? () => { setJournalCloseId(isClosing ? null : trade.id); setJournalClosePrice(""); setJournalCloseErr(""); } : undefined}
+                    last={i === journalTrades.length - 1 && !isClosing}
+                  />
+                  {isClosing && (
+                    <div style={{ display: "flex", gap: NATIVE_SPACE.s, padding: `0 0 ${NATIVE_SPACE.m}px` }}>
+                      <input
+                        style={{ ...inp, flex: 1, background: "rgba(255,255,255,0.05)", border: "none" }}
+                        placeholder="Exit price"
+                        value={journalClosePrice}
+                        autoFocus
+                        onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                        onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
+                      />
+                      <button onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 10, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
+                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 10, background: "transparent", border: `0.5px solid ${NATIVE_COLOR.divider}`, color: NATIVE_COLOR.textFaint, cursor: "pointer" }}>⌫</button>
+                    </div>
+                  )}
+                  {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: NATIVE_COLOR.negative, paddingBottom: NATIVE_SPACE.s }}>{journalCloseErr}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
         {/* ── Summary bar ── */}
         {total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "repeat(4, 1fr)", gap: isNative ? NATIVE_SPACE.s : 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
