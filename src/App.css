@@ -881,8 +881,35 @@ a:hover{
 .mobileBottomNav, .mobileMoreSheet, .mobileMoreSheet__backdrop{ display: none; }
 
 @media (max-width: 767px){
+  /* .sidebar{ display:none } alone leaves .layout's 240px first grid
+     track reserved but empty -- .main was being squeezed into whatever
+     was left (viewport-240px), and since that track was bare 1fr rather
+     than minmax(0,1fr), any content wider than that squeezed width blew
+     the whole grid past the viewport. This is the actual source of the
+     dashboard's page-level horizontal scroll -- not any individual card. */
+  .layout{ grid-template-columns: 1fr; }
   .sidebar{ display: none !important; }
   .page{ padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Every safe-area-inset usage in this file was -bottom (nav bar, FAB,
+     toast) -- nothing accounted for -top, and this app sets
+     viewport-fit=cover, so the WebView renders full-bleed under the
+     Dynamic Island/notch by design. .headerBar is the only top-anchored
+     persistent element (everything else fixed-position is bottom-
+     anchored or a centered modal) and holds the Analyze button, so it's
+     exactly what was colliding with the notch. */
+  .headerBar{ padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+
+  /* .headerBar renders unconditionally on every tab and had zero mobile
+     handling: .cmdBar (nowrap label + fixed-width input + button) and
+     .headerRight (nowrap market-status text) sat in one unwrapped
+     justify-content:space-between row with a combined min-content width
+     of ~600-700px -- forced into a ~375-430px phone screen, another real
+     source of the dashboard's horizontal overflow, independent of the
+     .layout grid fix above. */
+  .headerBar{ flex-wrap: wrap; row-gap: 10px; }
+  .cmdBar{ flex-wrap: wrap; width: 100%; }
+  .cmdInput{ flex: 1; min-width: 0; width: auto; }
 
   .mobileBottomNav{
     display: flex;
@@ -1104,12 +1131,28 @@ a:hover{
 
 /* ---------- Settings: sidebar rail collapses to a horizontal tab strip below 767px ---------- */
 @media (max-width: 767px){
-  .settingsShell{ flex-direction: column; border-radius: 12px; }
-  .settingsSidebar{ width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07); padding: 12px 12px 8px !important; }
+  .settingsShell{ flex-direction: column; border-radius: 12px; background: transparent !important; border: none !important; }
+  /* border-bottom removed -- the nav list now renders as its own bordered/
+     elevated card (see the isNative branch in App.jsx), so a second border
+     directly under it just doubled up. Padding bumped for clearer breathing
+     room between the nav card and the content pane below it. */
+  .settingsSidebar{ width: 100% !important; border-right: none !important; border-bottom: none !important; padding: 16px 16px 20px !important; }
   .settingsSidebar__profile{ display: none; }
-  .settingsSidebar__nav{ display: flex; flex-direction: row; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* overflow-x:auto alone gave zero indication this row scrolls -- Profile/
+     Account/Plan & Billing were the only 3 of 7 destinations visible, with
+     Notifications/Appearance/Privacy/Support undiscoverable unless a user
+     happened to swipe this specific row. Wrapping instead of scrolling
+     guarantees every destination is visible without a gesture, at the
+     cost of the row taking 2-3 lines instead of 1 -- a better trade for a
+     settings nav where discoverability matters more than compactness. */
+  .settingsSidebar__nav{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; }
   .settingsNavItem{ width: auto !important; white-space: nowrap; flex-shrink: 0; border-left: none !important; border-radius: 999px !important; padding: 10px 15px !important; }
-  .settingsContent{ padding: 20px 16px !important; }
+  /* .settingsContent has its own independent overflowY:auto (App.jsx) --
+     it's a nested scroll container, not the same element .page scrolls,
+     so .page's bottom-nav clearance (padding-bottom: calc(70px + env(
+     safe-area-inset-bottom))) never applied here. Matching that value
+     directly so content isn't clipped behind the fixed bottom nav. */
+  .settingsContent{ padding: 20px 16px calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
 /* ---------- Chat FAB: lift above the mobile bottom nav so they don't overlap ----------

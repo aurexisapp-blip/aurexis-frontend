@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { isNativeApp } from "./lib/platform";
 import App from "./App";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
@@ -104,7 +105,7 @@ function AppGate() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  if (isMobile && !isMobilePreview()) return <MobileBlock />;
+  if (isMobile && !isMobilePreview() && !isNativeApp()) return <MobileBlock />;
 
   // Capture OAuth token from URL before the gate check so it isn't lost
   const params = new URLSearchParams(window.location.search);
@@ -134,10 +135,10 @@ createRoot(rootEl).render(
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
         <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
-        <Route path="/login"      element={(window.innerWidth < 768 && !isMobilePreview()) ? <MobileBlock /> : <Auth defaultView="login" />} />
-        <Route path="/signup"     element={(window.innerWidth < 768 && !isMobilePreview()) ? <MobileBlock /> : <Auth defaultView="signup" />} />
+        <Route path="/login"      element={(window.innerWidth < 768 && !isMobilePreview() && !isNativeApp()) ? <MobileBlock /> : <Auth defaultView="login" />} />
+        <Route path="/signup"     element={(window.innerWidth < 768 && !isMobilePreview() && !isNativeApp()) ? <MobileBlock /> : <Auth defaultView="signup" />} />
         <Route path="/app/*" element={<AppGate />} />
-        <Route path="/*" element={<LandingPage />} />
+        <Route path="/*" element={isNativeApp() ? <Navigate to="/login" replace /> : <LandingPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

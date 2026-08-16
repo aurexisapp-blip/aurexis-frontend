@@ -7,6 +7,8 @@ import { AnimatePresence, animate, motion } from "framer-motion";
 
 import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
+import { isNativeApp } from "./lib/platform";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 import {
   apiFetch as apiClientFetch,
@@ -2535,7 +2537,147 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
   );
 }
 
+// Native (Capacitor) dashboard elevation -- gives the 5 main dashboard
+// cards a soft top-edge highlight + drop shadow instead of the flat fill
+// they use on web, so they read as distinct surfaces. `glow` adds a faint
+// brand-green edge, reserved for the primary (System Decision) card so it
+// stays visually dominant over the secondary cards.
+function nativeCardShadow(darkMode, glow) {
+  const base = darkMode
+    ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 26px rgba(0,0,0,0.42)"
+    : "0 1px 0 rgba(255,255,255,0.75) inset, 0 8px 20px rgba(0,0,0,0.08)";
+  return glow ? `${base}, 0 0 0 1px rgba(0,180,80,0.12)` : base;
+}
+
+const NATIVE_DASHBOARD_KEYFRAMES = `
+@keyframes aurexisSkeletonPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+`;
+
+function SkeletonRow({ darkMode, borderColor, height = 34, radius = 9 }) {
+  return (
+    <div style={{
+      height, borderRadius: radius,
+      background: darkMode ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.035)",
+      border: `1px solid ${borderColor}`,
+      animation: "aurexisSkeletonPulse 1.4s ease-in-out infinite",
+    }} />
+  );
+}
+
+// ── Native dashboard design system ──────────────────────────────────────
+// One shared spacing/type/component scale for the native (isNative) Dashboard
+// only -- referenced by all 5 cards so they read as one deliberate system
+// (Robinhood/Cash App discipline) instead of separately-tuned cards. Not
+// used by the desktop or web-mobile layouts.
+
+// 4/8/12/16/20px scale -- every native dashboard margin/padding traces back
+// to one of these instead of ad-hoc pixel values.
+const NATIVE_SPACE = { xs: 4, s: 8, m: 12, l: 16, xl: 20 };
+
+// Uniform shell for the 4 secondary cards (Market Pulse, Personal Best Pick
+// Log, Analysis, Top Movers) -- identical radius/padding/title treatment so
+// they read as a family. The primary (System Decision) card intentionally
+// departs from this (larger radius, bolder title, glow shadow) to stay
+// visually dominant.
+const NATIVE_SECONDARY_CARD = {
+  radius: 18,
+  headerPad: `${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.m}px`,
+  bodyPad: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px`,
+  title: { fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" },
+  label: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" },
+};
+
+// Data-tile grid (Today's Leaders / Top Movers) -- fixed height + radius +
+// gap so every tile is identical regardless of content, numbers right-
+// aligned and tabular so percentages line up down the column.
+const NATIVE_TILE = { radius: 12, gap: NATIVE_SPACE.s, height: 46 };
+
+function nativeTabStyle(active) {
+  return {
+    background: active ? "rgba(0,180,80,0.14)" : "transparent",
+    border: `1px solid ${active ? "rgba(0,180,80,0.30)" : "transparent"}`,
+    borderRadius: 999, cursor: "pointer",
+    padding: "7px 13px", fontSize: 12,
+    fontWeight: active ? 700 : 500,
+    letterSpacing: "0.01em", fontFamily: "inherit",
+    display: "flex", alignItems: "center", gap: 5,
+    height: 32, boxSizing: "border-box",
+  };
+}
+
+// Ticker + change tile shared by the Today's Leaders strip and the Top
+// Movers list on native -- guarantees both grids use one row shape.
+function NativeMoverTile({ symbol, right, rightColor, onClick, T, darkMode }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      onClick={onClick}
+      style={{
+        height: NATIVE_TILE.height,
+        borderRadius: NATIVE_TILE.radius,
+        background: darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
+        border: `1px solid ${T.border}`,
+        padding: "0 " + NATIVE_SPACE.m + "px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        cursor: onClick ? "pointer" : "default",
+        fontFamily: "inherit", width: "100%", minWidth: 0, boxSizing: "border-box",
+      }}
+    >
+      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: T.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{symbol}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: rightColor, fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.s }}>{right}</span>
+    </motion.button>
+  );
+}
+
 function AppInner() {
+  const isNative = isNativeApp();
+
+  // Push notification wiring -- registered once app-wide (not just while
+  // Settings is open) since a tap can arrive from any screen or from the
+  // app being fully closed. Permission itself is requested from the
+  // Settings > Notifications toggle (see settingsTab === "alerts"), not
+  // here -- this effect only listens for the results of that request.
+  useEffect(() => {
+    if (!isNative) return;
+    const regSub = PushNotifications.addListener("registration", (token) => {
+      const authToken = localStorage.getItem("aurexis_token");
+      if (!authToken || !token?.value) return;
+      fetch(`${API}/auth/device-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ device_token: token.value, platform: "ios" }),
+      })
+        .then((r) => {
+          if (r.ok) {
+            try {
+              localStorage.setItem("aurexis_push_registered", "1");
+              localStorage.setItem("aurexis_push_token", token.value);
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    });
+    const errSub = PushNotifications.addListener("registrationError", (err) => {
+      console.warn("push registration error", err);
+    });
+    // Tap handling: paid-pick pushes deep-link to the dashboard (where
+    // today's pick already lives); free-tier teaser pushes deep-link to
+    // the upgrade screen instead, since there's no pick to show them.
+    const tapSub = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      const data = action?.notification?.data || {};
+      if (data.type === "pick") setTab("dashboard");
+      else if (data.type === "upgrade") setTab("pricing");
+    });
+    return () => {
+      regSub.then((s) => s.remove());
+      errSub.then((s) => s.remove());
+      tapSub.then((s) => s.remove());
+    };
+  }, [isNative]);
+
   const NAV = useMemo(
     () => ({
       main: [
@@ -3363,23 +3505,20 @@ async function loadAccount() {
   setLoadingAccount(true);
   setErrAccount("");
   try {
+    // /account is the firm's own Alpaca brokerage account, gated off from
+    // customers on purpose (see app.py) -- not a per-user endpoint, so it's
+    // never called here. /portfolio is the real per-user source for
+    // cash/account_value.
     try {
-      const data = await safeApiCall(() => apiGetAccount(), { onToast: showLiveDataToast, context: "account" });
-      setAccount(data);
+      const p = await safeApiCall(() => apiGetPortfolio(), { onToast: showLiveDataToast, context: "account_from_portfolio" });
+      setAccount({
+        cash: p?.cash,
+        account_value: p?.account_value,
+      });
       markDataFetchSuccess();
-    } catch (e1) {
-      try {
-        const p = await safeApiCall(() => apiGetPortfolio(), { onToast: showLiveDataToast, context: "account_from_portfolio" });
-        // Map /portfolio -> /account shape
-        setAccount({
-          cash: p?.cash,
-          account_value: p?.account_value,
-        });
-        markDataFetchSuccess();
-      } catch (e2) {
-        setAccount(null);
-        setErrAccount(friendlyError(e1, "account"));
-      }
+    } catch (e2) {
+      setAccount(null);
+      setErrAccount(friendlyError(e2, "account"));
     }
   } finally {
     setLoadingAccount(false);
@@ -4772,31 +4911,74 @@ async function loadWatchlistLive() {
         if (sym.includes("ZVZ") || sym.includes("TEST")) return false;
         return Number.isFinite(price) && price >= 1 && (volume === null || volume === 0 || volume >= 10000);
       });
+      const stillLoadingFirstFetch = isNative && loadingMovers && eligibleMovers.length === 0 && !errMovers;
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
-          borderRadius: 16, overflow: "hidden",
-          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          borderRadius: isNative ? 18 : 16, overflow: "hidden",
+          boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
           height: "100%",
         }}>
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 18px 12px",
+            padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "14px 18px 12px",
             borderBottom: `1px solid ${T.border}`,
           }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Top Movers</div>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Top Movers</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Market leaders by movement.</div>
             </div>
-            <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
+            {isNative ? (
+              <motion.button whileTap={{ scale: 0.94 }} style={{ ...nativeTabStyle(false), borderColor: T.border2 }} onClick={loadMovers} disabled={loadingMovers}>Refresh</motion.button>
+            ) : (
+              <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
+            )}
           </div>
-          <div style={{ flex: 1, padding: "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
+          <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
             {errMovers ? (
               <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <span>Unable to load movers</span>
                 <button className="btn btn--ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={loadMovers}>Retry</button>
+              </div>
+            ) : stillLoadingFirstFetch ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_TILE.gap }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <SkeletonRow key={i} darkMode={darkMode} borderColor={T.border} height={NATIVE_TILE.height} radius={NATIVE_TILE.radius} />
+                ))}
+              </div>
+            ) : eligibleMovers.length > 0 && isNative ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_TILE.gap, ...(loadingMovers ? { opacity: 0.65 } : null) }}>
+                {eligibleMovers.slice(0, 8).map((m) => {
+                  const lastVal = m?.price;
+                  const chgVal = m?.pct_change;
+                  const chg = fmtSignedPct(chgVal);
+                  const isPos = Number(chgVal) >= 0;
+                  return (
+                    <motion.button
+                      key={m.symbol}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => onSelectMover(m.symbol)}
+                      style={{
+                        width: "100%", minWidth: 0, boxSizing: "border-box",
+                        height: NATIVE_TILE.height,
+                        borderRadius: NATIVE_TILE.radius,
+                        background: darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)",
+                        border: `1px solid ${T.border}`,
+                        padding: `0 ${NATIVE_SPACE.m}px`,
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0, overflow: "hidden" }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m?.symbol ?? "—"}</span>
+                        <span style={{ fontSize: 11, color: T.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lastVal === null || lastVal === undefined ? "—" : money(lastVal)}</span>
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: isPos ? "#4ade80" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.s }}>{chg.text}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
             ) : eligibleMovers.length > 0 ? (
               <div className="moversList" style={loadingMovers ? { opacity: 0.65 } : undefined}>
@@ -4818,8 +5000,12 @@ async function loadWatchlistLive() {
             ) : (
               <div className="mutedSmall">No liquid movers passed UI filters (price ≥ $1, volume ≥ 10k).</div>
             )}
-            <div style={{ marginTop: 12 }}>
-              <button className="btn btn--ghost" onClick={() => setTab("movers")}>Open full movers</button>
+            <div style={{ marginTop: NATIVE_SPACE.m }}>
+              {isNative ? (
+                <motion.button whileTap={{ scale: 0.96 }} style={{ ...nativeTabStyle(false), width: "100%", justifyContent: "center", borderColor: T.border2 }} onClick={() => setTab("movers")}>Open full movers</motion.button>
+              ) : (
+                <button className="btn btn--ghost" onClick={() => setTab("movers")}>Open full movers</button>
+              )}
             </div>
           </div>
         </div>
@@ -5157,14 +5343,14 @@ async function loadWatchlistLive() {
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
-          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
-          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
+          boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           height: "100%", display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
-          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Market Pulse</div>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Market Pulse</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Live session & regime context</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: isOpen ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(74,222,128,0.20)" : "rgba(255,255,255,0.10)"}` }}>
@@ -5174,8 +5360,8 @@ async function loadWatchlistLive() {
           </div>
 
           {/* Regime */}
-          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}` }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Market Regime</div>
+          <div style={{ padding: isNative ? `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.m}px` : "14px 18px 12px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={isNative ? { ...NATIVE_SECONDARY_CARD.label, color: T.textGhost, marginBottom: NATIVE_SPACE.s } : { fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Market Regime</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ padding: "5px 12px", borderRadius: 8, background: regimeColor.bg, border: `1px solid ${regimeColor.border}` }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: regimeColor.fg, letterSpacing: "0.02em" }}>{regimeLabel || "—"}</span>
@@ -5188,10 +5374,37 @@ async function loadWatchlistLive() {
           </div>
 
           {/* Top movers mini-strip */}
-          <div style={{ padding: "12px 18px 16px", flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Today's Leaders</div>
-            {topM.length === 0 ? (
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "12px 18px 16px", flex: 1 }}>
+            <div style={isNative ? { ...NATIVE_SECONDARY_CARD.label, color: T.textGhost, marginBottom: NATIVE_SPACE.s + 2 } : { fontSize: 9, fontWeight: 800, color: T.textGhost, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Today's Leaders</div>
+            {isNative && loadingMovers && topM.length === 0 ? (
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: NATIVE_TILE.gap }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <SkeletonRow key={i} darkMode={darkMode} borderColor={T.border} height={NATIVE_TILE.height} radius={NATIVE_TILE.radius} />
+                ))}
+              </div>
+            ) : isNative && topM.length === 0 ? (
+              <div style={{ fontSize: 11, color: T.textGhost }}>No leaders available right now.</div>
+            ) : topM.length === 0 ? (
               <div style={{ fontSize: 11, color: T.textGhost }}>Loading movers…</div>
+            ) : isNative ? (
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: NATIVE_TILE.gap }}>
+                {topM.map(m => {
+                  const pct = Number(m.pct_change);
+                  const isPos = pct >= 0;
+                  const pctText = `${isPos ? "+" : ""}${Number.isFinite(pct) ? pct.toFixed(1) : "—"}%`;
+                  return (
+                    <NativeMoverTile
+                      key={m.symbol}
+                      symbol={m.symbol}
+                      right={pctText}
+                      rightColor={isPos ? "#4ade80" : "#f87171"}
+                      onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
+                      T={T}
+                      darkMode={darkMode}
+                    />
+                  );
+                })}
+              </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {topM.map(m => {
@@ -5274,14 +5487,14 @@ async function loadWatchlistLive() {
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
-          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
-          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
+          boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
-          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Entry · Stop · Target from each analysis</div>
             </div>
             {history.length > 0 ? (
@@ -5945,12 +6158,12 @@ async function loadWatchlistLive() {
         return (
           <div style={{
             background: darkMode ? "linear-gradient(145deg, rgba(10,13,20,0.98) 0%, rgba(12,16,26,0.98) 100%)" : "#ffffff",
-            border: `1px solid ${T.border}`,
-            borderRadius: 16,
+            border: `1px solid ${isNative ? "rgba(0,180,80,0.16)" : T.border}`,
+            borderRadius: isNative ? 20 : 16,
             padding: "28px 28px 24px",
             position: "relative",
             overflow: "hidden",
-            boxShadow: darkMode ? "0 4px 32px rgba(0,0,0,0.45)" : "0 2px 12px rgba(0,0,0,0.06)",
+            boxShadow: isNative ? nativeCardShadow(darkMode, true) : (darkMode ? "0 4px 32px rgba(0,0,0,0.45)" : "0 2px 12px rgba(0,0,0,0.06)"),
           }}>
             {/* Subtle grid texture overlay */}
             <div style={{
@@ -5969,7 +6182,7 @@ async function loadWatchlistLive() {
                   fontSize: 18, color: T.textGhost, flexShrink: 0,
                 }}>⊘</div>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em", color: T.text, lineHeight: 1.2 }}>
+                  <div style={{ fontSize: isNative ? 20 : 18, fontWeight: isNative ? 800 : 700, letterSpacing: "-0.02em", color: T.text, lineHeight: 1.2 }}>
                     System Decision: {tradeDec || "NO_TRADE"}
                   </div>
                   <div style={{ fontSize: 12, color: T.textFaint, marginTop: 3, letterSpacing: "0.01em" }}>
@@ -6093,7 +6306,13 @@ async function loadWatchlistLive() {
                 </span>
               </div>
               {!bestPayload0 ? (
-                <RippleButton className="btn btn--primary" style={{ fontSize: 12, padding: "7px 16px" }} onClick={loadBestPick} disabled={loadingBestPick}>
+                <RippleButton
+                  className="btn btn--primary"
+                  style={isNative
+                    ? { fontSize: 13, fontWeight: 700, padding: "0 18px", height: 40, borderRadius: 12, boxSizing: "border-box" }
+                    : { fontSize: 12, padding: "7px 16px" }}
+                  onClick={loadBestPick} disabled={loadingBestPick}
+                >
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                     {loadingBestPick ? <span className="btnSpinner" /> : null}
                     <span>{loadingBestPick ? "Scanning…" : "Run Scan"}</span>
@@ -6179,9 +6398,16 @@ async function loadWatchlistLive() {
       }
 
       const heroCard = (
-        <div className={`card heroCard heroCard--${convStyle.bgKey}`}>
+        <div
+          className={`card heroCard heroCard--${convStyle.bgKey}`}
+          style={isNative ? {
+            borderRadius: 20,
+            border: "1px solid rgba(0,180,80,0.16)",
+            boxShadow: nativeCardShadow(darkMode, true),
+          } : undefined}
+        >
           <div className={`heroBg heroBg--${convStyle.bgKey}`} />
-          <div className="heroBody">
+          <div className="heroBody" style={isNative ? { padding: `${NATIVE_SPACE.xl}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px` } : undefined}>
             <div className="heroTop">
               <div className="heroLeft">
                 <div className="aiPickLabel">
@@ -6225,7 +6451,7 @@ async function loadWatchlistLive() {
                 </div>
                 {false ? null : (
                   <>
-                    <div className="heroTicker">{ticker || "—"}</div>
+                    <div className="heroTicker" style={isNative ? { fontSize: 30, fontWeight: 800 } : undefined}>{ticker || "—"}</div>
                     <div className="heroPrice">
                       {Number.isFinite(livePrice) && livePrice > 0 ? (
                         <>
@@ -6330,7 +6556,7 @@ async function loadWatchlistLive() {
               /* Starter: show locked Pro overlay */
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6338,7 +6564,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -6357,15 +6583,15 @@ async function loadWatchlistLive() {
             ) : canAccess(userPlan, "pro") ? (
               <div style={{ marginTop: 8, marginBottom: 4 }}>
                 {/* ── Entry + Stop row ── */}
-                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
+                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 8, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                     </div>
                     <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{entryNote}</div>
                   </div>
-                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.6)", marginBottom: 4 }}>Stop Loss</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: "rgba(248,113,113,0.9)", letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
@@ -6379,13 +6605,13 @@ async function loadWatchlistLive() {
                 {/* ── Targets row — 3-across cards on desktop; becomes a
                      horizontal-row list on mobile via .heroTargetsGrid /
                      .heroTargetBox__* (see App.css @767px) ── */}
-                <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 6, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
                   {[
                     { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(134,239,172,0.85)", bg: "rgba(134,239,172,0.05)", border: "rgba(134,239,172,0.15)" },
                     { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(52,211,153,0.85)", bg: "rgba(52,211,153,0.05)", border: "rgba(52,211,153,0.15)" },
                     { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(16,185,129,0.85)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
                   ].map(({ label, val, pct, note, color, bg, border }) => (
-                    <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "10px 12px" }}>
+                    <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: isNative ? 12 : 10, padding: isNative ? "12px 12px" : "10px 12px" }}>
                       <div className="heroTargetBox__label" style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
                       <div className="heroTargetBox__value" style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: "-0.02em", marginBottom: 2 }}>
                         {val !== null && Number.isFinite(Number(val)) ? `$${Number(val).toFixed(2)}` : "—"}
@@ -6404,7 +6630,7 @@ async function loadWatchlistLive() {
                     { label: "Position Size", val: positionSizePct !== null ? `${Number(positionSizePct).toFixed(1)}% of portfolio` : null },
                     { label: "Time Horizon", val: horizonLabel },
                   ].filter(x => x.val).map(({ label, val }) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
+                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: isNative ? 999 : 8, padding: isNative ? "7px 13px" : "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
                       <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: T.textFaint }}>{label}</span>
                       <span style={{ fontSize: 12, fontWeight: 800, color: T.text }}>{val}</span>
                     </div>
@@ -6453,7 +6679,7 @@ async function loadWatchlistLive() {
             ) : (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6461,7 +6687,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -6521,6 +6747,7 @@ async function loadWatchlistLive() {
               {ticker && tp0 ? (
                 <RippleButton
                   className="btn btn--primary"
+                  style={isNative ? { fontSize: 13, fontWeight: 700, padding: "0 18px", height: 40, borderRadius: 12, boxSizing: "border-box" } : undefined}
                   onClick={() => savePickToPortfolioLive({
                     symbol: ticker,
                     source: "best_pick",
@@ -6532,7 +6759,11 @@ async function loadWatchlistLive() {
                 </RippleButton>
               ) : null}
               {ticker ? (
-                <RippleButton className="btn btn--ghost" onClick={loadBestPick} disabled={loadingBestPick}>
+                <RippleButton
+                  className="btn btn--ghost"
+                  style={isNative ? { fontSize: 13, fontWeight: 700, padding: "0 18px", height: 40, borderRadius: 12, boxSizing: "border-box" } : undefined}
+                  onClick={loadBestPick} disabled={loadingBestPick}
+                >
                   {loadingBestPick ? "Refreshing…" : "Refresh"}
                 </RippleButton>
               ) : null}
@@ -6647,24 +6878,43 @@ async function loadWatchlistLive() {
         <div style={{
           background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
-          borderRadius: 16, overflow: "hidden",
-          boxShadow: darkMode
-            ? (_advIsWarn && activeTab === "metrics" ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)" : "0 8px 40px rgba(0,0,0,0.5)")
-            : "0 2px 12px rgba(0,0,0,0.06)",
+          borderRadius: isNative ? 18 : 16, overflow: "hidden",
+          boxShadow: isNative
+            ? nativeCardShadow(darkMode)
+            : (darkMode
+                ? (_advIsWarn && activeTab === "metrics" ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)" : "0 8px 40px rgba(0,0,0,0.5)")
+                : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
           height: "100%",
         }}>
-          <div style={{ padding: "14px 18px 0" }}>
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad.replace(/ [\d.]+px$/, " 0") : "14px 18px 0" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analysis</div>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analysis</div>
               {activeTab === "summary" && summaryHasContent ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
             </div>
             <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Setup reasoning, market context, and technical metrics.</div>
           </div>
 
-          <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }}>
+          <div style={isNative
+            ? { display: "flex", gap: NATIVE_SPACE.s, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px 0` }
+            : { display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }
+          }>
             {tabs.map(t => {
               const tabLocked = !canAccess(userPlan, "starter") && (t.id === "summary" || t.id === "metrics");
+              const active = activeTab === t.id;
+              if (isNative) {
+                return (
+                  <motion.button
+                    key={t.id}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => setActiveTab(t.id)}
+                    style={{ ...nativeTabStyle(active), color: active ? "#4ade80" : T.textFaint }}
+                  >
+                    {t.label}
+                    {tabLocked && <span style={{ fontSize: 9, background: "rgba(0,180,80,0.15)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
+                  </motion.button>
+                );
+              }
               return (
                 <button
                   key={t.id}
@@ -6672,9 +6922,9 @@ async function loadWatchlistLive() {
                   style={{
                     background: "none", border: "none", cursor: "pointer",
                     padding: "8px 14px", fontSize: 12.5,
-                    fontWeight: activeTab === t.id ? 700 : 500,
-                    color: activeTab === t.id ? T.text : T.textFaint,
-                    borderBottom: activeTab === t.id ? `2px solid ${T.textSec}` : "2px solid transparent",
+                    fontWeight: active ? 700 : 500,
+                    color: active ? T.text : T.textFaint,
+                    borderBottom: active ? `2px solid ${T.textSec}` : "2px solid transparent",
                     marginBottom: "-1px", transition: "color 0.15s ease, border-color 0.15s ease",
                     letterSpacing: "0.02em", fontFamily: "inherit",
                     display: "flex", alignItems: "center", gap: 5,
@@ -6687,7 +6937,7 @@ async function loadWatchlistLive() {
             })}
           </div>
 
-          <div style={{ flex: 1, padding: "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
+          <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
             {activeTab === "why" && (
               !a || !whyHasContent ? (
                 <div className="mutedSmall">{analyzeFallbackText}</div>
@@ -7022,7 +7272,11 @@ async function loadWatchlistLive() {
     };
 
     return (
-      <div className="dashBoardGrid">
+      <div
+        className="dashBoardGrid"
+        style={isNative ? { overflowX: "hidden", maxWidth: "100%", width: "100%", boxSizing: "border-box" } : undefined}
+      >
+        {isNative ? <style>{NATIVE_DASHBOARD_KEYFRAMES}</style> : null}
         {showDegradedBanner ? (
           <div className="dashCell dashCell--banner">
             <SystemAlert
@@ -7813,7 +8067,7 @@ async function loadWatchlistLive() {
           borderRadius: 12,
           padding: "16px 18px",
         }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 10 }}>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: T.text, lineHeight: 1 }}>
               {sym}
             </div>
@@ -8118,21 +8372,26 @@ async function loadWatchlistLive() {
 
     return (
       <div className="pageGrid">
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{
+          padding: 0, overflow: "hidden",
+          borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : undefined,
+          boxShadow: isNative ? nativeCardShadow(darkMode) : undefined,
+          minWidth: 0,
+        }}>
 
           {/* Header + Search */}
-          <div style={{ padding: "20px 22px 18px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "20px 22px 18px", borderBottom: `1px solid ${T.border}` }}>
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, letterSpacing: "-0.015em", marginBottom: 4 }}>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 15, fontWeight: 700, color: T.text, letterSpacing: "-0.015em", marginBottom: 4 }}>
                 Screener
               </div>
-              <div style={{ fontSize: 12, color: T.textFaint }}>
+              <div style={{ fontSize: 12, color: T.textFaint, marginTop: isNative ? 2 : 0 }}>
                 Enter symbols separated by commas. Click any column header to sort.
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: isNative ? "wrap" : "nowrap", minWidth: 0 }}>
               <div style={{
-                flex: 1, display: "flex", alignItems: "center",
+                flex: 1, minWidth: isNative ? 140 : 0, display: "flex", alignItems: "center",
                 background: T.bg2, border: `1px solid ${T.border2}`,
                 borderRadius: 9, padding: "0 14px", gap: 8,
               }}>
@@ -8143,7 +8402,7 @@ async function loadWatchlistLive() {
                   onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
                   placeholder="AAPL, NVDA, MSFT, TSLA…"
                   style={{
-                    flex: 1, background: "none", border: "none", outline: "none",
+                    flex: 1, minWidth: 0, background: "none", border: "none", outline: "none",
                     color: T.text, fontSize: 16, fontWeight: 500,
                     padding: "12px 0", fontFamily: "inherit", letterSpacing: "0.02em",
                   }}
@@ -8537,7 +8796,7 @@ async function loadWatchlistLive() {
       <div className="pageGrid">
         {/* ── Summary bar ── */}
         {total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "repeat(4, 1fr)", gap: isNative ? NATIVE_SPACE.s : 10 }}>
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
@@ -8585,7 +8844,7 @@ async function loadWatchlistLive() {
               borderBottom: `1px solid ${T.border}`,
             }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.textFaint, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>New Trade</div>
-              <div style={{ display: "grid", gridTemplateColumns: "120px 110px 110px 110px 1fr", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : "120px 110px 110px 110px 1fr", gap: isNative ? NATIVE_SPACE.s : 8, marginBottom: 10 }}>
                 {/* Symbol — uncontrolled, onBlur triggers auto-fill */}
                 <div style={{ position: "relative" }}>
                   <input
@@ -8959,7 +9218,7 @@ async function loadWatchlistLive() {
         </div>
 
         {/* Contact & Links */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : "1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 10 }}>
           <div style={{
             ...settingsSection,
             display: "flex", flexDirection: "column", gap: 14,
@@ -9319,6 +9578,50 @@ async function loadWatchlistLive() {
       } catch { showToast("Couldn't save — check your connection."); }
     }
 
+    // ── Push notifications (native only) ────────────────────────────────────
+    // Permission is requested here, from a deliberate toggle tap -- not
+    // silently on cold launch. The actual `registration` event (device
+    // token -> POST /auth/device-token) is handled app-wide in AppInner
+    // since a token can arrive at any time, not just while this pane is open.
+    const [pushEnabled, setPushEnabled] = React.useState(() => {
+      try { return localStorage.getItem("aurexis_push_registered") === "1"; } catch { return false; }
+    });
+    const [pushBusy, setPushBusy] = React.useState(false);
+
+    async function handleTogglePush() {
+      if (pushBusy) return;
+      setPushBusy(true);
+      try {
+        if (pushEnabled) {
+          // iOS permission itself can't be revoked in-app (only via system
+          // Settings) -- unregistering the token server-side is what
+          // actually stops delivery, which is what "off" means to the user.
+          const tok = (() => { try { return localStorage.getItem("aurexis_push_token"); } catch { return null; } })();
+          const authToken = localStorage.getItem("aurexis_token");
+          if (tok && authToken) {
+            await fetch(`${API}/auth/device-token?device_token=${encodeURIComponent(tok)}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${authToken}` },
+            }).catch(() => {});
+          }
+          try { localStorage.removeItem("aurexis_push_registered"); localStorage.removeItem("aurexis_push_token"); } catch {}
+          setPushEnabled(false);
+        } else {
+          const perm = await PushNotifications.requestPermissions();
+          if (perm?.receive === "granted") {
+            await PushNotifications.register();
+            setPushEnabled(true);
+          } else {
+            showToast("Notifications permission was denied. Enable it in iOS Settings to turn this on.");
+          }
+        }
+      } catch {
+        showToast("Couldn't update push notifications — try again.");
+      } finally {
+        setPushBusy(false);
+      }
+    }
+
     // ── Shared sub-components ──────────────────────────────────────────────
     const dm = darkMode;
     const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
@@ -9363,6 +9666,7 @@ async function loadWatchlistLive() {
       { id: "alerts",      icon: "◎", label: "Notifications" },
       { id: "appearance",  icon: "⬡", label: "Appearance" },
       { id: "privacy",     icon: "⊛", label: "Privacy" },
+      { id: "support",     icon: "◌", label: "Support" },
     ];
 
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
@@ -9387,10 +9691,44 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
-          <div className="settingsSidebar__nav">
-          {NAV_ITEMS.map(n => {
+          <div
+            className="settingsSidebar__nav"
+            style={isNative ? {
+              display: "flex", flexDirection: "column", gap: 0,
+              background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+              border: `1px solid ${T.border}`,
+              borderRadius: NATIVE_SECONDARY_CARD.radius,
+              boxShadow: nativeCardShadow(darkMode),
+              overflow: "hidden",
+            } : undefined}
+          >
+          {NAV_ITEMS.map((n, i) => {
             const active = settingsTab === n.id;
             const av = _getAvatar(avatarId);
+            if (isNative) {
+              return (
+                <motion.button
+                  key={n.id}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSettingsTab(n.id)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    width: "100%", padding: "14px 16px",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${T.border}` : "none",
+                    borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
+                    background: "transparent", textAlign: "left",
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: active ? 1 : 0.45, color: active ? av.text : T.textFaint, flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? T.text : T.textSec }}>{n.label}</span>
+                  </span>
+                  {active ? (
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: av.text, boxShadow: `0 0 6px ${av.text}`, flexShrink: 0 }} />
+                  ) : null}
+                </motion.button>
+              );
+            }
             return (
               <button
                 key={n.id}
@@ -9442,7 +9780,7 @@ async function loadWatchlistLive() {
 
               {/* ── Avatar picker ── */}
               <SectionTitle>Avatar Style</SectionTitle>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", columnGap: 10, rowGap: isNative ? 16 : 10, marginBottom: 24 }}>
                 {AVATAR_PRESETS.map(preset => {
                   const selected = avatarId === preset.id;
                   return (
@@ -9598,11 +9936,11 @@ async function loadWatchlistLive() {
                       <div style={{ padding: "18px 18px", fontSize: 13, color: txtG }}>No invoices yet.</div>
                     ) : (
                       <>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 50px", gap: 8, padding: "10px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) 70px 60px 40px" : "1fr 80px 70px 50px", gap: 8, padding: "10px 18px", borderBottom: dm ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)" }}>
                           {["Date","Total","Status",""].map(h => <div key={h} style={{ fontSize: 10, fontWeight: 700, color: txtG, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</div>)}
                         </div>
                         {invoices.map((inv, i) => (
-                          <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 50px", gap: 8, padding: "11px 18px", alignItems: "center", borderBottom: i < invoices.length - 1 ? (dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)") : "none" }}>
+                          <div key={inv.id} style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) 70px 60px 40px" : "1fr 80px 70px 50px", gap: 8, padding: "11px 18px", alignItems: "center", borderBottom: i < invoices.length - 1 ? (dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)") : "none" }}>
                             <div style={{ fontSize: 13, color: txtS }}>{inv.date}</div>
                             <div style={{ fontSize: 13, color: txt, fontWeight: 600 }}>{inv.amount}</div>
                             <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#4ade80" : txtG }}>{inv.status}</div>
@@ -9658,6 +9996,24 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 13, color: txtS, marginBottom: 24, lineHeight: 1.6 }}>
                 Choose what Aurexis emails you about. Unsubscribe any time.
               </div>
+
+              {isNative && (
+                <>
+                  <SectionTitle>Push Notifications</SectionTitle>
+                  <FieldRow
+                    label="New pick alert"
+                    value="Get notified on this device the moment the AI selects today's pick"
+                    action={<Toggle enabled={pushEnabled} onChange={handleTogglePush} />}
+                  />
+                  <div style={{ marginTop: 12, marginBottom: 28, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                    <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
+                      {canAccess(userPlan, "starter")
+                        ? "You'll see the ticker and setup as soon as it's ready — even with the app closed."
+                        : "Free plan gets a heads-up when a new pick drops; upgrade to see the pick itself."}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <SectionTitle>Email Alerts</SectionTitle>
               {!canAccess(userPlan, "starter") ? (
@@ -9780,6 +10136,9 @@ async function loadWatchlistLive() {
               </div>
             </div>
           )}
+
+          {/* SUPPORT ──────────────────────────────────────────────────── */}
+          {settingsTab === "support" && <Support />}
 
         </div>
       </div>
@@ -10938,7 +11297,7 @@ const renderPage = () => {
                     { icon: "⚙", label: "Settings",       action: () => { setTab("settings"); setSettingsTab("profile");  setProfileMenuOpen(false); } },
                     { icon: "◈", label: "Plan & Billing",  action: () => { setTab("settings"); setSettingsTab("billing");  setProfileMenuOpen(false); } },
                     { icon: "◎", label: "Notifications",   action: () => { setTab("settings"); setSettingsTab("alerts");   setProfileMenuOpen(false); } },
-                    { icon: "⊙", label: "Support",         action: () => { setTab("support");  setProfileMenuOpen(false); } },
+                    { icon: "⊙", label: "Support",         action: () => { setTab("settings"); setSettingsTab("support"); setProfileMenuOpen(false); } },
                   ].map(item => (
                     <button key={item.label} onClick={item.action} style={{
                       display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -11026,15 +11385,17 @@ const renderPage = () => {
         {/* Mobile bottom tab bar — replaces the sidebar below 768px (see
             .mobileBottomNav in App.css). Renders unconditionally; hidden via
             CSS rather than JS so there's no layout-shift flash on resize.
-            Primary bar surfaces the 4 sections used every session (Dashboard
-            covers ticker analysis inline, so there's no separate "Analyze"
-            tab); everything else is one tap away in More, never buried
-            behind a hamburger or back/forward. */}
+            All 6 sections (Dashboard covers ticker analysis inline, so
+            there's no separate "Analyze" tab) fit directly in the primary
+            bar now -- Support moved into Settings (see NAV_ITEMS/support
+            settingsTab) since it's a low-frequency destination, not a
+            tab-worthy one, which freed enough room that a separate "More"
+            catch-all isn't needed. */}
         {(() => {
           const MOBILE_NAV_MIN_PLAN = { watchlist: "starter", tradejournal: "starter" };
-          const primaryKeys = ["dashboard", "screener", "tradejournal", "settings"];
+          const primaryKeys = ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
           const primaryItems = primaryKeys.map((k) => NAV_ALL.find((n) => n.key === k)).filter(Boolean);
-          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key));
+          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support");
           return (
             <>
               <nav className="mobileBottomNav" aria-label="Primary">
@@ -11055,16 +11416,18 @@ const renderPage = () => {
                     </button>
                   );
                 })}
-                <button
-                  className={`mobileBottomNav__item ${mobileMoreOpen ? "mobileBottomNav__item--active" : ""}`}
-                  onClick={() => setMobileMoreOpen((o) => !o)}
-                >
-                  <span className="mobileBottomNav__icon">☰</span>
-                  <span className="mobileBottomNav__label">More</span>
-                </button>
+                {moreItems.length > 0 ? (
+                  <button
+                    className={`mobileBottomNav__item ${mobileMoreOpen ? "mobileBottomNav__item--active" : ""}`}
+                    onClick={() => setMobileMoreOpen((o) => !o)}
+                  >
+                    <span className="mobileBottomNav__icon">☰</span>
+                    <span className="mobileBottomNav__label">More</span>
+                  </button>
+                ) : null}
               </nav>
 
-              {mobileMoreOpen && (
+              {mobileMoreOpen && moreItems.length > 0 && (
                 <>
                   <div className="mobileMoreSheet__backdrop" onClick={() => setMobileMoreOpen(false)} />
                   <div className="mobileMoreSheet">
