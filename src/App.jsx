@@ -2608,95 +2608,6 @@ function nativeTabStyle(active) {
   };
 }
 
-// ── Native "brand new iPhone" redesign (Aug 2026) ───────────────────────
-// Minimal, low-box palette + list-row pattern shared by all 5 native
-// screens (Dashboard/Watchlist/Screener/Journal/Settings). Deliberately
-// scoped to native dark mode only -- desktop/web-mobile and native light
-// mode continue to read from the T palette above, untouched. Extends
-// (does not replace) NATIVE_SPACE/NATIVE_SECONDARY_CARD/NATIVE_TILE.
-const NATIVE_COLOR = {
-  bg: "#0a0a0a",
-  surface: "#111110",
-  divider: "rgba(255,255,255,0.08)", // 0.5px hairline, never a full border
-  accent: "#3EE0A3",
-  accentBase: "#22C88E",
-  negative: "#e8756b",
-  text: "rgba(255,255,255,0.94)",
-  textLabel: "#8a8a86",
-  textFaint: "#6a6a66",
-};
-
-const NATIVE_TYPE = {
-  hero: { fontSize: 34, fontWeight: 600, letterSpacing: "-0.01em", color: NATIVE_COLOR.text },
-  screenTitle: { fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em", color: NATIVE_COLOR.text },
-  rowTitle: { fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: NATIVE_COLOR.text },
-  rowSubtitle: { fontSize: 13, fontWeight: 500, color: NATIVE_COLOR.textLabel },
-  label: { fontSize: 11, fontWeight: 500, letterSpacing: "0.04em", textTransform: "uppercase", color: NATIVE_COLOR.textFaint },
-};
-
-// Conviction tier -> score pill color. Only "high" (green) and "moderate"
-// (amber) are called out in the design spec; LOW/NO_TRADE/WAIT get a
-// neutral muted pill so they don't read as a 3rd unspecified color.
-function nativeScorePillColors(tier) {
-  const t = String(tier || "").toUpperCase();
-  if (t === "VERY HIGH" || t === "HIGH" || t === "SOLID") {
-    return { bg: "rgba(62,224,163,0.14)", text: NATIVE_COLOR.accent };
-  }
-  if (t === "MODERATE") {
-    return { bg: "rgba(245,158,11,0.14)", text: "#f59e0b" };
-  }
-  return { bg: "rgba(255,255,255,0.06)", text: NATIVE_COLOR.textLabel };
-}
-
-function NativeScorePill({ label, tier }) {
-  const c = nativeScorePillColors(tier);
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      padding: "4px 10px", borderRadius: 999,
-      background: c.bg, color: c.text,
-      fontSize: 12, fontWeight: 700, letterSpacing: "0.01em",
-      whiteSpace: "nowrap",
-    }}>{label}</span>
-  );
-}
-
-// One list-row shape for the entire native app: circular avatar/initials,
-// title+subtitle stack, trailing stat/pill, 0.5px divider below (owner
-// passes `last` to suppress it on the final row of a list).
-function NativeListRow({ avatar, avatarColor, title, subtitle, trailing, trailingSub, trailingColor, onClick, last }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: NATIVE_SPACE.m,
-        padding: `${NATIVE_SPACE.m}px 0`,
-        borderBottom: last ? "none" : `0.5px solid ${NATIVE_COLOR.divider}`,
-        cursor: onClick ? "pointer" : "default",
-      }}
-    >
-      <div style={{
-        width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: avatarColor || "rgba(255,255,255,0.06)",
-        color: NATIVE_COLOR.text, fontSize: 13, fontWeight: 700,
-      }}>{avatar}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ ...NATIVE_TYPE.rowTitle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
-        {subtitle != null && <div style={{ ...NATIVE_TYPE.rowSubtitle, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</div>}
-      </div>
-      {trailing != null && (
-        <div style={{ flexShrink: 0, textAlign: "right" }}>
-          {typeof trailing === "string" || typeof trailing === "number" ? (
-            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: trailingColor || NATIVE_COLOR.text, fontVariantNumeric: "tabular-nums" }}>{trailing}</div>
-          ) : trailing}
-          {trailingSub != null && <div style={{ ...NATIVE_TYPE.rowSubtitle, marginTop: 2 }}>{trailingSub}</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Ticker + change tile shared by the Today's Leaders strip and the Top
 // Movers list on native -- guarantees both grids use one row shape.
 function NativeMoverTile({ symbol, right, rightColor, onClick, T, darkMode }) {
@@ -4450,10 +4361,6 @@ async function loadWatchlistLive() {
 
 
   const Dashboard = () => {
-    // Native only: when true, the dashboard grid is replaced full-screen by
-    // the per-pick detail view (Why This Trade / AI Summary / Advanced
-    // Metrics) for whatever symbol is currently analyzed.
-    const [pickDetailOpen, setPickDetailOpen] = React.useState(false);
     const analysisObj = analyzeData && typeof analyzeData === "object" ? analyzeData : null;
 
     const statusRaw = analysisObj?.status;
@@ -5577,64 +5484,17 @@ async function loadWatchlistLive() {
       };
       const fmt = (v) => v != null ? `$${Number(v).toFixed(2)}` : "—";
 
-      if (isNative) {
-        return (
-          <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px` }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
-              <div style={NATIVE_TYPE.rowTitle}>Your pick history</div>
-              {history.length > 0 ? (
-                <button onClick={() => { setBestPickLog([]); try { localStorage.removeItem("aurexis_best_pick_log"); } catch {} }}
-                  style={{ background: "none", border: "none", cursor: "pointer", ...NATIVE_TYPE.label, marginBottom: 0 }}>
-                  Clear
-                </button>
-              ) : null}
-            </div>
-            {history.length === 0 ? (
-              <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Analyze a ticker to log your first pick.</div>
-            ) : history.map((item, i) => {
-              const vc = verdictCfg(item.decision, item.score);
-              return (
-                <div key={`${item.symbol}_${item.ts}`} style={{ position: "relative" }}>
-                  <div style={{ filter: isLocked ? "blur(14px)" : "none", opacity: isLocked ? 0.2 : 1, pointerEvents: isLocked ? "none" : "auto" }}>
-                    <NativeListRow
-                      avatar={item.symbol.slice(0, 2)}
-                      title={item.symbol}
-                      subtitle={timeAgo(item.ts)}
-                      trailing={vc ? <NativeScorePill label={vc.text} tier={vc.text} /> : (item.score != null ? item.score : "—")}
-                      trailingSub={item.entry != null ? `Entry ${fmt(item.entry)}` : null}
-                      onClick={isLocked ? undefined : () => { setSymbol(item.symbol); runAnalyze(item.symbol); setPickDetailOpen(true); }}
-                      last={i === history.length - 1}
-                    />
-                  </div>
-                  {isLocked && (
-                    <div
-                      onClick={() => setTab("pricing")}
-                      style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(10,13,22,0.80)", borderRadius: 999, padding: "5px 12px" }}>
-                        <span style={{ fontSize: 10 }}>🔒</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: NATIVE_COLOR.accent }}>Starter to unlock</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      }
-
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
-          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
-          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
+          border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
+          boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
-          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
+              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Entry · Stop · Target from each analysis</div>
             </div>
             {history.length > 0 ? (
@@ -6692,34 +6552,11 @@ async function loadWatchlistLive() {
               </div>
             </div>
 
-            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") && isNative ? (
-              /* Starter on native: same unified single-card shape as the
-                 unlocked view below, just blurred — not 5 separate boxes. */
-              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", marginTop: NATIVE_SPACE.m, marginBottom: NATIVE_SPACE.m }}>
-                <div style={{ background: NATIVE_COLOR.surface, filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
-                  {["Entry", "Stop", "Target 1 — Take 50%", "Target 2 — Take 25%", "Target 3 — Trail rest"].map((label, i, arr) => (
-                    <div key={label} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
-                      borderBottom: i < arr.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
-                    }}>
-                      <div style={NATIVE_TYPE.label}>{label}</div>
-                      <div style={{ fontSize: 17, fontWeight: 600, color: NATIVE_COLOR.text }}>$███.██</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.75),rgba(7,11,18,0.65))" }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: NATIVE_COLOR.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>Pro · $29/mo</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>Upgrade for full trade plan</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: NATIVE_COLOR.accentBase, color: "#06120c", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
-                </div>
-              </div>
-            ) : canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
+            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
               /* Starter: show locked Pro overlay */
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6727,7 +6564,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -6743,74 +6580,18 @@ async function loadWatchlistLive() {
                   <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#00b450", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
                 </div>
               </div>
-            ) : canAccess(userPlan, "pro") && isNative ? (
-              /* Native: one unified surface — Entry/Stop/T1/T2/T3 rows
-                 separated by hairline dividers instead of 5 boxed cards. */
-              <div style={{ marginTop: NATIVE_SPACE.m, marginBottom: NATIVE_SPACE.m }}>
-                <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, overflow: "hidden" }}>
-                  {[
-                    { label: "Entry", val: entryN, color: NATIVE_COLOR.text, sub: entryNote },
-                    { label: "Stop", val: stopN, color: NATIVE_COLOR.negative, sub: Number.isFinite(stopPct) && stopPct > 0 ? `${stopPct.toFixed(1)}% below entry` : "Exit if thesis breaks" },
-                    { label: "Target 1 — Take 50%", val: target1, color: NATIVE_COLOR.accent, sub: Number.isFinite(t1GainPct) && t1GainPct > 0 ? `+${t1GainPct.toFixed(1)}%` : "First profit target" },
-                    { label: "Target 2 — Take 25%", val: target2, color: NATIVE_COLOR.accent, sub: Number.isFinite(t2GainPct) && t2GainPct > 0 ? `+${t2GainPct.toFixed(1)}%` : "Let winner run" },
-                    { label: "Target 3 — Trail rest", val: target3, color: NATIVE_COLOR.accent, sub: Number.isFinite(t3GainPct) && t3GainPct > 0 ? `+${t3GainPct.toFixed(1)}%` : "Full extension" },
-                  ].map((row, i, arr) => (
-                    <div key={row.label} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
-                      borderBottom: i < arr.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
-                    }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={NATIVE_TYPE.label}>{row.label}</div>
-                        <div style={{ ...NATIVE_TYPE.rowSubtitle, marginTop: 2 }}>{row.sub}</div>
-                      </div>
-                      <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.01em", color: row.color, fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.m }}>
-                        {Number.isFinite(row.val) && row.val > 0 ? `$${row.val.toFixed(2)}` : "—"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* ── 3-stat row: Position size / Time horizon / Market regime ── */}
-                <div style={{ display: "flex", marginTop: NATIVE_SPACE.m }}>
-                  {[
-                    { label: "Position size", val: positionSizePct !== null ? `${Number(positionSizePct).toFixed(1)}%` : "—" },
-                    { label: "Time horizon", val: horizonLabel || "—" },
-                    { label: "Market regime", val: marketRegime || "—" },
-                  ].map((s) => (
-                    <div key={s.label} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={NATIVE_TYPE.label}>{s.label}</div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: NATIVE_COLOR.text, marginTop: 4 }}>{s.val}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {(pickRationale.length > 0 || riskFlags.length > 0 || trailingStopPlan.length > 0) && (
-                  <div
-                    onClick={() => setPickDetailOpen(true)}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      marginTop: NATIVE_SPACE.m, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
-                      background: NATIVE_COLOR.surface, borderRadius: 14, cursor: "pointer",
-                    }}
-                  >
-                    <span style={NATIVE_TYPE.rowTitle}>View full analysis</span>
-                    <span style={{ color: NATIVE_COLOR.textFaint, fontSize: 16 }}>›</span>
-                  </div>
-                )}
-              </div>
             ) : canAccess(userPlan, "pro") ? (
               <div style={{ marginTop: 8, marginBottom: 4 }}>
                 {/* ── Entry + Stop row ── */}
-                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
+                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 8, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                     </div>
                     <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{entryNote}</div>
                   </div>
-                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.6)", marginBottom: 4 }}>Stop Loss</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: "rgba(248,113,113,0.9)", letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
@@ -6824,13 +6605,13 @@ async function loadWatchlistLive() {
                 {/* ── Targets row — 3-across cards on desktop; becomes a
                      horizontal-row list on mobile via .heroTargetsGrid /
                      .heroTargetBox__* (see App.css @767px) ── */}
-                <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 6, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
                   {[
                     { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(134,239,172,0.85)", bg: "rgba(134,239,172,0.05)", border: "rgba(134,239,172,0.15)" },
                     { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(52,211,153,0.85)", bg: "rgba(52,211,153,0.05)", border: "rgba(52,211,153,0.15)" },
                     { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(16,185,129,0.85)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
                   ].map(({ label, val, pct, note, color, bg, border }) => (
-                    <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: "10px 12px" }}>
+                    <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: isNative ? 12 : 10, padding: isNative ? "12px 12px" : "10px 12px" }}>
                       <div className="heroTargetBox__label" style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
                       <div className="heroTargetBox__value" style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: "-0.02em", marginBottom: 2 }}>
                         {val !== null && Number.isFinite(Number(val)) ? `$${Number(val).toFixed(2)}` : "—"}
@@ -6849,7 +6630,7 @@ async function loadWatchlistLive() {
                     { label: "Position Size", val: positionSizePct !== null ? `${Number(positionSizePct).toFixed(1)}% of portfolio` : null },
                     { label: "Time Horizon", val: horizonLabel },
                   ].filter(x => x.val).map(({ label, val }) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
+                    <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: isNative ? 999 : 8, padding: isNative ? "7px 13px" : "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
                       <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: T.textFaint }}>{label}</span>
                       <span style={{ fontSize: 12, fontWeight: 800, color: T.text }}>{val}</span>
                     </div>
@@ -6895,32 +6676,10 @@ async function loadWatchlistLive() {
                   </div>
                 )}
               </div>
-            ) : isNative ? (
-              /* Free on native: same unified single-card shape, blurred. */
-              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", marginTop: NATIVE_SPACE.m, marginBottom: NATIVE_SPACE.m }}>
-                <div style={{ background: NATIVE_COLOR.surface, filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  {["Entry", "Stop", "Target 1 — Take 50%", "Target 2 — Take 25%", "Target 3 — Trail rest"].map((label, i, arr) => (
-                    <div key={label} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
-                      borderBottom: i < arr.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
-                    }}>
-                      <div style={NATIVE_TYPE.label}>{label}</div>
-                      <div style={{ fontSize: 17, fontWeight: 600, color: NATIVE_COLOR.text }}>$███.██</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.7),rgba(7,11,18,0.6))" }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: NATIVE_COLOR.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Unlock full execution plan</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: NATIVE_COLOR.accentBase, color: "#06120c", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
-                </div>
-              </div>
             ) : (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6928,7 +6687,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -7512,84 +7271,6 @@ async function loadWatchlistLive() {
       );
     };
 
-    // Native only: merges MarketPulseCard's "Today's Leaders" strip and the
-    // standalone TopMoversCard into one list — both read the same `movers`
-    // state and showed overlapping data as two separate cards.
-    const TodaysLeadersCard = () => {
-      const isOpen = sessionFromClockOrHeuristic(clock) === "OPEN";
-      const eligible = (Array.isArray(movers) ? movers : []).filter((m) => {
-        const price = Number(m?.price ?? m?.last_price ?? m?.last);
-        const vol = m?.volume;
-        const volume = vol != null ? Number(vol) : null;
-        const sym = String(m?.symbol || "").toUpperCase();
-        if (sym.includes("ZVZ") || sym.includes("TEST")) return false;
-        return Number.isFinite(price) && price >= 1 && (volume === null || volume === 0 || volume >= 10000);
-      }).slice(0, 8);
-      const stillLoading = loadingMovers && eligible.length === 0 && !errMovers;
-
-      return (
-        <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px` }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
-            <div style={NATIVE_TYPE.rowTitle}>Today's Leaders</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: isOpen ? NATIVE_COLOR.accent : NATIVE_COLOR.textFaint, display: "inline-block" }} />
-              <span style={{ ...NATIVE_TYPE.label, marginBottom: 0 }}>{isOpen ? "Open" : "Closed"}</span>
-            </div>
-          </div>
-          {errMovers ? (
-            <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Unable to load leaders.</div>
-          ) : stillLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.s }}>
-              {[0, 1, 2].map((i) => <SkeletonRow key={i} darkMode={darkMode} borderColor={NATIVE_COLOR.divider} height={40} radius={10} />)}
-            </div>
-          ) : eligible.length === 0 ? (
-            <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>No leaders available right now.</div>
-          ) : eligible.map((m, i) => {
-            const pct = Number(m?.pct_change);
-            const isPos = pct >= 0;
-            const price = m?.price;
-            return (
-              <NativeListRow
-                key={m.symbol}
-                avatar={String(m.symbol || "").slice(0, 2)}
-                title={m.symbol}
-                subtitle={price != null ? money(price) : null}
-                trailing={`${isPos ? "+" : ""}${Number.isFinite(pct) ? pct.toFixed(1) : "—"}%`}
-                trailingColor={isPos ? NATIVE_COLOR.accent : NATIVE_COLOR.negative}
-                onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
-                last={i === eligible.length - 1}
-              />
-            );
-          })}
-        </div>
-      );
-    };
-
-    if (isNative && pickDetailOpen) {
-      return (
-        <div style={{ background: NATIVE_COLOR.bg, minHeight: "100%" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: NATIVE_SPACE.s, padding: `${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.m}px` }}>
-            <button onClick={() => setPickDetailOpen(false)} style={{ background: "none", border: "none", color: NATIVE_COLOR.accent, fontSize: 24, cursor: "pointer", padding: 0, lineHeight: 1 }}>‹</button>
-            <div style={NATIVE_TYPE.screenTitle}>{analyzeSym || "Analysis"}</div>
-          </div>
-          <div style={{ padding: `0 ${NATIVE_SPACE.l}px ${NATIVE_SPACE.xl}px` }}>
-            {analyzeIsLowConviction ? (
-              <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l }}>
-                <div style={{ ...NATIVE_TYPE.rowTitle, color: "#f59e0b", marginBottom: 4 }}>⚠ Low Conviction — Trade Not Recommended</div>
-                <div style={NATIVE_TYPE.rowSubtitle}>
-                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
-                </div>
-              </div>
-            ) : (
-              <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
-                <AnalysisCard />
-              </ProGate>
-            )}
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div
         className="dashBoardGrid"
@@ -7611,56 +7292,40 @@ async function loadWatchlistLive() {
           <HeroCard />
         </motion.div>
 
-        {isNative ? (
-          <>
-            <motion.div className="dashCell dashCell--performance"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-              <TodaysLeadersCard />
-            </motion.div>
-            <motion.div className="dashCell dashCell--picks"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-              <AnalyzeHistoryCard />
-            </motion.div>
-          </>
-        ) : (
-          <>
-            <motion.div className="dashCell dashCell--performance"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-              <MarketPulseCard />
-            </motion.div>
-            <motion.div className="dashCell dashCell--picks"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-              <AnalyzeHistoryCard />
-            </motion.div>
-            <div className="dashCell dashCell--why">
-              {analyzeIsLowConviction ? (
-                <div className="card lowConvictionCard">
-                  <div className="cardHead">
-                    <div>
-                      <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
-                      <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
-                    </div>
-                  </div>
-                  <div className="cardBody">
-                    <div className="mutedSmall">
-                      {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
-                      Consider waiting for a stronger setup or analyzing a different symbol.
-                    </div>
-                  </div>
+        <motion.div className="dashCell dashCell--performance"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
+          <MarketPulseCard />
+        </motion.div>
+        <motion.div className="dashCell dashCell--picks"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
+          <AnalyzeHistoryCard />
+        </motion.div>
+        <div className="dashCell dashCell--why">
+          {analyzeIsLowConviction ? (
+            <div className="card lowConvictionCard">
+              <div className="cardHead">
+                <div>
+                  <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
+                  <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
                 </div>
-              ) : (
-                <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
-                  <AnalysisCard />
-                </ProGate>
-              )}
+              </div>
+              <div className="cardBody">
+                <div className="mutedSmall">
+                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
+                  Consider waiting for a stronger setup or analyzing a different symbol.
+                </div>
+              </div>
             </div>
-            <div className="dashCell dashCell--summary"><TopMoversCard /></div>
-          </>
-        )}
+          ) : (
+            <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+              <AnalysisCard />
+            </ProGate>
+          )}
+        </div>
+
+        <div className="dashCell dashCell--summary"><TopMoversCard /></div>
       </div>
     );
   };
@@ -8464,73 +8129,6 @@ async function loadWatchlistLive() {
       );
     };
 
-    if (isNative) {
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: `${NATIVE_SPACE.l}px` }}>
-          <div style={NATIVE_TYPE.screenTitle}>Watchlist</div>
-
-          {/* ── Saved ── */}
-          <div>
-            <div style={{ ...NATIVE_TYPE.label, marginBottom: NATIVE_SPACE.s }}>Saved</div>
-            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
-              {loadingWatchlist && watchlistLive.length === 0 ? (
-                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Loading…</div>
-              ) : watchlistLive.length === 0 ? (
-                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Symbols you save will appear here.</div>
-              ) : watchlistLive.map((sym, i) => (
-                <NativeListRow
-                  key={sym}
-                  avatar={sym.slice(0, 2)}
-                  title={sym}
-                  onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
-                  trailing={
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeFromWatchlistLive(sym); }}
-                      style={{ background: "none", border: "none", color: NATIVE_COLOR.textFaint, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 0" }}
-                    >Remove</button>
-                  }
-                  last={i === watchlistLive.length - 1}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* ── System Watchlist ── */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
-              <div style={NATIVE_TYPE.label}>Building momentum</div>
-              <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", ...NATIVE_TYPE.label, marginBottom: 0, cursor: "pointer" }}>
-                {loadingCandidates ? "Scanning…" : "Refresh"}
-              </button>
-            </div>
-            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
-              {loadingCandidates ? (
-                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Scanning market for close candidates…</div>
-              ) : candidatesError ? (
-                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>{candidatesError}</div>
-              ) : systemCandidates.length === 0 ? (
-                <div style={{ ...NATIVE_TYPE.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>No close candidates right now — this fills in as stocks build momentum.</div>
-              ) : systemCandidates.map((c, i) => {
-                const progress = c.score !== null ? Math.min(100, Math.round((c.score / AI_SCORE_THRESHOLD) * 100)) : null;
-                const tier = progress === null ? "LOW" : progress >= 90 ? "HIGH" : progress >= 72 ? "MODERATE" : "LOW";
-                return (
-                  <NativeListRow
-                    key={c.symbol}
-                    avatar={c.symbol.slice(0, 2)}
-                    title={c.symbol}
-                    subtitle={c.edgeSignals.length > 0 ? c.edgeSignals.slice(0, 2).map(fmt).join(" · ") : (c.noTradeReason || "Edge signals detected")}
-                    trailing={<NativeScorePill label={c.score !== null ? `${c.score.toFixed(1)}/${AI_SCORE_THRESHOLD.toFixed(1)}` : "—"} tier={tier} />}
-                    onClick={() => { setSymbol(c.symbol); setTab("dashboard"); runAnalyze(c.symbol); }}
-                    last={i === systemCandidates.length - 1}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="pageGrid">
 
@@ -8771,55 +8369,6 @@ async function loadWatchlistLive() {
     };
 
     const loadingSymCount = (screenerInputRef.current?.value || "").split(/[,\s]+/).filter((s) => s.trim()).length;
-
-    if (isNative) {
-      const scoreTier = (s) => (s === null ? "LOW" : s >= 70 ? "HIGH" : s >= 50 ? "MODERATE" : "LOW");
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l }}>
-          <div style={NATIVE_TYPE.screenTitle}>Screener</div>
-
-          <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l }}>
-            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "0 14px", gap: 8, marginBottom: NATIVE_SPACE.m }}>
-              <span style={{ fontSize: 12, color: NATIVE_COLOR.textFaint, flexShrink: 0 }}>⊞</span>
-              <input
-                ref={screenerInputRef}
-                defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
-                onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
-                placeholder="AAPL, NVDA, MSFT, TSLA…"
-                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: NATIVE_COLOR.text, fontSize: 15, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
-              />
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={runScreen}
-              disabled={loading}
-              style={{ width: "100%", padding: "12px 0", borderRadius: 12, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
-            >
-              {loading ? `Screening ${loadingSymCount} symbol${loadingSymCount !== 1 ? "s" : ""}…` : "Screen"}
-            </motion.button>
-          </div>
-
-          {!loading && hasScreened && results.length > 0 && (
-            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: `0 ${NATIVE_SPACE.l}px` }}>
-              {sortedResults.map((row, i) => (
-                <NativeListRow
-                  key={`scr_${row.symbol}_${i}`}
-                  avatar={row.symbol.slice(0, 2)}
-                  title={row.symbol}
-                  subtitle={row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
-                  trailing={row.error ? null : <NativeScorePill label={row.aiScore ?? "—"} tier={scoreTier(row.aiScore)} />}
-                  onClick={row.error ? undefined : () => { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); }}
-                  last={i === sortedResults.length - 1}
-                />
-              ))}
-            </div>
-          )}
-          {!loading && (!hasScreened || results.length === 0) && (
-            <div style={{ ...NATIVE_TYPE.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.xl}px 0` }}>Add tickers above and tap Screen.</div>
-          )}
-        </div>
-      );
-    }
 
     return (
       <div className="pageGrid">
@@ -9243,112 +8792,11 @@ async function loadWatchlistLive() {
       { label: "Best Trade",    value: bestTrade ? `${bestTrade.symbol} +${bestRet.toFixed(1)}%` : "—", colored: bestRet },
     ];
 
-    if (isNative) {
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l }}>
-          <div style={NATIVE_TYPE.screenTitle}>Trade Journal</div>
-
-          {total > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l }}>
-              {summaryStats.map(({ label, value, colored }) => (
-                <div key={label} style={{ flex: "1 1 45%", marginBottom: NATIVE_SPACE.s }}>
-                  <div style={NATIVE_TYPE.label}>{label}</div>
-                  <div style={{
-                    fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", marginTop: 4,
-                    color: colored !== null && colored !== undefined
-                      ? (colored >= 0 ? NATIVE_COLOR.accent : NATIVE_COLOR.negative)
-                      : NATIVE_COLOR.text,
-                  }}>{value}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => journalAddOpen ? closeForm() : setJournalAddOpen(true)}
-            style={{ width: "100%", padding: "13px 0", borderRadius: 14, background: journalAddOpen ? "transparent" : NATIVE_COLOR.accentBase, border: journalAddOpen ? `0.5px solid ${NATIVE_COLOR.divider}` : "none", color: journalAddOpen ? NATIVE_COLOR.text : "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
-          >
-            {journalAddOpen ? "Cancel" : "+ Add Trade"}
-          </motion.button>
-
-          {journalAddOpen && (
-            <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: NATIVE_SPACE.l, display: "flex", flexDirection: "column", gap: NATIVE_SPACE.s }}>
-              <div style={{ position: "relative" }}>
-                <input
-                  ref={symRef}
-                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none", paddingRight: fetchingSymbol ? 28 : undefined }}
-                  placeholder="Symbol"
-                  onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
-                  onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
-                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
-                />
-                {fetchingSymbol && <span className="btnSpinner" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />}
-              </div>
-              {[
-                { ref: entryRef, placeholder: "Entry $", fkey: "entry" },
-                { ref: stopRef, placeholder: "Stop $", fkey: "stop" },
-                { ref: targetRef, placeholder: "Target $", fkey: "target" },
-                { ref: notesRef, placeholder: "Notes (optional)", fkey: "notes" },
-              ].map(({ ref, placeholder, fkey }) => (
-                <input
-                  key={fkey} ref={ref}
-                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none" }}
-                  placeholder={placeholder}
-                  onChange={e => saveField(fkey, e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
-                />
-              ))}
-              {journalAddErr && <div style={{ fontSize: 12, color: NATIVE_COLOR.negative }}>{journalAddErr}</div>}
-              <motion.button whileTap={{ scale: 0.97 }} onClick={submitAdd} style={{ padding: "12px 0", borderRadius: 12, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Submit</motion.button>
-            </div>
-          )}
-
-          <div style={{ background: NATIVE_COLOR.surface, borderRadius: 18, padding: journalTrades.length ? `0 ${NATIVE_SPACE.l}px` : NATIVE_SPACE.l }}>
-            {journalTrades.length === 0 ? (
-              <div style={{ ...NATIVE_TYPE.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.m}px 0` }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
-            ) : journalTrades.map((trade, i) => {
-              const isClosing = journalCloseId === trade.id;
-              const statusColor = trade.status === "won" ? NATIVE_COLOR.accent : trade.status === "lost" ? NATIVE_COLOR.negative : NATIVE_COLOR.textLabel;
-              return (
-                <div key={trade.id}>
-                  <NativeListRow
-                    avatar={trade.symbol.slice(0, 2)}
-                    title={trade.symbol}
-                    subtitle={`${fmtD(trade.enteredAt)} · ${trade.status[0].toUpperCase()}${trade.status.slice(1)}`}
-                    trailing={trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : (trade.status === "open" ? "Open" : "—")}
-                    trailingColor={trade.returnPct !== null ? statusColor : NATIVE_COLOR.textLabel}
-                    onClick={trade.status === "open" ? () => { setJournalCloseId(isClosing ? null : trade.id); setJournalClosePrice(""); setJournalCloseErr(""); } : undefined}
-                    last={i === journalTrades.length - 1 && !isClosing}
-                  />
-                  {isClosing && (
-                    <div style={{ display: "flex", gap: NATIVE_SPACE.s, padding: `0 0 ${NATIVE_SPACE.m}px` }}>
-                      <input
-                        style={{ ...inp, flex: 1, background: "rgba(255,255,255,0.05)", border: "none" }}
-                        placeholder="Exit price"
-                        value={journalClosePrice}
-                        autoFocus
-                        onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
-                        onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
-                      />
-                      <button onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 10, background: NATIVE_COLOR.accentBase, border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
-                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 10, background: "transparent", border: `0.5px solid ${NATIVE_COLOR.divider}`, color: NATIVE_COLOR.textFaint, cursor: "pointer" }}>⌫</button>
-                    </div>
-                  )}
-                  {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: NATIVE_COLOR.negative, paddingBottom: NATIVE_SPACE.s }}>{journalCloseErr}</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="pageGrid">
         {/* ── Summary bar ── */}
         {total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "repeat(4, 1fr)", gap: isNative ? NATIVE_SPACE.s : 10 }}>
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
@@ -10175,18 +9623,15 @@ async function loadWatchlistLive() {
     }
 
     // ── Shared sub-components ──────────────────────────────────────────────
-    // Every section box in every pane below reads bg/bdr/txt/txtS/txtG, so
-    // branching these here cascades the native palette across all 7 panes
-    // without touching each pane's markup individually.
     const dm = darkMode;
-    const bg   = isNative ? NATIVE_COLOR.surface : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
-    const bdr  = isNative ? "none" : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
-    const txt  = isNative ? NATIVE_COLOR.text : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
-    const txtS = isNative ? NATIVE_COLOR.textLabel : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
-    const txtG = isNative ? NATIVE_COLOR.textFaint : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
+    const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+    const bdr  = dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
+    const txt  = dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)";
+    const txtS = dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)";
+    const txtG = dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)";
 
     const FieldRow = ({ label, value, action }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: isNative ? `0.5px solid ${NATIVE_COLOR.divider}` : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
           {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
@@ -10199,7 +9644,7 @@ async function loadWatchlistLive() {
       <button
         onClick={onChange}
         style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
-          background: enabled ? (isNative ? NATIVE_COLOR.accentBase : "rgba(0,180,80,0.80)") : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          background: enabled ? "rgba(0,180,80,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
           position: "relative", transition: "background 0.2s" }}
       >
         <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
@@ -10227,7 +9672,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? NATIVE_COLOR.bg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -10250,8 +9695,10 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: NATIVE_COLOR.surface,
-              borderRadius: 18,
+              background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+              border: `1px solid ${T.border}`,
+              borderRadius: NATIVE_SECONDARY_CARD.radius,
+              boxShadow: nativeCardShadow(darkMode),
               overflow: "hidden",
             } : undefined}
           >
@@ -10267,17 +9714,17 @@ async function loadWatchlistLive() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "14px 16px",
-                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${T.border}` : "none",
                     borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
                     background: "transparent", textAlign: "left",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? NATIVE_COLOR.accent : NATIVE_COLOR.textFaint, flexShrink: 0 }}>{n.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? NATIVE_COLOR.text : NATIVE_COLOR.textLabel }}>{n.label}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: active ? 1 : 0.45, color: active ? av.text : T.textFaint, flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? T.text : T.textSec }}>{n.label}</span>
                   </span>
                   {active ? (
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: NATIVE_COLOR.accent, flexShrink: 0 }} />
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: av.text, boxShadow: `0 0 6px ${av.text}`, flexShrink: 0 }} />
                   ) : null}
                 </motion.button>
               );
@@ -11946,18 +11393,12 @@ const renderPage = () => {
             catch-all isn't needed. */}
         {(() => {
           const MOBILE_NAV_MIN_PLAN = { watchlist: "starter", tradejournal: "starter" };
-          // Native: 5 tabs — Movers folded into Dashboard's Today's Leaders,
-          // so it's not a nav destination on native. Web/desktop-mobile keep
-          // the original 6-tab bar (Movers remains its own route there).
-          const primaryKeys = isNative
-            ? ["dashboard", "watchlist", "screener", "tradejournal", "settings"]
-            : ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
-          const NATIVE_LABEL = { dashboard: "Today" };
+          const primaryKeys = ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
           const primaryItems = primaryKeys.map((k) => NAV_ALL.find((n) => n.key === k)).filter(Boolean);
-          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support" && !(isNative && n.key === "movers"));
+          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support");
           return (
             <>
-              <nav className="mobileBottomNav" aria-label="Primary" style={isNative ? { background: "rgba(10,10,10,0.82)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: `0.5px solid ${NATIVE_COLOR.divider}` } : undefined}>
+              <nav className="mobileBottomNav" aria-label="Primary">
                 {primaryItems.map((n) => {
                   const isActive = tab === n.key && !mobileMoreOpen;
                   const navLocked = MOBILE_NAV_MIN_PLAN[n.key] && !canAccess(userPlan, MOBILE_NAV_MIN_PLAN[n.key]);
@@ -11966,13 +11407,12 @@ const renderPage = () => {
                       key={n.key}
                       className={`mobileBottomNav__item ${isActive ? "mobileBottomNav__item--active" : ""}`}
                       onClick={() => { setMobileMoreOpen(false); setTab(n.key); }}
-                      style={isNative ? { color: isActive ? NATIVE_COLOR.accent : NATIVE_COLOR.textLabel } : undefined}
                     >
                       <span className="mobileBottomNav__iconWrap">
                         <span className="mobileBottomNav__icon">{n.icon}</span>
                         {navLocked && <span className="mobileBottomNav__lockDot" />}
                       </span>
-                      <span className="mobileBottomNav__label">{isNative ? (NATIVE_LABEL[n.key] || n.label) : n.label}</span>
+                      <span className="mobileBottomNav__label">{n.label}</span>
                     </button>
                   );
                 })}
