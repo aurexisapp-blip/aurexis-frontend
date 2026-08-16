@@ -6692,11 +6692,34 @@ async function loadWatchlistLive() {
               </div>
             </div>
 
-            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
+            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") && isNative ? (
+              /* Starter on native: same unified single-card shape as the
+                 unlocked view below, just blurred — not 5 separate boxes. */
+              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", marginTop: NATIVE_SPACE.m, marginBottom: NATIVE_SPACE.m }}>
+                <div style={{ background: NATIVE_COLOR.surface, filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
+                  {["Entry", "Stop", "Target 1 — Take 50%", "Target 2 — Take 25%", "Target 3 — Trail rest"].map((label, i, arr) => (
+                    <div key={label} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
+                      borderBottom: i < arr.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
+                    }}>
+                      <div style={NATIVE_TYPE.label}>{label}</div>
+                      <div style={{ fontSize: 17, fontWeight: 600, color: NATIVE_COLOR.text }}>$███.██</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.75),rgba(7,11,18,0.65))" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: NATIVE_COLOR.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>Pro · $29/mo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>Upgrade for full trade plan</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: NATIVE_COLOR.accentBase, color: "#06120c", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
+                </div>
+              </div>
+            ) : canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
               /* Starter: show locked Pro overlay */
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6704,7 +6727,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -6872,10 +6895,32 @@ async function loadWatchlistLive() {
                   </div>
                 )}
               </div>
+            ) : isNative ? (
+              /* Free on native: same unified single-card shape, blurred. */
+              <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", marginTop: NATIVE_SPACE.m, marginBottom: NATIVE_SPACE.m }}>
+                <div style={{ background: NATIVE_COLOR.surface, filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  {["Entry", "Stop", "Target 1 — Take 50%", "Target 2 — Take 25%", "Target 3 — Trail rest"].map((label, i, arr) => (
+                    <div key={label} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
+                      borderBottom: i < arr.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
+                    }}>
+                      <div style={NATIVE_TYPE.label}>{label}</div>
+                      <div style={{ fontSize: 17, fontWeight: 600, color: NATIVE_COLOR.text }}>$███.██</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.7),rgba(7,11,18,0.6))" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: NATIVE_COLOR.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Unlock full execution plan</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: NATIVE_COLOR.accentBase, color: "#06120c", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                </div>
+              </div>
             ) : (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6883,7 +6928,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
