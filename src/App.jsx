@@ -10129,15 +10129,18 @@ async function loadWatchlistLive() {
     }
 
     // ── Shared sub-components ──────────────────────────────────────────────
+    // Every section box in every pane below reads bg/bdr/txt/txtS/txtG, so
+    // branching these here cascades the native palette across all 7 panes
+    // without touching each pane's markup individually.
     const dm = darkMode;
-    const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
-    const bdr  = dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
-    const txt  = dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)";
-    const txtS = dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)";
-    const txtG = dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)";
+    const bg   = isNative ? NATIVE_COLOR.surface : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
+    const bdr  = isNative ? "none" : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
+    const txt  = isNative ? NATIVE_COLOR.text : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
+    const txtS = isNative ? NATIVE_COLOR.textLabel : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
+    const txtG = isNative ? NATIVE_COLOR.textFaint : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
 
     const FieldRow = ({ label, value, action }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: isNative ? `0.5px solid ${NATIVE_COLOR.divider}` : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
           {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
@@ -10150,7 +10153,7 @@ async function loadWatchlistLive() {
       <button
         onClick={onChange}
         style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
-          background: enabled ? "rgba(0,180,80,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          background: enabled ? (isNative ? NATIVE_COLOR.accentBase : "rgba(0,180,80,0.80)") : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
           position: "relative", transition: "background 0.2s" }}
       >
         <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
@@ -10178,7 +10181,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? NATIVE_COLOR.bg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -10201,10 +10204,8 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-              border: `1px solid ${T.border}`,
-              borderRadius: NATIVE_SECONDARY_CARD.radius,
-              boxShadow: nativeCardShadow(darkMode),
+              background: NATIVE_COLOR.surface,
+              borderRadius: 18,
               overflow: "hidden",
             } : undefined}
           >
@@ -10220,17 +10221,17 @@ async function loadWatchlistLive() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "14px 16px",
-                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${T.border}` : "none",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `0.5px solid ${NATIVE_COLOR.divider}` : "none",
                     borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
                     background: "transparent", textAlign: "left",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: active ? 1 : 0.45, color: active ? av.text : T.textFaint, flexShrink: 0 }}>{n.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? T.text : T.textSec }}>{n.label}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? NATIVE_COLOR.accent : NATIVE_COLOR.textFaint, flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? NATIVE_COLOR.text : NATIVE_COLOR.textLabel }}>{n.label}</span>
                   </span>
                   {active ? (
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: av.text, boxShadow: `0 0 6px ${av.text}`, flexShrink: 0 }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: NATIVE_COLOR.accent, flexShrink: 0 }} />
                   ) : null}
                 </motion.button>
               );
