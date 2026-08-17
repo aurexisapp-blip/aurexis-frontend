@@ -2920,31 +2920,6 @@ function AppInner() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  // The FAB auto-focuses the chat input the instant the sheet opens, so the
-  // keyboard comes up almost immediately -- but the sheet was sized with
-  // 100vh/bottom:0, and 100vh on iOS doesn't shrink when the keyboard
-  // appears (same root cause class as the input auto-zoom bug: the layout
-  // viewport not accounting for what's actually visible). That covered the
-  // input+send row with the keyboard every time. visualViewport does report
-  // the real visible height, so track it and lift the sheet clear of the
-  // keyboard instead of trusting 100vh.
-  const [chatKeyboardInset, setChatKeyboardInset] = useState(0);
-  React.useEffect(() => {
-    if (!isNative || !chatOpen || typeof window === "undefined" || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const update = () => {
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setChatKeyboardInset(inset);
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      setChatKeyboardInset(0);
-    };
-  }, [isNative, chatOpen]);
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", content: "Hey! I'm AURO, your AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
   ]);
@@ -12400,19 +12375,6 @@ const renderPage = () => {
       </div>
 
       {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
-      {/* Backdrop scrim — native only, full-screen sheet needs a solid layer behind it */}
-      {isNative && chatOpen && (
-        <div
-          onClick={() => setChatOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.55)",
-            zIndex: 1198,
-          }}
-        />
-      )}
-
       {/* FAB toggle button */}
       <button
         className="chatFab"
@@ -12461,31 +12423,24 @@ const renderPage = () => {
         {chatOpen ? "✕" : "✦"}
       </button>
 
-      {/* Chat panel */}
+      {/* Chat panel — native: full-screen takeover, not a bottom sheet.
+          A partial-height sheet anchored with bottom:0/vh math fought the
+          keyboard through two rounds of fixes (100vh doesn't shrink for the
+          keyboard on iOS, so lifting/shrinking it by hand kept drifting out
+          of sync). Full-screen sidesteps that whole class of bug: the
+          .chatFullscreen class below uses 100dvh, which modern WebKit does
+          recompute when the keyboard opens, so the input row just stays at
+          the bottom of a shorter flex column -- no JS viewport tracking
+          needed at all. Desktop keeps its small floating widget, unchanged. */}
       {chatOpen && (
-        <div className="chatPanel" style={isNative ? {
+        <div className={isNative ? "chatFullscreen" : "chatPanel"} style={isNative ? {
           position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: chatKeyboardInset,
+          inset: 0,
           width: "100%",
-          // Shrinking height by the same amount bottom grows keeps the
-          // panel's TOP edge fixed in place -- without this, raising bottom
-          // alone pushed the top edge off the top of the screen (the header
-          // overlapping the status bar) while leaving a gap below the panel
-          // where the translucent backdrop showed the dashboard through it.
-          height: `calc(min(80vh, calc(100vh - 64px)) - ${chatKeyboardInset}px)`,
-          transition: "bottom 0.12s ease-out, height 0.12s ease-out",
-          borderRadius: "20px 20px 0 0",
           background: "#0a0a0a",
-          border: "none",
-          borderTop: "1px solid #1a1a19",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
           zIndex: 1199,
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         } : {
           position: "fixed",
           bottom: 108,
@@ -12507,7 +12462,7 @@ const renderPage = () => {
         }}>
           {/* Header */}
           <div style={isNative ? {
-            padding: "10px 14px 11px",
+            padding: "calc(14px + env(safe-area-inset-top, 0px)) 16px 14px",
             borderBottom: "0.5px solid #1a1a19",
             display: "flex",
             alignItems: "center",
@@ -12523,21 +12478,15 @@ const renderPage = () => {
             flexShrink: 0,
             background: darkMode ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)",
           }}>
-            {isNative && (
-              <div style={{
-                position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
-                width: 36, height: 4, borderRadius: 2, background: "#2a2a28",
-              }} />
-            )}
             <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              width: isNative ? 36 : 32, height: isNative ? 36 : 32, borderRadius: isNative ? 11 : 10, flexShrink: 0,
               background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 15, color: "white", fontWeight: 700,
+              fontSize: isNative ? 17 : 15, color: "white", fontWeight: 700,
             }}>✦</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>AURO</div>
-              <div style={{ fontSize: 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+              <div style={{ fontSize: isNative ? 15 : 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>AURO</div>
+              <div style={{ fontSize: isNative ? 11 : 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3EE0A3", display: "inline-block", boxShadow: "0 0 4px #3EE0A3" }} />
                 Live market context
               </div>
@@ -12547,9 +12496,9 @@ const renderPage = () => {
                 onClick={() => setChatOpen(false)}
                 aria-label="Close chat"
                 style={{
-                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                  width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                   background: "#1a1a19", border: "none", color: "#8a8a86",
-                  fontSize: 13, cursor: "pointer",
+                  fontSize: 14, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >✕</button>
@@ -12562,10 +12511,10 @@ const renderPage = () => {
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "14px 12px 8px",
+              padding: isNative ? "20px 16px 10px" : "14px 12px 8px",
               display: "flex",
               flexDirection: "column",
-              gap: 8,
+              gap: isNative ? 12 : 8,
             }}
           >
             {chatHistory.map((m, i) => (
@@ -12575,11 +12524,11 @@ const renderPage = () => {
                 alignItems: m.role === "user" ? "flex-end" : "flex-start",
               }}>
                 <div style={{
-                  padding: "8px 12px",
-                  borderRadius: m.role === "user" ? "14px 14px 3px 14px" : "4px 14px 14px 14px",
-                  fontSize: 12.5,
-                  lineHeight: 1.55,
-                  maxWidth: "84%",
+                  padding: isNative ? "10px 14px" : "8px 12px",
+                  borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                  fontSize: isNative ? 14 : 12.5,
+                  lineHeight: 1.6,
+                  maxWidth: isNative ? "86%" : "84%",
                   wordBreak: "break-word",
                   background: m.role === "user"
                     ? "linear-gradient(135deg, #6366f1, #7c3aed)"
@@ -12611,35 +12560,60 @@ const renderPage = () => {
             )}
           </div>
 
-          {/* Quick chips — only before first message */}
+          {/* Quick suggestions — only before first message */}
           {chatHistory.length <= 1 && (
-            <div style={{ padding: "0 12px 8px", display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {["Top pick?", "Win rate?", "Best signal?", "Market regime?"].map(s => (
-                <button
-                  key={s}
-                  onClick={() => sendChatText(s)}
-                  style={{
-                    background: darkMode ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.08)",
-                    color: "#818cf8",
-                    border: "1px solid rgba(99,102,241,0.22)",
-                    borderRadius: 20,
-                    padding: "4px 10px", fontSize: 11.5, cursor: "pointer",
-                    transition: "background 0.15s",
-                    fontFamily: "inherit",
-                  }}
-                >{s}</button>
-              ))}
-            </div>
+            isNative ? (
+              <div style={{ padding: "0 16px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[
+                  { label: "Top pick?", icon: "🎯" },
+                  { label: "Win rate?", icon: "📊" },
+                  { label: "Best signal?", icon: "⚡" },
+                  { label: "Market regime?", icon: "🌊" },
+                ].map(s => (
+                  <button
+                    key={s.label}
+                    onClick={() => sendChatText(s.label)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: "#111110", border: "0.5px solid #1a1a19", borderRadius: 14,
+                      padding: "12px 14px", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>{s.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: "0 12px 8px", display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {["Top pick?", "Win rate?", "Best signal?", "Market regime?"].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => sendChatText(s)}
+                    style={{
+                      background: darkMode ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.08)",
+                      color: "#818cf8",
+                      border: "1px solid rgba(99,102,241,0.22)",
+                      borderRadius: 20,
+                      padding: "4px 10px", fontSize: 11.5, cursor: "pointer",
+                      transition: "background 0.15s",
+                      fontFamily: "inherit",
+                    }}
+                  >{s}</button>
+                ))}
+              </div>
+            )
           )}
 
           {/* Input row */}
           <div style={{
-            padding: isNative ? "8px 12px calc(12px + env(safe-area-inset-bottom, 0px))" : "8px 12px 12px",
+            padding: isNative ? "12px 16px calc(14px + env(safe-area-inset-bottom, 0px))" : "8px 12px 12px",
             borderTop: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`,
             display: "flex",
-            gap: 7,
+            gap: isNative ? 10 : 7,
             alignItems: "flex-end",
             flexShrink: 0,
+            background: isNative ? "#0a0a0a" : undefined,
           }}>
             <textarea
               ref={chatInputRef}
@@ -12653,8 +12627,8 @@ const renderPage = () => {
                 flex: 1, resize: "none",
                 background: isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
                 border: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border2}`,
-                borderRadius: 10,
-                color: T.text, fontSize: 16, padding: "8px 11px",
+                borderRadius: isNative ? 14 : 10,
+                color: T.text, fontSize: 16, padding: isNative ? "11px 14px" : "8px 11px",
                 fontFamily: "inherit", lineHeight: 1.45, outline: "none",
                 maxHeight: 80, overflow: "auto",
                 transition: "border-color 0.15s",
@@ -12664,14 +12638,14 @@ const renderPage = () => {
               onClick={sendChatMessage}
               disabled={chatLoading || !chatInput.trim()}
               style={{
-                width: 36, height: 36,
+                width: isNative ? 42 : 36, height: isNative ? 42 : 36,
                 background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                border: "none", borderRadius: 10, cursor: "pointer",
+                border: "none", borderRadius: isNative ? 14 : 10, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
                 opacity: (chatLoading || !chatInput.trim()) ? 0.35 : 1,
                 transition: "opacity 0.15s",
-                fontSize: 13, color: "white",
+                fontSize: isNative ? 15 : 13, color: "white",
               }}
             >➤</button>
           </div>

@@ -3340,3 +3340,13 @@ a:hover{
   border-color: rgba(0,0,0,0.10);
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 }
+
+/* Native AI chat, full-screen takeover. 100vh first as a fallback for
+   engines that don't understand dvh (ignored, rule just no-ops); 100dvh
+   second so it wins when supported -- modern WebKit recomputes dvh when
+   the keyboard opens, so the input row at the bottom of this flex column
+   stays above the keyboard with zero JS viewport tracking required. */
+.chatFullscreen {
+  height: 100vh;
+  height: 100dvh;
+}
