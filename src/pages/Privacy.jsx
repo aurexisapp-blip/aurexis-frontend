@@ -11,7 +11,6 @@ export default function Privacy() {
           "Account info: email, name, password (hashed)",
           "Payment info: handled by Stripe — we never see your card numbers",
           "Usage data: which features you use, when you log in",
-          "Optional: phone number for SMS alerts",
         ]} />
       </Section>
 
@@ -35,7 +34,6 @@ export default function Privacy() {
         <UL items={[
           "Stripe — payments",
           "SendGrid — email delivery",
-          "Twilio — SMS alerts (optional)",
           "Cloudflare — security and DDoS protection",
           "Vercel — frontend hosting",
           "Railway — backend hosting",
