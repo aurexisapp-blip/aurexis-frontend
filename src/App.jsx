@@ -2920,6 +2920,31 @@ function AppInner() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  // The FAB auto-focuses the chat input the instant the sheet opens, so the
+  // keyboard comes up almost immediately -- but the sheet was sized with
+  // 100vh/bottom:0, and 100vh on iOS doesn't shrink when the keyboard
+  // appears (same root cause class as the input auto-zoom bug: the layout
+  // viewport not accounting for what's actually visible). That covered the
+  // input+send row with the keyboard every time. visualViewport does report
+  // the real visible height, so track it and lift the sheet clear of the
+  // keyboard instead of trusting 100vh.
+  const [chatKeyboardInset, setChatKeyboardInset] = useState(0);
+  React.useEffect(() => {
+    if (!isNative || !chatOpen || typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setChatKeyboardInset(inset);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      setChatKeyboardInset(0);
+    };
+  }, [isNative, chatOpen]);
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", content: "Hey! I'm your StackIQ AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
   ]);
@@ -12442,9 +12467,10 @@ const renderPage = () => {
           position: "fixed",
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: chatKeyboardInset,
           width: "100%",
           height: "min(80vh, calc(100vh - 64px))",
+          transition: "bottom 0.12s ease-out",
           borderRadius: "20px 20px 0 0",
           background: "#0a0a0a",
           border: "none",
