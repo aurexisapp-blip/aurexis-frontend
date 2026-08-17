@@ -940,7 +940,11 @@ a:hover{
     /* 58px tall x 1/5 of viewport wide comfortably clears Apple's 44pt
        minimum touch target on any phone this app reasonably supports. */
   }
-  .mobileBottomNav__item--active{ color: #3EE0A3; }
+  /* Active-tab color follows the user's chosen avatar accent (--nav-
+     active-rgb, set inline on <nav> from avatarId) so the one persistent
+     piece of chrome reflects personalization -- falls back to brand
+     green if the variable isn't set for some reason. */
+  .mobileBottomNav__item--active{ color: rgb(var(--nav-active-rgb, 62,224,163)); }
   .mobileBottomNav__iconWrap{ position: relative; display: inline-flex; }
   .mobileBottomNav__item--active .mobileBottomNav__iconWrap::before{
     content: "";
@@ -949,7 +953,7 @@ a:hover{
     transform: translate(-50%, -50%);
     width: 34px; height: 26px;
     border-radius: 9px;
-    background: rgba(0, 212, 98, 0.14);
+    background: rgba(var(--nav-active-rgb, 62,224,163), 0.14);
     z-index: -1;
   }
   .mobileBottomNav__icon{ font-size: 18px; line-height: 1; display: block; }

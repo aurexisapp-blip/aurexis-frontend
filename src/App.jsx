@@ -10206,11 +10206,11 @@ async function loadWatchlistLive() {
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? "#3EE0A3" : "#6a6a66", flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? av.text : "#6a6a66", flexShrink: 0 }}>{n.icon}</span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: active ? "#f5f5f4" : "#8a8a86" }}>{n.label}</span>
                   </span>
                   {active ? (
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3EE0A3" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: av.text, boxShadow: `0 0 8px ${av.text}` }} />
                   ) : null}
                 </motion.button>
               );
@@ -11906,7 +11906,7 @@ const renderPage = () => {
           const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support");
           return (
             <>
-              <nav className="mobileBottomNav" aria-label="Primary">
+              <nav className="mobileBottomNav" aria-label="Primary" style={{ "--nav-active-rgb": _getAvatar(avatarId).rgb }}>
                 {primaryItems.map((n) => {
                   const isActive = tab === n.key && !mobileMoreOpen;
                   const navLocked = MOBILE_NAV_MIN_PLAN[n.key] && !canAccess(userPlan, MOBILE_NAV_MIN_PLAN[n.key]);
