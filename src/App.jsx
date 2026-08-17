@@ -8687,6 +8687,7 @@ async function loadWatchlistLive() {
             {loading ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: "#8a8a86" }}>Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…</div>
+                <div style={{ fontSize: 12, color: "#6a6a66", marginTop: 4 }}>This can take up to a minute</div>
               </div>
             ) : !hasScreened || results.length === 0 ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
@@ -8802,6 +8803,7 @@ async function loadWatchlistLive() {
                   Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…
                 </span>
               </div>
+              <div style={{ fontSize: 12, color: T.textGhost, marginTop: 6 }}>This can take up to a minute</div>
             </div>
           ) : !hasScreened || results.length === 0 ? (
             <div style={{ padding: "52px 22px", textAlign: "center" }}>
