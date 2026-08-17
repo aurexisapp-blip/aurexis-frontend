@@ -124,14 +124,44 @@ export default function Legal() {
     setActive(id);
   };
 
-  // Hash on load
+  // Hash on load -- retries until the target element actually exists in the
+  // DOM, since a fixed short delay was landing short (e.g. #privacy opening
+  // to Terms of Service instead) when web fonts/layout were still settling.
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash) setTimeout(() => scrollTo(hash), 120);
+    if (!hash) return;
+    let attempts = 0;
+    const tryScroll = () => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "auto", block: "start" });
+        setActive(hash);
+      } else if (attempts < 20) {
+        attempts += 1;
+        setTimeout(tryScroll, 100);
+      }
+    };
+    setTimeout(tryScroll, 50);
   }, []);
 
   return (
     <div style={{ fontFamily: '"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', background: T.bg, color: T.text, minHeight: "100vh", WebkitFontSmoothing: "antialiased" }}>
+      <style>{`
+        @media (max-width: 720px) {
+          .legalLayout { flex-direction: column !important; }
+          .legalSidebar {
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            padding: 20px 0 24px !important;
+            border-bottom: 1px solid ${T.border};
+          }
+          .legalContent {
+            padding: 28px 4px 80px !important;
+            border-left: none !important;
+          }
+        }
+      `}</style>
 
       {/* Top bar */}
       <div style={{ borderBottom: `1px solid ${T.border}`, padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
@@ -144,10 +174,10 @@ export default function Legal() {
         <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.18em", color: T.textGhost }}>AUREXIS</div>
       </div>
 
-      <div style={{ display: "flex", maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div className="legalLayout" style={{ display: "flex", maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
 
         {/* Sidebar */}
-        <aside style={{
+        <aside className="legalSidebar" style={{
           width: 210, flexShrink: 0, position: "sticky", top: 55, height: "calc(100vh - 55px)",
           overflowY: "auto", padding: "36px 0 60px", display: "flex", flexDirection: "column", gap: 28,
           scrollbarWidth: "none",
@@ -179,7 +209,7 @@ export default function Legal() {
         </aside>
 
         {/* Content */}
-        <main style={{ flex: 1, minWidth: 0, padding: "44px 0 100px 48px", borderLeft: `1px solid ${T.border}` }}>
+        <main className="legalContent" style={{ flex: 1, minWidth: 0, padding: "44px 0 100px 48px", borderLeft: `1px solid ${T.border}` }}>
 
           {/* ── GETTING STARTED ─────────────────────────────────────── */}
           <SectionBlock id="getting-started" title="Getting Started" label="Support">
