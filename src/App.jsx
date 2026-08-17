@@ -4148,6 +4148,25 @@ async function loadWatchlistLive() {
 
       showToast?.("Analysis ready");
 
+      // The result card only exists in the Dashboard tab's DOM, but "Analyze"
+      // is reachable from many places (header, Movers, Screener, Portfolio,
+      // Watchlist). Switch there and scroll to it so the result is never
+      // silently rendered on a tab the user isn't looking at.
+      setTab("dashboard");
+      (() => {
+        let attempts = 0;
+        const tryScroll = () => {
+          const el = document.getElementById("analysisCardAnchor");
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (attempts < 20) {
+            attempts += 1;
+            setTimeout(tryScroll, 100);
+          }
+        };
+        setTimeout(tryScroll, 50);
+      })();
+
       return mappedData;
     } catch (e) {
       if (reqId !== analyzeReqIdRef.current) return;
@@ -7549,7 +7568,7 @@ async function loadWatchlistLive() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
           <AnalyzeHistoryCard />
         </motion.div>
-        <div className="dashCell dashCell--why">
+        <div className="dashCell dashCell--why" id="analysisCardAnchor">
           {analyzeIsLowConviction ? (
             <div className="card lowConvictionCard">
               <div className="cardHead">
