@@ -12191,12 +12191,42 @@ const renderPage = () => {
       </div>
 
       {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
+      {/* Backdrop scrim — native only, full-screen sheet needs a solid layer behind it */}
+      {isNative && chatOpen && (
+        <div
+          onClick={() => setChatOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 1198,
+          }}
+        />
+      )}
+
       {/* FAB toggle button */}
       <button
         className="chatFab"
         onClick={() => { setChatOpen(o => !o); setTimeout(() => chatInputRef.current?.focus(), 80); }}
         title={chatOpen ? "Close AI chat" : "Ask AI"}
-        style={{
+        style={isNative ? {
+          position: "fixed",
+          bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
+          right: 16,
+          width: 50,
+          height: 50,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+          border: "none",
+          boxShadow: "0 4px 20px rgba(99,102,241,0.45)",
+          cursor: "pointer",
+          display: chatOpen ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1200,
+          color: "white",
+          fontSize: 20,
+        } : {
           position: "fixed",
           bottom: 52,
           right: 20,
@@ -12224,7 +12254,24 @@ const renderPage = () => {
 
       {/* Chat panel */}
       {chatOpen && (
-        <div className="chatPanel" style={{
+        <div className="chatPanel" style={isNative ? {
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "min(80vh, calc(100vh - 64px))",
+          borderRadius: "20px 20px 0 0",
+          background: "#0a0a0a",
+          border: "none",
+          borderTop: "1px solid #1a1a19",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          zIndex: 1199,
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        } : {
           position: "fixed",
           bottom: 108,
           right: 20,
@@ -12244,7 +12291,15 @@ const renderPage = () => {
           zIndex: 1199,
         }}>
           {/* Header */}
-          <div style={{
+          <div style={isNative ? {
+            padding: "10px 14px 11px",
+            borderBottom: "0.5px solid #1a1a19",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexShrink: 0,
+            background: "#111110",
+          } : {
             padding: "12px 14px 11px",
             borderBottom: `1px solid ${T.border}`,
             display: "flex",
@@ -12253,6 +12308,12 @@ const renderPage = () => {
             flexShrink: 0,
             background: darkMode ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)",
           }}>
+            {isNative && (
+              <div style={{
+                position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
+                width: 36, height: 4, borderRadius: 2, background: "#2a2a28",
+              }} />
+            )}
             <div style={{
               width: 32, height: 32, borderRadius: 10, flexShrink: 0,
               background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
@@ -12266,6 +12327,18 @@ const renderPage = () => {
                 Live market context
               </div>
             </div>
+            {isNative && (
+              <button
+                onClick={() => setChatOpen(false)}
+                aria-label="Close chat"
+                style={{
+                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                  background: "#1a1a19", border: "none", color: "#8a8a86",
+                  fontSize: 13, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >✕</button>
+            )}
           </div>
 
           {/* Messages */}
@@ -12295,9 +12368,9 @@ const renderPage = () => {
                   wordBreak: "break-word",
                   background: m.role === "user"
                     ? "linear-gradient(135deg, #6366f1, #7c3aed)"
-                    : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+                    : (isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)")),
                   color: m.role === "user" ? "#f1f5f9" : T.text,
-                  border: m.role === "user" ? "none" : `1px solid ${T.border}`,
+                  border: m.role === "user" ? "none" : (isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`),
                 }}>
                   {m.content}
                 </div>
@@ -12307,8 +12380,8 @@ const renderPage = () => {
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
                 padding: "9px 13px",
-                background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-                border: `1px solid ${T.border}`,
+                background: isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+                border: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`,
                 borderRadius: "4px 14px 14px 14px",
                 alignSelf: "flex-start",
               }}>
@@ -12346,8 +12419,8 @@ const renderPage = () => {
 
           {/* Input row */}
           <div style={{
-            padding: "8px 12px 12px",
-            borderTop: `1px solid ${T.border}`,
+            padding: isNative ? "8px 12px calc(12px + env(safe-area-inset-bottom, 0px))" : "8px 12px 12px",
+            borderTop: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`,
             display: "flex",
             gap: 7,
             alignItems: "flex-end",
@@ -12363,8 +12436,8 @@ const renderPage = () => {
               disabled={chatLoading}
               style={{
                 flex: 1, resize: "none",
-                background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                border: `1px solid ${T.border2}`,
+                background: isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+                border: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border2}`,
                 borderRadius: 10,
                 color: T.text, fontSize: 16, padding: "8px 11px",
                 fontFamily: "inherit", lineHeight: 1.45, outline: "none",
