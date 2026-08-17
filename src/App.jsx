@@ -10836,7 +10836,7 @@ async function loadWatchlistLive() {
                       { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
                       { label: "Delete account & all data", action: "Settings → Account → Delete account" },
                       { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
-                      { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#3EE0A3", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
+                      { label: "Full privacy policy", action: <span onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/legal#privacy" })} style={{ color: "#3EE0A3", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>View policy ↗</span> },
                     ].map(({ label, action }, i, arr) => (
                       <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none" }}>
                         <div style={{ fontSize: 13, color: "#f5f5f4", fontWeight: 500 }}>{label}</div>
