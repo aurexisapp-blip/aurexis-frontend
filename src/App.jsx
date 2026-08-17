@@ -4420,6 +4420,23 @@ async function loadWatchlistLive() {
   );
 
 
+  // Single source of truth for "today's pick" entry price -- HeroCard (the
+  // Entry/Stop Loss cards at the top of the page) and AnalysisCard's
+  // Execution Plan row both call this instead of each computing their own
+  // path through bestPickData, so the two displays can't drift apart from
+  // each other the way two independent computations of the same value
+  // eventually do.
+  function getBestPickEntryPrice(bestPickPayload) {
+    const payload = bestPickPayload && typeof bestPickPayload === "object" ? bestPickPayload : null;
+    const best =
+      (payload?.pick && typeof payload.pick === "object" ? payload.pick : null) ||
+      (payload?.best_pick && typeof payload.best_pick === "object" ? payload.best_pick : null) ||
+      payload;
+    const tp = (best?.trade_plan && typeof best.trade_plan === "object" ? best.trade_plan : null)
+      || (payload?.trade_plan && typeof payload.trade_plan === "object" ? payload.trade_plan : null);
+    return Number(tp?.entry ?? best?.entry);
+  }
+
   const Dashboard = () => {
     const analysisObj = analyzeData && typeof analyzeData === "object" ? analyzeData : null;
 
@@ -5996,7 +6013,7 @@ async function loadWatchlistLive() {
       // Trade plan — ONLY from bestPickData
       const tp0 = (best0?.trade_plan && typeof best0.trade_plan === "object" ? best0.trade_plan : null)
         || (bestPayload0?.trade_plan && typeof bestPayload0.trade_plan === "object" ? bestPayload0.trade_plan : null);
-      const entryN = Number(tp0?.entry ?? best0?.entry);
+      const entryN = getBestPickEntryPrice(bestPickData);
       const stopN  = Number(tp0?.stop ?? best0?.stop);
       const targets0 = Array.isArray(tp0?.targets) ? tp0.targets.map(Number).filter(n => Number.isFinite(n) && n > 0) : [];
       const target1  = targets0[0] ?? null;
@@ -7278,10 +7295,18 @@ async function loadWatchlistLive() {
                     </div>
                   ) : null}
 
-                  {(ep || _advHasStop || _advTargets.length > 0) ? (
+                  {(() => {
+                    // Same source HeroCard's Entry/Stop Loss cards use (bestPickData,
+                    // not this card's own live-analyze data) -- so this row can never
+                    // show a different entry price than the one at the top of the page.
+                    const _heroEntryPrice = getBestPickEntryPrice(bestPickData);
+                    const _hasHeroEntry = Number.isFinite(_heroEntryPrice) && _heroEntryPrice > 0;
+                    if (!ep && !_advHasStop && _advTargets.length === 0 && !_hasHeroEntry) return null;
+                    return (
                     <div>
                       <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Execution Plan</div>
                       <div className="kv" style={{ marginTop: 0 }}>
+                        {_hasHeroEntry ? <div className="kvRow"><div className="kvKey">Entry</div><div className="kvVal"><span style={{ color: T.text }}>${_heroEntryPrice.toFixed(2)}</span></div></div> : null}
                         {ep?.date ? <div className="kvRow"><div className="kvKey">Date</div><div className="kvVal">{fmtAnalyzeValue(ep.date)}</div></div> : null}
                         {ep?.window ? <div className="kvRow"><div className="kvKey">Window</div><div className="kvVal">{fmtAnalyzeValue(ep.window)}</div></div> : null}
                         {bzText !== "—" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
@@ -7308,7 +7333,8 @@ async function loadWatchlistLive() {
                         ) : null}
                       </div>
                     </div>
-                  ) : null}
+                    );
+                  })()}
 
                   {a && (Number.isFinite(Number(a?.aiScore)) || Number.isFinite(Number(a?.executionScore))) ? (
                     <div>
