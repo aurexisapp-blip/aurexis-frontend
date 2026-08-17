@@ -2946,7 +2946,7 @@ function AppInner() {
     };
   }, [isNative, chatOpen]);
   const [chatHistory, setChatHistory] = useState([
-    { role: "assistant", content: "Hey! I'm your StackIQ AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
+    { role: "assistant", content: "Hey! I'm AURO, your AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -12536,7 +12536,7 @@ const renderPage = () => {
               fontSize: 15, color: "white", fontWeight: 700,
             }}>✦</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>StackIQ AI</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>AURO</div>
               <div style={{ fontSize: 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3EE0A3", display: "inline-block", boxShadow: "0 0 4px #3EE0A3" }} />
                 Live market context
