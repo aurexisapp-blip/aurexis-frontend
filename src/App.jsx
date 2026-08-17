@@ -10837,11 +10837,11 @@ async function loadWatchlistLive() {
     }
 
     return (
-      <div style={{ padding: "28px 20px 48px", maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ padding: isNative ? "20px 16px 40px" : "28px 20px 48px", maxWidth: 1100, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ marginBottom: 36, textAlign: "center" }}>
+        <div style={{ marginBottom: isNative ? 24 : 36, textAlign: "center" }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>PRICING</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>Simple, transparent pricing.</div>
+          <div style={{ fontSize: isNative ? 24 : 30, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>Simple, transparent pricing.</div>
           <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
         </div>
 
@@ -10851,8 +10851,11 @@ async function loadWatchlistLive() {
           </div>
         )}
 
-        {/* Plan grid — 4 columns */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+        {/* Plan grid — 4 columns on desktop; native has no room for 4 equal
+            columns (each card's full feature matrix squeezed into ~1/4 of a
+            phone's width was overlapping and getting clipped past the right
+            edge), so it stacks to one full-width card per plan instead. */}
+        <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : "repeat(4, 1fr)", gap: isNative ? 16 : 14 }}>
           {plans.map((plan) => {
             const isCurrent = plan.id === userPlan;
             const isLoading = upgradeLoading === plan.id;
