@@ -11608,8 +11608,8 @@ const renderPage = () => {
 
 
   return (
-    <div className="appShell" style={isNative ? { background: "#0a0a0a" } : undefined}>
-      <div className="layout" style={{ display: "flex", background: isNative ? "#0a0a0a" : undefined }}>
+    <div className="appShell" style={isNative ? { background: "#0a0a0a", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
+      <div className="layout" style={{ display: "flex", background: isNative ? "#0a0a0a" : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
         <aside
           className="sidebar"
           style={{
@@ -11963,7 +11963,7 @@ const renderPage = () => {
           );
         })()}
 
-        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? "#0a0a0a" : undefined }}>
+        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? "#0a0a0a" : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
           {tab === "dashboard" && marketDataFailure ? (
             <SystemAlert type="warning" message="Market data degraded — analytics delayed." />
           ) : null}
@@ -12130,7 +12130,7 @@ const renderPage = () => {
           )}
 
 
-          <div className="page" style={isNative ? { background: "#0a0a0a", paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" } : undefined}>
+          <div className="page" style={isNative ? { background: "#0a0a0a", paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
             {tab === "dashboard" && cmdErr ? (
               <div className="monoBox monoBox--bad" style={{ marginBottom: 12 }}>
                 {cmdErr}

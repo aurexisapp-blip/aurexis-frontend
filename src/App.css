@@ -25,6 +25,7 @@
 /* Full-height layout reliability */
 html, body, #root {
   height: 100%;
+  overflow-x: hidden;
 }
 body {
   margin: 0;
