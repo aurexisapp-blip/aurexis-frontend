@@ -2719,23 +2719,39 @@ function AppInner() {
   // here -- this effect only listens for the results of that request.
   useEffect(() => {
     if (!isNative) return;
-    const regSub = PushNotifications.addListener("registration", (token) => {
+    // The registration event only fires once the OS hands back a device
+    // token, which can take anywhere from milliseconds to several seconds
+    // after PushNotifications.register() resolves -- and the one POST to
+    // persist it server-side had zero retry, so a single dropped network
+    // request left the toggle looking "on" (Settings sets pushEnabled=true
+    // as soon as register() resolves, before this token even exists) with
+    // no device token actually on file, and no push ever arrives. Retrying
+    // a few times closes that gap without needing the user to notice and
+    // manually retoggle.
+    const registerDeviceToken = (token, retriesLeft = 2) => {
       const authToken = localStorage.getItem("aurexis_token");
-      if (!authToken || !token?.value) return;
+      if (!authToken || !token) return;
       fetch(`${API}/auth/device-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ device_token: token.value, platform: "ios" }),
+        body: JSON.stringify({ device_token: token, platform: "ios" }),
       })
         .then((r) => {
           if (r.ok) {
             try {
               localStorage.setItem("aurexis_push_registered", "1");
-              localStorage.setItem("aurexis_push_token", token.value);
+              localStorage.setItem("aurexis_push_token", token);
             } catch {}
+          } else if (retriesLeft > 0) {
+            setTimeout(() => registerDeviceToken(token, retriesLeft - 1), 2500);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (retriesLeft > 0) setTimeout(() => registerDeviceToken(token, retriesLeft - 1), 2500);
+        });
+    };
+    const regSub = PushNotifications.addListener("registration", (token) => {
+      registerDeviceToken(token?.value);
     });
     const errSub = PushNotifications.addListener("registrationError", (err) => {
       console.warn("push registration error", err);
@@ -2748,6 +2764,20 @@ function AppInner() {
       if (data.type === "pick") setTab("dashboard");
       else if (data.type === "upgrade") setTab("pricing");
     });
+    // Self-heal: if the OS already shows permission as granted (this
+    // session or a past one) but we never confirmed a token made it to the
+    // backend, re-register. Re-registering when already granted is a no-op
+    // permission-wise -- it just asks the OS for the current token again,
+    // which re-fires "registration" above and gives the retry logic another
+    // shot at getting it to the backend. Covers the case where the app was
+    // killed mid-registration last time and never got a second chance.
+    PushNotifications.checkPermissions()
+      .then((perm) => {
+        if (perm?.receive === "granted" && localStorage.getItem("aurexis_push_registered") !== "1") {
+          PushNotifications.register().catch(() => {});
+        }
+      })
+      .catch(() => {});
     return () => {
       regSub.then((s) => s.remove());
       errSub.then((s) => s.remove());
@@ -10238,6 +10268,26 @@ async function loadWatchlistLive() {
       try { return localStorage.getItem("aurexis_push_registered") === "1"; } catch { return false; }
     });
     const [pushBusy, setPushBusy] = React.useState(false);
+    // This pane remounts fresh every time the user navigates back to
+    // Settings (it's conditionally rendered, not kept alive off-screen),
+    // so the localStorage-based initial state above was the ONLY thing the
+    // toggle showed -- and that flag only gets written after the device
+    // token round-trips to the backend (see the registration listener in
+    // AppInner), a step that can still be in flight when the user leaves
+    // this screen. The toggle would then remount reading "not yet written"
+    // and show off, even though the user had just granted permission.
+    // Checking the actual OS permission on every mount corrects that: OS
+    // grant status is the durable, immediate source of truth, independent
+    // of whether our own backend round-trip has finished yet.
+    React.useEffect(() => {
+      if (!isNative) return;
+      PushNotifications.checkPermissions()
+        .then((perm) => {
+          if (perm?.receive === "granted") setPushEnabled(true);
+          else if (perm?.receive === "denied") setPushEnabled(false);
+        })
+        .catch(() => {});
+    }, []);
 
     async function handleTogglePush() {
       if (pushBusy) return;
