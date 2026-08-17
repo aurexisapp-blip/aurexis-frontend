@@ -3208,6 +3208,31 @@ function AppInner() {
     try { localStorage.setItem("aurexis_journal_v1", JSON.stringify(updated)); } catch {}
     setJournalTradesRaw(updated);
   };
+  // Used by the Best Pick card's "Add to Journal" button. `source` + matching
+  // entry price is how isPickInJournal() below detects "already added" --
+  // journal entries otherwise have no link back to the pick that created them.
+  const isPickInJournal = (sym, entry) =>
+    journalTrades.some(t => t.symbol === sym && t.source === "best_pick" && t.entryPrice === entry);
+  const addPickToJournal = ({ symbol, entry, stop, target }) => {
+    const sym = normalizeSymbol(symbol);
+    if (!sym || !Number.isFinite(entry) || entry <= 0) {
+      showToast?.("Trade plan unavailable — cannot add to journal.");
+      return;
+    }
+    if (isPickInJournal(sym, entry)) return;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    saveJournalTrades([
+      {
+        id, symbol: sym, entryPrice: entry,
+        stopPrice: Number.isFinite(stop) ? stop : null,
+        targetPrice: Number.isFinite(target) ? target : null,
+        enteredAt: new Date().toISOString(), exitPrice: null, exitedAt: null,
+        status: "open", returnPct: null, notes: "", source: "best_pick",
+      },
+      ...journalTrades,
+    ]);
+    showToast?.("Added to Trade Journal");
+  };
   // journalAddOpen lives here so it survives TradeJournal remounts caused by App re-renders.
   // Form field values are kept in a ref (no state) so typing never triggers re-renders.
   const [journalAddOpen, setJournalAddOpen] = useState(false);
@@ -6963,14 +6988,13 @@ async function loadWatchlistLive() {
                 <RippleButton
                   className="btn btn--primary"
                   style={isNative ? { fontSize: 13, fontWeight: 700, padding: "0 18px", height: 40, borderRadius: 12, boxSizing: "border-box" } : undefined}
-                  onClick={() => savePickToPortfolioLive({
-                    symbol: ticker,
-                    source: "best_pick",
-                    analysisSnapshot: ensureAnalyzeSchema(bestPayload0, ticker),
-                  })}
-                  disabled={savingPortfolio || Boolean(savedPortfolioMap?.[`${ticker}:best_pick`])}
+                  onClick={() => {
+                    if (!canAccess(userPlan, "starter")) { setTab("pricing"); return; }
+                    addPickToJournal({ symbol: ticker, entry: entryN, stop: stopN, target: target1 });
+                  }}
+                  disabled={canAccess(userPlan, "starter") && isPickInJournal(ticker, entryN)}
                 >
-                  {savedPortfolioMap?.[`${ticker}:best_pick`] ? "Tracked ✓" : savingPortfolio ? "Saving…" : "Track Pick"}
+                  {!canAccess(userPlan, "starter") ? "Add to Journal" : isPickInJournal(ticker, entryN) ? "In Journal ✓" : "Add to Journal"}
                 </RippleButton>
               ) : null}
               {ticker ? (

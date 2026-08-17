@@ -324,6 +324,12 @@ a:hover{
   background:
     linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
   backdrop-filter: blur(6px);
+  /* Was already mounted on every tab (renders once in the shared shell,
+     above whatever tab is active) but scrolled away with the page --
+     pinning it here keeps Analyze reachable from anywhere, on every tab. */
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 
 
