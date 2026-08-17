@@ -249,6 +249,30 @@ function summarizePayloadShape(data) {
   return { rootKeys, shape };
 }
 
+// Single source of truth for "the user is logged out" -- there used to be
+// four separate places (mount-time session check, Settings sign-out,
+// profile-menu log-out, delete-account) each clearing a slightly different
+// subset of the aurexis_* localStorage keys, which meant e.g. logging out
+// via the profile menu left aurexis_force_onboarding behind for the next
+// person to log in on that device. This also calls the backend's
+// /auth/logout so the httpOnly sq_token cookie (set by the password/OTP
+// login path) is actually cleared -- clearing localStorage alone left that
+// cookie live, so an apiFetch call made right after "logging out" would
+// still authenticate via the cookie fallback in the backend's
+// _extract_token, since it just re-adds no Bearer header and lets the
+// still-valid cookie carry the request.
+async function doLogout() {
+  const tok = localStorage.getItem("aurexis_token");
+  localStorage.removeItem("aurexis_token");
+  localStorage.removeItem("aurexis_user_email");
+  localStorage.removeItem("aurexis_user_first_name");
+  localStorage.removeItem("aurexis_force_onboarding");
+  if (tok) {
+    fetch(`${API_BASE}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${tok}` } }).catch(() => {});
+  }
+  window.location.href = "/";
+}
+
 async function apiFetch(path, options) {
   const p = String(path || "");
   const url = /^https?:\/\//i.test(p)
@@ -310,6 +334,14 @@ async function apiFetch(path, options) {
   }
 
   if (!res.ok) {
+    // A 401 while we believed we had a valid token means the backend's
+    // single-session enforcement invalidated it (most commonly: logged in
+    // on another device) -- treat it as a forced logout everywhere apiFetch
+    // is used, not just the one mount-time /auth/me probe that used to be
+    // the only place this was caught.
+    if (res.status === 401 && _tok) {
+      doLogout();
+    }
     const msg =
       (data && data.detail) ||
       (typeof data === "string" ? data : null) ||
@@ -2275,9 +2307,7 @@ function usePlan() {
         .then(r => {
           if (r.status === 401) {
             // Session invalidated (logged in on another device) — force re-login
-            localStorage.removeItem("aurexis_token");
-            localStorage.removeItem("aurexis_user_email");
-            window.location.href = "/";
+            doLogout();
             return null;
           }
           return r.ok ? r.json() : null;
@@ -10317,7 +10347,7 @@ async function loadWatchlistLive() {
               <SectionTitle>Session</SectionTitle>
               <FieldRow label="Sign out" value="End your current session on this device" action={
                 <button
-                  onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); localStorage.removeItem("aurexis_force_onboarding"); window.location.href = "/"; }}
+                  onClick={doLogout}
                   style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: bdr, background: "transparent", color: txtS, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
                 >
                   Sign out
@@ -10336,7 +10366,7 @@ async function loadWatchlistLive() {
                       if (window.confirm("Are you sure? This cannot be undone.")) {
                         const token = localStorage.getItem("aurexis_token");
                         fetch(`${API}/auth/delete-account`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} })
-                          .finally(() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; });
+                          .finally(doLogout);
                       }
                     }}
                     style={{ padding: "7px 16px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "1px solid rgba(251,113,133,0.22)", background: "rgba(251,113,133,0.07)", color: "rgba(251,113,133,0.75)", cursor: "pointer", fontFamily: "inherit" }}
@@ -11825,7 +11855,7 @@ const renderPage = () => {
                   ))}
 
                   <div style={{ height: 1, background: darkMode ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)", margin: "4px 0" }} />
-                  <button onClick={() => { localStorage.removeItem("aurexis_token"); localStorage.removeItem("aurexis_user_email"); window.location.href = "/"; }} style={{
+                  <button onClick={doLogout} style={{
                     display: "flex", alignItems: "center", gap: 10, width: "100%",
                     padding: "10px 16px 14px", background: "none", border: "none", cursor: "pointer",
                     fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: "rgba(248,113,113,0.90)",
