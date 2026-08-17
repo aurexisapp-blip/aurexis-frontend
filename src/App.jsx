@@ -7849,6 +7849,97 @@ async function loadWatchlistLive() {
 
     const thStyle = { cursor: "pointer", userSelect: "none" };
 
+    if (isNative) {
+      const FREE_MOVERS_LIMIT = 5;
+      const isFreeUser = !canAccess(userPlan, "starter");
+      const visibleMovers = isFreeUser ? sorted.slice(0, FREE_MOVERS_LIMIT) : sorted;
+      const hiddenCount = isFreeUser ? Math.max(0, sorted.length - FREE_MOVERS_LIMIT) : 0;
+      const hasAuthError = Array.isArray(movers) && movers.some((m) => String(m?.data_status || m?.dataStatus || "").toLowerCase() === "auth_error");
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Movers</div>
+            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>Market leaders by momentum — tap any row to analyze</div>
+          </div>
+
+          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+            {hasAuthError || moversFailure || errMovers ? (
+              <div style={{ padding: "28px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "#e8756b", marginBottom: 12 }}>
+                  {hasAuthError ? "Market data unavailable — check Alpaca keys." : "Unable to load movers"}
+                </div>
+                <button onClick={loadMovers} style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  Retry
+                </button>
+              </div>
+            ) : !sorted.length ? (
+              <div style={{ padding: "28px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: "#8a8a86" }}>No liquid movers available right now.</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6a6a66" }}>Top movers</span>
+                  <button onClick={loadMovers} disabled={loadingMovers} style={{ background: "none", border: "none", color: "#6a6a66", fontSize: 12, cursor: "pointer", padding: 0 }}>
+                    {loadingMovers ? "Refreshing…" : "Refresh"}
+                  </button>
+                </div>
+                <div style={{ opacity: loadingMovers ? 0.6 : 1 }}>
+                  {visibleMovers.map((m, i) => {
+                    const status = String(m?.data_status ?? m?.dataStatus ?? "").toLowerCase();
+                    const isAuthError = status === "auth_error";
+                    const lastValRaw = m?.price ?? m?.last_price ?? m?.lastPrice ?? m?.last;
+                    const lastVal = isAuthError ? null : lastValRaw;
+                    const priorClose = m?.prior_close ?? m?.priorClose ?? m?.prev_close ?? m?.prevClose;
+                    const chgValRaw = m?.pct_change ?? m?.change_percent ?? m?.pctChange ?? m?.change_pct ?? m?.changePct;
+                    const chgVal0 = isAuthError ? null : chgValRaw;
+                    const chgVal = Number(chgVal0) === 0 && Number.isFinite(Number(priorClose)) && Number.isFinite(Number(lastVal)) && Number(priorClose) !== 0
+                      ? ((Number(lastVal) - Number(priorClose)) / Number(priorClose)) * 100
+                      : chgVal0;
+                    const volValRaw = m?.volume;
+                    const volVal = isAuthError ? null : volValRaw;
+                    const chg = fmtSignedPct(chgVal);
+                    const isPos = Number(chgVal) >= 0;
+                    return (
+                      <div
+                        key={m.symbol}
+                        onClick={() => onSelectMover(m.symbol)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 12, padding: "13px 18px",
+                          borderTop: "0.5px solid #1a1a19", cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ flex: 1.2, minWidth: 0 }}>
+                          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{m?.symbol ?? "—"}</div>
+                          <div style={{ fontSize: 12, color: "#8a8a86", marginTop: 2 }}>
+                            {lastVal === null || lastVal === undefined || !Number.isFinite(Number(lastVal)) || Number(lastVal) <= 0 ? "—" : money(lastVal)}
+                            {volVal !== null && volVal !== undefined && Number.isFinite(Number(volVal)) && Number(volVal) > 0 ? ` · Vol ${fmtVol(volVal)}` : ""}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: isPos ? "#3EE0A3" : "#e8756b", fontVariantNumeric: "tabular-nums" }}>{chg.text}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {isFreeUser && hiddenCount > 0 && (
+            <div style={{ background: "#111110", borderRadius: 16, padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#3EE0A3" }}>{hiddenCount} more movers</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f4" }}>Unlock the full leaderboard</div>
+              <div style={{ fontSize: 12, color: "#8a8a86", lineHeight: 1.6, maxWidth: 260 }}>See every momentum mover, live — updated throughout the trading day.</div>
+              <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "10px 24px", borderRadius: 999, background: "#3EE0A3", color: "#06120c", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                Upgrade to Starter →
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
     <div className="pageGrid">
       <div className="card">
