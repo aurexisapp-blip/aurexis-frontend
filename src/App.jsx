@@ -5387,21 +5387,29 @@ async function loadWatchlistLive() {
             ) : topM.length === 0 ? (
               <div style={{ fontSize: 11, color: T.textGhost }}>Loading movers…</div>
             ) : isNative ? (
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: NATIVE_TILE.gap }}>
-                {topM.map(m => {
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: "#111110", borderRadius: 12, overflow: "hidden" }}>
+                {topM.map((m, i) => {
                   const pct = Number(m.pct_change);
                   const isPos = pct >= 0;
                   const pctText = `${isPos ? "+" : ""}${Number.isFinite(pct) ? pct.toFixed(1) : "—"}%`;
+                  const col = i % 2;
+                  const row = Math.floor(i / 2);
+                  const totalRows = Math.ceil(topM.length / 2);
                   return (
-                    <NativeMoverTile
+                    <button
                       key={m.symbol}
-                      symbol={m.symbol}
-                      right={pctText}
-                      rightColor={isPos ? "#4ade80" : "#f87171"}
                       onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
-                      T={T}
-                      darkMode={darkMode}
-                    />
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "12px", background: "none", border: "none", cursor: "pointer",
+                        borderRight: col === 0 ? "0.5px solid #1a1a19" : "none",
+                        borderBottom: row < totalRows - 1 ? "0.5px solid #1a1a19" : "none",
+                        fontFamily: "inherit", textAlign: "left", minWidth: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: T.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.symbol}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: isPos ? "#4ade80" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: 8 }}>{pctText}</span>
+                    </button>
                   );
                 })}
               </div>
@@ -5552,8 +5560,23 @@ async function loadWatchlistLive() {
                       </div>
                     </div>
 
-                    {/* Trade data row */}
-                    {hasTradeData && (
+                    {/* Trade data row — plain inline stats, hairline dividers,
+                        no per-stat boxes (native only; desktop unchanged). */}
+                    {hasTradeData && isNative && (
+                      <div style={{ display: "flex", marginLeft: 44 }}>
+                        {[
+                          { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
+                          { label: "Stop", value: fmt(item.stop), color: "#f87171" },
+                          { label: "Target", value: fmt(item.target), color: "#4ade80" },
+                        ].map(({ label, value, color }, i) => (
+                          <div key={label} style={{ flex: 1, padding: "0 10px", borderLeft: i > 0 ? "0.5px solid #1a1a19" : "none" }}>
+                            <div style={{ fontSize: 9, fontWeight: 600, color: T.textGhost, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {hasTradeData && !isNative && (
                       <div style={{ display: "flex", gap: 6, marginLeft: 44 }}>
                         {[
                           { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
@@ -6412,7 +6435,9 @@ async function loadWatchlistLive() {
               <div className="heroLeft">
                 <div className="aiPickLabel">
                   Today's AI Pick
-                  {conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
+                  {/* Native: conviction badge shown once, top-right in
+                      .heroRight only -- this inline copy duplicated it. */}
+                  {!isNative && conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
                     <span
                       style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}
                       onMouseEnter={() => setConvTipVisible(true)}
@@ -6583,15 +6608,38 @@ async function loadWatchlistLive() {
             ) : canAccess(userPlan, "pro") ? (
               <div style={{ marginTop: 8, marginBottom: 4 }}>
                 {/* ── Entry + Stop row ── */}
-                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 8, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
-                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
+                {isNative ? (
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "1fr 1fr",
+                    background: "#111110", borderRadius: 16, marginBottom: NATIVE_SPACE.s,
+                  }}>
+                    <div style={{ padding: "14px 16px", borderRight: "0.5px solid #1a1a19" }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
+                        {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
+                      </div>
+                      <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{entryNote}</div>
+                    </div>
+                    <div style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.6)", marginBottom: 4 }}>Stop Loss</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: "rgba(248,113,113,0.9)", letterSpacing: "-0.02em", marginBottom: 3 }}>
+                        {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
+                      </div>
+                      <div style={{ fontSize: 10, color: "rgba(248,113,113,0.5)" }}>
+                        {Number.isFinite(stopPct) && stopPct > 0 ? `${stopPct.toFixed(1)}% below entry — exit here if wrong` : "Exit if thesis breaks"}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                <div className="heroEntryStopGrid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
                     </div>
                     <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{entryNote}</div>
                   </div>
-                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: isNative ? 12 : 10, padding: isNative ? "14px 16px" : "12px 14px" }}>
+                  <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 10, padding: "12px 14px" }}>
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(248,113,113,0.6)", marginBottom: 4 }}>Stop Loss</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: "rgba(248,113,113,0.9)", letterSpacing: "-0.02em", marginBottom: 3 }}>
                       {Number.isFinite(stopN) && stopN > 0 ? `$${stopN.toFixed(2)}` : "—"}
@@ -6601,6 +6649,7 @@ async function loadWatchlistLive() {
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* ── Targets row — 3-across cards on desktop; becomes a
                      horizontal-row list on mobile via .heroTargetsGrid /
@@ -6896,7 +6945,7 @@ async function loadWatchlistLive() {
           </div>
 
           <div style={isNative
-            ? { display: "flex", gap: NATIVE_SPACE.s, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px 0` }
+            ? { display: "flex", gap: 2, padding: 4, margin: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px 0`, background: "#111110", borderRadius: 14 }
             : { display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }
           }>
             {tabs.map(t => {
@@ -6906,11 +6955,22 @@ async function loadWatchlistLive() {
                 return (
                   <motion.button
                     key={t.id}
-                    whileTap={{ scale: 0.94 }}
+                    whileTap={{ scale: 0.96 }}
                     onClick={() => setActiveTab(t.id)}
-                    style={{ ...nativeTabStyle(active), color: active ? "#4ade80" : T.textFaint }}
+                    style={{
+                      position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                      padding: "8px 6px", border: "none", cursor: "pointer", fontFamily: "inherit",
+                      background: "none", zIndex: 1,
+                    }}
                   >
-                    {t.label}
+                    {active && (
+                      <motion.div
+                        layoutId="analysisTabIndicator"
+                        transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                        style={{ position: "absolute", inset: 0, background: "rgba(74,222,128,0.16)", borderRadius: 10, zIndex: -1 }}
+                      />
+                    )}
+                    <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, letterSpacing: "0.01em", color: active ? "#4ade80" : T.textFaint }}>{t.label}</span>
                     {tabLocked && <span style={{ fontSize: 9, background: "rgba(0,180,80,0.15)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
                   </motion.button>
                 );
