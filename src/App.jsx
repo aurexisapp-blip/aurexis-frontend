@@ -7332,6 +7332,19 @@ async function loadWatchlistLive() {
                       </div>
                     </div>
                   ) : null}
+
+                  {(() => {
+                    const explainer = String(a?.metrics_explainer || a?.reasoning?.metrics_explainer || "").trim();
+                    if (!explainer) return null;
+                    return (
+                      <div>
+                        <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>What This Means</div>
+                        <div className="mutedSmall" style={{ fontSize: 13, lineHeight: 1.65, color: T.textSec }}>
+                          {explainer}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )
             )}

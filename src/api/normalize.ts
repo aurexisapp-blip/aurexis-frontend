@@ -72,6 +72,9 @@ export function normalizeAnalysis(raw: AnalyzeResponse | any) {
       (a0 as any).what_breaks ?? (a0 as any).breaks ?? (a0 as any)?.decision?.breaks ?? (a0 as any)?.reasoning?.breaks,
       10
     ),
+    metrics_explainer: String(
+      (a0 as any).metrics_explainer ?? (a0 as any)?.reasoning?.metrics_explainer ?? ""
+    ).trim(),
     when_to_recheck: String(
       (a0 as any).when_to_recheck ??
         (a0 as any).when_to_recheck_again ??
