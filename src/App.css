@@ -917,13 +917,15 @@ a:hover{
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 1100;
-    height: calc(58px + env(safe-area-inset-bottom, 0px));
-    padding: 6px 4px env(safe-area-inset-bottom, 0px);
-    background: rgba(8, 9, 13, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255,255,255,0.07);
-    box-shadow: 0 -6px 20px rgba(0,0,0,0.28);
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 4px env(safe-area-inset-bottom, 0px);
+    /* Matches the app's established native surface -- was a mismatched
+       navy rgba(8,9,13) with a heavy 20px blur + drop shadow left over
+       from before the black/green retheme. Solid #111110 + a single
+       hairline top border is the same "one card, hairline divider"
+       language used everywhere else instead of its own one-off treatment. */
+    background: #111110;
+    border-top: 0.5px solid #1a1a19;
   }
   .mobileBottomNav__item{
     flex: 1;
@@ -931,14 +933,14 @@ a:hover{
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     background: none;
     border: none;
-    color: rgba(255,255,255,0.40);
+    color: #6a6a66;
     cursor: pointer;
     position: relative;
     transition: color 0.15s ease;
-    /* 58px tall x 1/5 of viewport wide comfortably clears Apple's 44pt
+    /* 60px tall x 1/6 of viewport wide comfortably clears Apple's 44pt
        minimum touch target on any phone this app reasonably supports. */
   }
   /* Active-tab color follows the user's chosen avatar accent (--nav-
@@ -952,17 +954,17 @@ a:hover{
     position: absolute;
     left: 50%; top: 50%;
     transform: translate(-50%, -50%);
-    width: 34px; height: 26px;
-    border-radius: 9px;
-    background: rgba(var(--nav-active-rgb, 62,224,163), 0.14);
+    width: 38px; height: 28px;
+    border-radius: 10px;
+    background: rgba(var(--nav-active-rgb, 62,224,163), 0.12);
     z-index: -1;
   }
-  .mobileBottomNav__icon{ font-size: 18px; line-height: 1; display: block; }
+  .mobileBottomNav__icon{ line-height: 1; display: flex; align-items: center; justify-content: center; }
   .mobileBottomNav__lockDot{
     position: absolute; top: -2px; right: -4px;
     width: 7px; height: 7px; border-radius: 50%;
     background: rgba(251, 191, 36, 0.90);
-    border: 1.5px solid rgba(8, 9, 13, 0.96);
+    border: 1.5px solid #111110;
   }
   .mobileBottomNav__label{ font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
   .mobileBottomNav__item--active .mobileBottomNav__label{ font-weight: 700; }

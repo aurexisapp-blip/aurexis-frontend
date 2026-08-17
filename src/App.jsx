@@ -12128,6 +12128,65 @@ const renderPage = () => {
           const primaryKeys = ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
           const primaryItems = primaryKeys.map((k) => NAV_ALL.find((n) => n.key === k)).filter(Boolean);
           const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support");
+          // Bottom-nav-only icon set -- deliberately separate from n.icon
+          // (the plain Unicode glyphs used everywhere else this array is
+          // rendered: desktop sidebar, Settings nav, profile menu). Those
+          // render fine as text at a fontSize; swapping n.icon itself to
+          // SVG would've changed every one of those too. Simple stroke
+          // shapes (circle/rect/line/polyline) only, not hand-authored
+          // bezier paths, so there's nothing here that can render subtly
+          // wrong the way a mistyped curve control point could.
+          const navIconPaths = {
+            dashboard: (
+              <>
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              </>
+            ),
+            movers: (
+              <>
+                <polyline points="3,17 9,11 13,15 21,7" />
+                <polyline points="14,7 21,7 21,14" />
+              </>
+            ),
+            screener: (
+              <>
+                <circle cx="10" cy="10" r="7" />
+                <line x1="21" y1="21" x2="15" y2="15" />
+              </>
+            ),
+            watchlist: (
+              <>
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </>
+            ),
+            tradejournal: (
+              <>
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <line x1="8" y1="8" x2="16" y2="8" />
+                <line x1="8" y1="13" x2="16" y2="13" />
+                <line x1="8" y1="18" x2="13" y2="18" />
+              </>
+            ),
+            settings: (
+              <>
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <circle cx="15" cy="6" r="2" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <circle cx="9" cy="12" r="2" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+                <circle cx="17" cy="18" r="2" />
+              </>
+            ),
+          };
+          const NavIcon = ({ navKey }) => (
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              {navIconPaths[navKey]}
+            </svg>
+          );
           return (
             <>
               <nav className="mobileBottomNav" aria-label="Primary" style={{ "--nav-active-rgb": _getAvatar(avatarId).rgb }}>
@@ -12141,7 +12200,7 @@ const renderPage = () => {
                       onClick={() => { setMobileMoreOpen(false); setTab(n.key); }}
                     >
                       <span className="mobileBottomNav__iconWrap">
-                        <span className="mobileBottomNav__icon">{n.icon}</span>
+                        <span className="mobileBottomNav__icon"><NavIcon navKey={n.key} /></span>
                         {navLocked && <span className="mobileBottomNav__lockDot" />}
                       </span>
                       <span className="mobileBottomNav__label">{n.label}</span>
