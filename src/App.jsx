@@ -8279,37 +8279,6 @@ async function loadWatchlistLive() {
     const sortDir = screenerSortDir;
     const setSortDir = setScreenerSortDir;
 
-    // Native filter chips (native only). "My Watchlist"/"Today's Movers"
-    // pull from real state and run the screen; "High Conviction" sorts
-    // whatever's already screened by AI Score (there's no separate
-    // conviction data source pre-screen).
-    const [activeChip, setActiveChip] = useState(null);
-    const CHIP_PRESETS = [
-      { id: "watchlist", label: "My Watchlist" },
-      { id: "movers", label: "Today's Movers" },
-      { id: "highConviction", label: "High Conviction" },
-    ];
-    const runChip = (id) => {
-      setActiveChip(id === activeChip ? null : id);
-      if (id === "watchlist") {
-        const syms = Array.isArray(watchlistLive) ? watchlistLive.filter(Boolean) : [];
-        if (syms.length && screenerInputRef.current) {
-          screenerInputRef.current.value = syms.join(", ");
-          runScreen();
-        }
-      } else if (id === "movers") {
-        const syms = Array.isArray(movers) ? movers.slice(0, 10).map((m) => m?.symbol).filter(Boolean) : [];
-        if (syms.length && screenerInputRef.current) {
-          screenerInputRef.current.value = syms.join(", ");
-          runScreen();
-        }
-      } else if (id === "highConviction") {
-        setSortCol("aiScore");
-        setSortDir("desc");
-        if (!hasScreened || results.length === 0) runScreen();
-      }
-    };
-
     const unwrapAnalysis = (raw) => {
       if (!raw || typeof raw !== "object") return null;
       return (
@@ -8463,29 +8432,6 @@ async function loadWatchlistLive() {
 
     return (
       <div className="pageGrid">
-        {isNative && (
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 2 }}>
-            {CHIP_PRESETS.map((c) => {
-              const active = activeChip === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => runChip(c.id)}
-                  style={{
-                    flexShrink: 0, padding: "7px 14px", borderRadius: 999,
-                    background: active ? "#111110" : "transparent",
-                    border: active ? "1px solid rgba(62,224,163,0.40)" : "0.5px solid #1a1a19",
-                    color: active ? "#3EE0A3" : "#8a8a86",
-                    fontSize: 13, fontWeight: active ? 700 : 500, letterSpacing: "0.01em",
-                    whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit",
-                  }}
-                >
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
         <div className="card" style={{
           padding: 0, overflow: "hidden",
           borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : undefined,
@@ -8539,97 +8485,7 @@ async function loadWatchlistLive() {
           </div>
 
           {/* Body */}
-          {isNative ? (
-            loading ? (
-              <div style={{ padding: "6px 18px" }}>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < 3 ? "0.5px solid #1a1a19" : "none" }}>
-                    <div className="skeleton" style={{ width: 8, height: 8, borderRadius: "50%", background: "#1a1a19", flexShrink: 0 }} />
-                    <div style={{ flex: 1.4, minWidth: 0 }}>
-                      <div className="skeleton" style={{ width: "38%", height: 13, borderRadius: 6, background: "#1a1a19" }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div className="skeleton" style={{ width: "50%", height: 11, borderRadius: 6, background: "#1a1a19" }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div className="skeleton" style={{ width: "60%", height: 11, borderRadius: 6, background: "#1a1a19" }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : !hasScreened || results.length === 0 ? (
-              <div style={{ minHeight: 168, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 22px" }}>
-                <div style={{ fontSize: 24, opacity: 0.12, marginBottom: 8 }}>⊞</div>
-                <div style={{ fontSize: 13, color: "#8a8a86", textAlign: "center" }}>Add tickers above and tap Screen</div>
-              </div>
-            ) : (
-              <div>
-                {/* Slim sortable header row -- Ticker/AI Score/Bias are the
-                    real sortable fields this screener returns; there's no
-                    price or % change in the underlying data to sort by. */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px", borderBottom: "0.5px solid #1a1a19" }}>
-                  <span style={{ width: 8, flexShrink: 0 }} />
-                  {[
-                    { key: "symbol", label: "Ticker", flex: 1.4 },
-                    { key: "aiScore", label: "Conviction", flex: 1 },
-                    { key: "direction", label: "Bias", flex: 1 },
-                  ].map((h) => {
-                    const active = sortCol === h.key;
-                    return (
-                      <button
-                        key={h.key}
-                        onClick={() => handleSort(h.key)}
-                        style={{
-                          flex: h.flex, display: "flex", alignItems: "center", gap: 4,
-                          background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
-                        }}
-                      >
-                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: active ? "#8a8a86" : "#6a6a66" }}>{h.label}</span>
-                        <span style={{ fontSize: 9, color: active ? "#8a8a86" : "#3a3a38" }}>{active ? (sortDir === "desc" ? "↓" : "↑") : "↕"}</span>
-                      </button>
-                    );
-                  })}
-                  <span style={{ width: 16, flexShrink: 0 }} />
-                </div>
-                {sortedResults.map((row, i) => {
-                  const isLast = i === sortedResults.length - 1;
-                  const tier = row.error || row.aiScore === null ? null : row.aiScore >= 70 ? "high" : row.aiScore >= 45 ? "moderate" : "low";
-                  const dotColor = tier === "high" ? "#3EE0A3" : tier === "moderate" ? "#e9b459" : "#6a6a66";
-                  const biasColor = row.direction === "BULLISH" ? "#3EE0A3" : row.direction === "BEARISH" ? "#e8756b" : "#8a8a86";
-                  return (
-                    <div
-                      key={`scr_n_${row.symbol}_${i}`}
-                      onClick={() => { if (!row.error) { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); } }}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 12, padding: "12px 18px",
-                        borderBottom: isLast ? "none" : "0.5px solid #1a1a19",
-                        cursor: row.error ? "default" : "pointer",
-                      }}
-                    >
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-                      <div style={{ flex: 1.4, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: row.error ? "#6a6a66" : "#f5f5f4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.symbol}</div>
-                        {row.error ? <div style={{ fontSize: 11, color: "#e8756b", marginTop: 1 }}>Unavailable</div> : null}
-                      </div>
-                      {!row.error && (
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: dotColor }}>{row.aiScore ?? "—"}</span>
-                        </div>
-                      )}
-                      {!row.error && (
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: biasColor }}>
-                            {row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"}
-                          </span>
-                        </div>
-                      )}
-                      <span style={{ color: "#6a6a66", fontSize: 16, flexShrink: 0 }}>›</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )
-          ) : loading ? (
+          {loading ? (
             <div style={{ padding: "52px 22px", textAlign: "center" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                 <span className="btnSpinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} />
