@@ -2804,10 +2804,6 @@ function AppInner() {
     []
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
-  // Covers tabs reachable outside the sidebar nav (portfolio, pricing) --
-  // NAV_ALL alone is missing those. Used for the non-Dashboard page title
-  // that replaces the Analyze bar on every other tab.
-  const TAB_TITLES = { portfolio: "Portfolio", pricing: "Plans & Pricing", launch: "Aurexis" };
 
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("aurexis_darkMode") !== "false");
 
@@ -12382,61 +12378,7 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
-          {tab !== "dashboard" ? (() => {
-            const plan = userPlan || "free";
-            const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
-            let title = TAB_TITLES[tab] || (NAV_ALL.find(n => n.key === tab)?.label) || "Aurexis";
-            let subtitle = "";
-            if (tab === "movers") {
-              const gainers = movers.filter(m => Number(m?.pct_change ?? m?.change ?? 0) > 0).length;
-              const losers = movers.filter(m => Number(m?.pct_change ?? m?.change ?? 0) < 0).length;
-              subtitle = movers.length ? `${gainers} up · ${losers} down today` : "Today's biggest movers";
-            } else if (tab === "watchlist") {
-              const n = Array.isArray(watchlistLive) ? watchlistLive.length : 0;
-              subtitle = n > 0 ? `${n} symbol${n === 1 ? "" : "s"} tracked` : "No symbols yet";
-            } else if (tab === "tradejournal") {
-              const closed = journalTrades.filter(t => t.status !== "open");
-              const won = closed.filter(t => t.status === "won");
-              const winRate = closed.length > 0 ? Math.round((won.length / closed.length) * 100) : null;
-              subtitle = journalTrades.length
-                ? `${journalTrades.length} trade${journalTrades.length === 1 ? "" : "s"}${winRate !== null ? ` · ${winRate}% win rate` : ""}`
-                : "Log your first trade";
-            } else if (tab === "portfolio") {
-              const n = Array.isArray(portfolioLive) ? portfolioLive.length : (Array.isArray(portfolioLive?.positions) ? portfolioLive.positions.length : 0);
-              subtitle = n > 0 ? `${n} open position${n === 1 ? "" : "s"}` : "No open positions";
-            } else if (tab === "screener") {
-              subtitle = "Scan the market for setups";
-            } else if (tab === "settings") {
-              subtitle = `${planLabel} plan`;
-            } else if (tab === "support") {
-              subtitle = "We usually reply within a few hours";
-            } else if (tab === "pricing") {
-              subtitle = `You're on the ${planLabel} plan`;
-            }
-            return (
-              <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  background: isNative ? "#111110" : T.bg2,
-                  border: isNative ? "none" : `1px solid ${T.border}`,
-                  borderRadius: 16,
-                  padding: isNative ? "13px 16px" : "12px 16px",
-                  boxSizing: "border-box",
-                }}>
-                  <span style={{ fontSize: isNative ? 16 : 15, fontWeight: 700, color: isNative ? "#f5f5f4" : T.text, letterSpacing: "-0.01em" }}>
-                    {title}
-                  </span>
-                </div>
-                {subtitle ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px" }}>
-                    <span style={{ fontSize: isNative ? 12 : 11, color: isNative ? "#8a8a86" : T.textMuted }}>
-                      {subtitle}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })() : isNative ? (
+          {tab !== "dashboard" ? null : isNative ? (
           <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
             <form
               onSubmit={onCmdSubmit}
