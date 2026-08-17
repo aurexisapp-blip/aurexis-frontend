@@ -8631,6 +8631,80 @@ async function loadWatchlistLive() {
 
     const loadingSymCount = (screenerInputRef.current?.value || "").split(/[,\s]+/).filter((s) => s.trim()).length;
 
+    if (isNative) {
+      const scoreTier = (s) => (s === null ? null : s >= 70 ? "high" : s >= 45 ? "moderate" : "low");
+      const tierColor = (t) => t === "high" ? "#3EE0A3" : t === "moderate" ? "#e9b459" : "#8a8a86";
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Screener</div>
+            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>Enter symbols separated by commas</div>
+          </div>
+
+          <div style={{ background: "#111110", borderRadius: 16, padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "0 14px", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 12, color: "#6a6a66", flexShrink: 0 }}>⊞</span>
+              <input
+                ref={screenerInputRef}
+                defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
+                onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
+                placeholder="AAPL, NVDA, MSFT, TSLA…"
+                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: "#f5f5f4", fontSize: 15, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
+              />
+            </div>
+            <button
+              onClick={runScreen}
+              disabled={loading}
+              style={{ width: "100%", padding: "12px 0", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? `Screening ${loadingSymCount} symbol${loadingSymCount !== 1 ? "s" : ""}…` : "Screen"}
+            </button>
+          </div>
+
+          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+            {loading ? (
+              <div style={{ padding: "28px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: "#8a8a86" }}>Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…</div>
+              </div>
+            ) : !hasScreened || results.length === 0 ? (
+              <div style={{ padding: "28px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: "#8a8a86" }}>Add tickers above and tap Screen</div>
+              </div>
+            ) : (
+              sortedResults.map((row, i) => {
+                const tier = row.error ? null : scoreTier(row.aiScore);
+                const ds = dirStyle(row.direction);
+                return (
+                  <div
+                    key={`scr_n_${row.symbol}_${i}`}
+                    onClick={() => { if (!row.error) { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); } }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "13px 18px",
+                      borderTop: i > 0 ? "0.5px solid #1a1a19" : "none",
+                      cursor: row.error ? "default" : "pointer",
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tier ? tierColor(tier) : "#1a1a19", flexShrink: 0 }} />
+                    <div style={{ flex: 1.2, minWidth: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? "#6a6a66" : "#f5f5f4" }}>{row.symbol}</div>
+                      <div style={{ fontSize: 12, color: "#8a8a86", marginTop: 2 }}>
+                        {row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
+                      </div>
+                    </div>
+                    {!row.error && (
+                      <div style={{ fontSize: 15, fontWeight: 700, color: tier ? tierColor(tier) : "#8a8a86", fontVariantNumeric: "tabular-nums" }}>
+                        {row.aiScore ?? "—"}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
         <div className="card" style={{
