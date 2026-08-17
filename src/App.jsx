@@ -37,7 +37,7 @@ const API_BASE = API_BASE_URL;
 const API = API_BASE_URL;
 
 // Module-level cache so Settings alert prefs survive remounts (state lives outside Settings)
-const _alertPrefsCache = { loaded: false, newPick: true, outcome: true };
+const _alertPrefsCache = { loaded: false, newPick: true, outcome: true, phone: "", phoneVerified: false, channel: "email" };
 const _billingCache = { fetched: false, paymentMethod: undefined, invoices: undefined };
 
 // Avatar presets — gradient + accent color + RGB for CSS variable
@@ -10196,6 +10196,73 @@ async function loadWatchlistLive() {
     const [alertNewPick, setAlertNewPick] = React.useState(_alertPrefsCache.newPick);
     const [alertOutcome, setAlertOutcome] = React.useState(_alertPrefsCache.outcome);
 
+    // ── SMS alerts (phone verification) ─────────────────────────────────────
+    const [phone, setPhone] = React.useState(_alertPrefsCache.phone);
+    const [phoneVerified, setPhoneVerified] = React.useState(_alertPrefsCache.phoneVerified);
+    const [smsChannel, setSmsChannel] = React.useState(_alertPrefsCache.channel === "sms" || _alertPrefsCache.channel === "both");
+    const [phoneInput, setPhoneInput] = React.useState(_alertPrefsCache.phone);
+    const [codeInput, setCodeInput] = React.useState("");
+    const [codeSent, setCodeSent] = React.useState(false);
+    const [smsBusy, setSmsBusy] = React.useState(false);
+
+    async function handleSendCode() {
+      if (smsBusy || !phoneInput.trim()) return;
+      setSmsBusy(true);
+      try {
+        const token = localStorage.getItem("aurexis_token");
+        const r = await fetch(`${API}/alerts/phone/send-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ phone: phoneInput.trim() }),
+        });
+        const d = await r.json().catch(() => null);
+        if (r.ok && d?.ok) {
+          _alertPrefsCache.phone = d.phone || phoneInput.trim();
+          _alertPrefsCache.phoneVerified = false;
+          setPhone(_alertPrefsCache.phone);
+          setPhoneVerified(false);
+          setCodeSent(true);
+          showToast("Code sent — check your texts.");
+        } else {
+          showToast(d?.error || "Couldn't send code.");
+        }
+      } catch { showToast("Couldn't send code — check your connection."); }
+      finally { setSmsBusy(false); }
+    }
+
+    async function handleVerifyCode() {
+      if (smsBusy || !codeInput.trim()) return;
+      setSmsBusy(true);
+      try {
+        const token = localStorage.getItem("aurexis_token");
+        const r = await fetch(`${API}/alerts/phone/verify-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ code: codeInput.trim() }),
+        });
+        const d = await r.json().catch(() => null);
+        if (r.ok && d?.ok) {
+          _alertPrefsCache.phoneVerified = true;
+          setPhoneVerified(true);
+          setCodeSent(false);
+          setCodeInput("");
+          showToast("Phone verified.");
+        } else {
+          showToast(d?.error || "Incorrect or expired code.");
+        }
+      } catch { showToast("Couldn't verify — check your connection."); }
+      finally { setSmsBusy(false); }
+    }
+
+    async function handleToggleSms() {
+      if (smsBusy) return;
+      const next = !smsChannel;
+      const channel = next ? "both" : "email";
+      _alertPrefsCache.channel = channel;
+      setSmsChannel(next);
+      await _saveAlertPrefs(alertNewPick, alertOutcome, phone, channel);
+    }
+
     // ── Billing tab data ──────────────────────────────────────────────────
     const [paymentMethod, setPaymentMethod] = React.useState(_billingCache.paymentMethod);
     const [invoices, setInvoices]           = React.useState(_billingCache.invoices);
@@ -10240,20 +10307,31 @@ async function loadWatchlistLive() {
           if (!d) return;
           const np = d.alerts_new_pick != null ? !!d.alerts_new_pick : _alertPrefsCache.newPick;
           const oc = d.alerts_outcome  != null ? !!d.alerts_outcome  : _alertPrefsCache.outcome;
+          const ph = d.phone != null ? d.phone : _alertPrefsCache.phone;
+          const pv = !!d.phone_verified;
+          const ch = d.alerts_channel || _alertPrefsCache.channel;
           _alertPrefsCache.loaded = true; _alertPrefsCache.newPick = np; _alertPrefsCache.outcome = oc;
+          _alertPrefsCache.phone = ph; _alertPrefsCache.phoneVerified = pv; _alertPrefsCache.channel = ch;
           setAlertNewPick(np); setAlertOutcome(oc);
+          setPhone(ph); setPhoneInput(ph); setPhoneVerified(pv);
+          setSmsChannel(ch === "sms" || ch === "both");
         })
         .catch(() => { _alertPrefsCache.loaded = true; });
     }, []);
 
-    async function _saveAlertPrefs(newPick, outcome) {
+    async function _saveAlertPrefs(newPick, outcome, phoneVal, channelVal) {
       const token = localStorage.getItem("aurexis_token");
       if (!token) return;
       try {
         const r = await fetch(`${API}/alerts/preferences`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ phone: null, alerts_new_pick: newPick, alerts_outcome: outcome, alerts_channel: "email" }),
+          body: JSON.stringify({
+            phone: phoneVal !== undefined ? (phoneVal || null) : (phone || null),
+            alerts_new_pick: newPick,
+            alerts_outcome: outcome,
+            alerts_channel: channelVal !== undefined ? channelVal : (smsChannel ? "both" : "email"),
+          }),
         });
         if (r.ok) showToast("Saved.");
       } catch { showToast("Couldn't save — check your connection."); }
@@ -10767,6 +10845,79 @@ async function loadWatchlistLive() {
                   </div>
                 </>
               )}
+
+              <div style={{ marginTop: 28 }}>
+                <SectionTitle>SMS Alerts</SectionTitle>
+                {phoneVerified ? (
+                  <>
+                    <FieldRow
+                      label="Text me alerts"
+                      value={phone}
+                      action={<Toggle enabled={smsChannel} onChange={handleToggleSms} />}
+                    />
+                    <div style={{ marginTop: 4 }}>
+                      <button
+                        onClick={() => { setCodeSent(false); setPhoneInput(phone); }}
+                        style={{ background: "none", border: "none", padding: 0, fontSize: 12, color: txtS, cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        Change number
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "10px 0" }}>
+                      <input
+                        type="tel"
+                        value={phoneInput}
+                        onChange={e => setPhoneInput(e.target.value)}
+                        placeholder="+1 555 123 4567"
+                        style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 15, fontFamily: "inherit",
+                          background: isNative ? "#1a1a19" : (dm ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+                          border: isNative ? "none" : bdr, color: txt, outline: "none" }}
+                      />
+                      <button
+                        onClick={handleSendCode}
+                        disabled={smsBusy || !phoneInput.trim()}
+                        style={{ padding: "10px 16px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, cursor: smsBusy ? "default" : "pointer",
+                          background: "rgba(34,200,142,0.14)", color: "#3EE0A3", opacity: smsBusy || !phoneInput.trim() ? 0.5 : 1, whiteSpace: "nowrap" }}
+                      >
+                        {codeSent ? "Resend" : "Send code"}
+                      </button>
+                    </div>
+                    {codeSent && (
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "6px 0 10px" }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={codeInput}
+                          onChange={e => setCodeInput(e.target.value.replace(/\D/g, ""))}
+                          placeholder="6-digit code"
+                          style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 15, fontFamily: "inherit", letterSpacing: "0.1em",
+                            background: isNative ? "#1a1a19" : (dm ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+                            border: isNative ? "none" : bdr, color: txt, outline: "none" }}
+                        />
+                        <button
+                          onClick={handleVerifyCode}
+                          disabled={smsBusy || codeInput.length !== 6}
+                          style={{ padding: "10px 16px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, cursor: smsBusy ? "default" : "pointer",
+                            background: "rgba(34,200,142,0.14)", color: "#3EE0A3", opacity: smsBusy || codeInput.length !== 6 ? 0.5 : 1, whiteSpace: "nowrap" }}
+                        >
+                          Verify
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div style={{ marginTop: 8, padding: isNative ? "0 2px" : "14px 16px", background: isNative ? "none" : bg, borderRadius: isNative ? 0 : 10, border: isNative ? "none" : bdr }}>
+                  <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
+                    {canAccess(userPlan, "starter")
+                      ? "You'll get the full pick and outcome by text, in addition to email. Standard message rates may apply."
+                      : "Free plan gets a heads-up text when a new pick drops; upgrade to see the pick itself. Standard message rates may apply."}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
