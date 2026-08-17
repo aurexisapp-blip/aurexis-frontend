@@ -12469,8 +12469,13 @@ const renderPage = () => {
           right: 0,
           bottom: chatKeyboardInset,
           width: "100%",
-          height: "min(80vh, calc(100vh - 64px))",
-          transition: "bottom 0.12s ease-out",
+          // Shrinking height by the same amount bottom grows keeps the
+          // panel's TOP edge fixed in place -- without this, raising bottom
+          // alone pushed the top edge off the top of the screen (the header
+          // overlapping the status bar) while leaving a gap below the panel
+          // where the translucent backdrop showed the dashboard through it.
+          height: `calc(min(80vh, calc(100vh - 64px)) - ${chatKeyboardInset}px)`,
+          transition: "bottom 0.12s ease-out, height 0.12s ease-out",
           borderRadius: "20px 20px 0 0",
           background: "#0a0a0a",
           border: "none",
