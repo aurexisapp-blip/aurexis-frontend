@@ -8777,7 +8777,7 @@ async function loadWatchlistLive() {
                 defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
                 onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
                 placeholder="AAPL, NVDA, MSFT, TSLA…"
-                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: "#f5f5f4", fontSize: 15, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
+                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: "#f5f5f4", fontSize: 16, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
               />
             </div>
             <button
@@ -9316,7 +9316,7 @@ async function loadWatchlistLive() {
               <div style={{ position: "relative" }}>
                 <input
                   ref={symRef}
-                  style={{ width: "100%", background: "none", border: "none", borderBottom: "0.5px solid #1a1a19", color: "#f5f5f4", fontSize: 15, padding: "8px 0", outline: "none", fontFamily: "inherit", paddingRight: fetchingSymbol ? 28 : undefined }}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: "0.5px solid #1a1a19", color: "#f5f5f4", fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit", paddingRight: fetchingSymbol ? 28 : undefined }}
                   placeholder="Symbol"
                   onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
                   onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
@@ -9332,7 +9332,7 @@ async function loadWatchlistLive() {
               ].map(({ ref, placeholder, fkey }, i, arr) => (
                 <input
                   key={fkey} ref={ref}
-                  style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none", color: "#f5f5f4", fontSize: 15, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none", color: "#f5f5f4", fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
                   placeholder={placeholder}
                   onChange={e => saveField(fkey, e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
@@ -9376,7 +9376,7 @@ async function loadWatchlistLive() {
                   {isClosing && (
                     <div style={{ display: "flex", gap: 8, paddingBottom: 14 }}>
                       <input
-                        style={{ flex: 1, background: "none", border: "1px solid #1a1a19", borderRadius: 12, color: "#f5f5f4", fontSize: 15, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
+                        style={{ flex: 1, background: "none", border: "1px solid #1a1a19", borderRadius: 12, color: "#f5f5f4", fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
                         placeholder="Exit price"
                         value={journalClosePrice}
                         autoFocus
@@ -12209,7 +12209,7 @@ const renderPage = () => {
                 placeholder="Analyze any stock"
                 style={{
                   flex: 1, minWidth: 0, background: "none", border: "none", outline: "none",
-                  color: "#f5f5f4", fontSize: 15, fontWeight: 500, padding: "11px 0", fontFamily: "inherit",
+                  color: "#f5f5f4", fontSize: 16, fontWeight: 500, padding: "11px 0", fontFamily: "inherit",
                 }}
               />
               <RippleButton
