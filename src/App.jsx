@@ -8189,6 +8189,116 @@ async function loadWatchlistLive() {
       );
     };
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Watchlist</div>
+            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>
+              Setups close to clearing our conviction threshold
+            </div>
+          </div>
+
+          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+            {loadingCandidates ? (
+              <div style={{ padding: "36px 22px", textAlign: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                  <span className="btnSpinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} />
+                  <span style={{ fontSize: 13, color: "#8a8a86" }}>Scanning market for close candidates…</span>
+                </div>
+              </div>
+            ) : candidatesError ? (
+              <div style={{ padding: "28px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: "#e8756b", marginBottom: 12 }}>{candidatesError}</div>
+                <button
+                  onClick={loadSystemCandidates}
+                  style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                >
+                  Retry scan
+                </button>
+              </div>
+            ) : systemCandidates.length === 0 ? (
+              <div style={{ padding: "40px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 24, opacity: 0.12, marginBottom: 12 }}>◈</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#8a8a86", marginBottom: 6 }}>No close candidates right now</div>
+                <div style={{ fontSize: 12, color: "#6a6a66", maxWidth: 260, margin: "0 auto" }}>
+                  The system will populate this list as stocks build enough momentum to be near-threshold.
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6a6a66" }}>Building momentum</span>
+                  <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", color: "#6a6a66", fontSize: 12, cursor: "pointer", padding: 0 }}>
+                    {loadingCandidates ? "Scanning…" : "Refresh"}
+                  </button>
+                </div>
+                {systemCandidates.map((candidate, i) => {
+                  const { symbol: sym, score, edgeSignals, noTradeReason } = candidate;
+                  const progress = score !== null ? Math.min(100, Math.round((score / AI_SCORE_THRESHOLD) * 100)) : null;
+                  const progressColor = progress === null ? "#1a1a19" : progress >= 90 ? "#3EE0A3" : "#e9b459";
+                  const signalText = edgeSignals.length > 0 ? edgeSignals.slice(0, 3).map((s) => fmt(s)).join(" · ") : (noTradeReason || "Edge signals detected");
+                  return (
+                    <div key={sym} style={{ padding: "14px 18px", borderTop: "0.5px solid #1a1a19" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
+                        <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{sym}</span>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "3px 9px", borderRadius: 999,
+                          background: "none", border: "1px solid rgba(233,180,89,0.30)",
+                          fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: "#e9b459",
+                        }}>
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#e9b459" }} />
+                          WATCHING
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#8a8a86", marginBottom: 10, lineHeight: 1.5 }}>{signalText}</div>
+
+                      {score !== null ? (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                            <span style={{ fontSize: 10, color: "#6a6a66", letterSpacing: "0.04em", textTransform: "uppercase" }}>Conviction</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#8a8a86" }}>{score.toFixed(1)}/{AI_SCORE_THRESHOLD.toFixed(1)}</span>
+                          </div>
+                          <div style={{ height: 2, background: "#1a1a19", borderRadius: 1 }}>
+                            <div style={{ width: `${progress}%`, height: "100%", background: progressColor, borderRadius: 1 }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 12 }}>Score pending scan</div>
+                      )}
+
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
+                          style={{
+                            padding: "8px 16px", borderRadius: 12,
+                            background: "#3EE0A3", border: "none",
+                            color: "#06120c", fontSize: 13, fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >Analyze →</button>
+                        <button
+                          onClick={() => addToWatchlistLive(sym)}
+                          disabled={addingWatchlist}
+                          style={{
+                            padding: "8px 16px", borderRadius: 12,
+                            background: "none", border: "1px solid #1a1a19",
+                            color: "#8a8a86", fontSize: 13, fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >+ Watch</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
 
@@ -8852,11 +8962,127 @@ async function loadWatchlistLive() {
       { label: "Best Trade",    value: bestTrade ? `${bestTrade.symbol} +${bestRet.toFixed(1)}%` : "—", colored: bestRet },
     ];
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Trade Journal</div>
+
+          {total > 0 && (
+            <div style={{ background: "#111110", borderRadius: 16, padding: "16px 18px", display: "flex", flexWrap: "wrap" }}>
+              {summaryStats.map(({ label, value, colored }) => (
+                <div key={label} style={{ flex: "1 1 45%", marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: "#6a6a66", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
+                  <div style={{
+                    fontSize: 19, fontWeight: 700, letterSpacing: "-0.01em",
+                    color: colored !== null && colored !== undefined ? (colored >= 0 ? "#3EE0A3" : "#e8756b") : "#f5f5f4",
+                  }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => journalAddOpen ? closeForm() : setJournalAddOpen(true)}
+            style={{
+              padding: "13px 0", borderRadius: 16, border: journalAddOpen ? "1px solid #1a1a19" : "none",
+              background: journalAddOpen ? "none" : "#3EE0A3",
+              color: journalAddOpen ? "#8a8a86" : "#06120c",
+              fontSize: 15, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            {journalAddOpen ? "Cancel" : "+ Add Trade"}
+          </button>
+
+          {journalAddOpen && (
+            <div style={{ background: "#111110", borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={symRef}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: "0.5px solid #1a1a19", color: "#f5f5f4", fontSize: 15, padding: "8px 0", outline: "none", fontFamily: "inherit", paddingRight: fetchingSymbol ? 28 : undefined }}
+                  placeholder="Symbol"
+                  onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
+                  onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+                {fetchingSymbol && <span className="btnSpinner" style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />}
+              </div>
+              {[
+                { ref: entryRef, placeholder: "Entry $", fkey: "entry" },
+                { ref: stopRef, placeholder: "Stop $", fkey: "stop" },
+                { ref: targetRef, placeholder: "Target $", fkey: "target" },
+                { ref: notesRef, placeholder: "Notes (optional)", fkey: "notes" },
+              ].map(({ ref, placeholder, fkey }, i, arr) => (
+                <input
+                  key={fkey} ref={ref}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none", color: "#f5f5f4", fontSize: 15, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
+                  placeholder={placeholder}
+                  onChange={e => saveField(fkey, e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+              ))}
+              {journalAddErr && <div style={{ fontSize: 12, color: "#e8756b" }}>{journalAddErr}</div>}
+              <button onClick={submitAdd} style={{ marginTop: 6, padding: "12px 0", borderRadius: 14, background: "#3EE0A3", border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Submit</button>
+            </div>
+          )}
+
+          <div style={{ background: "#111110", borderRadius: 16, padding: journalTrades.length ? "0 18px" : 18 }}>
+            {journalTrades.length === 0 ? (
+              <div style={{ padding: "20px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: "#8a8a86" }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
+              </div>
+            ) : journalTrades.map((trade, i) => {
+              const isClosing = journalCloseId === trade.id;
+              const statusColor = trade.status === "won" ? "#3EE0A3" : trade.status === "lost" ? "#e8756b" : "#8a8a86";
+              return (
+                <div key={trade.id} style={{ borderTop: i > 0 ? "0.5px solid #1a1a19" : "none" }}>
+                  <div
+                    onClick={trade.status === "open" ? () => { setJournalCloseId(isClosing ? null : trade.id); setJournalClosePrice(""); setJournalCloseErr(""); } : undefined}
+                    style={{ padding: "14px 0", cursor: trade.status === "open" ? "pointer" : "default" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{trade.symbol}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: statusColor, textTransform: "capitalize" }}>{trade.status}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 8 }}>{fmtD(trade.enteredAt)}</div>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Entry <span style={{ color: "#f5f5f4", fontWeight: 600 }}>{fmtP(trade.entryPrice)}</span></span>
+                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Stop <span style={{ color: "#e8756b", fontWeight: 600 }}>{fmtP(trade.stopPrice)}</span></span>
+                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Target <span style={{ color: "#3EE0A3", fontWeight: 600 }}>{fmtP(trade.targetPrice)}</span></span>
+                      {trade.returnPct !== null && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: trade.returnPct >= 0 ? "#3EE0A3" : "#e8756b", marginLeft: "auto" }}>
+                          {trade.returnPct >= 0 ? "+" : ""}{trade.returnPct.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isClosing && (
+                    <div style={{ display: "flex", gap: 8, paddingBottom: 14 }}>
+                      <input
+                        style={{ flex: 1, background: "none", border: "1px solid #1a1a19", borderRadius: 12, color: "#f5f5f4", fontSize: 15, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
+                        placeholder="Exit price"
+                        value={journalClosePrice}
+                        autoFocus
+                        onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                        onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
+                      />
+                      <button onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
+                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 12, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", cursor: "pointer" }}>⌫</button>
+                    </div>
+                  )}
+                  {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: "#e8756b", paddingBottom: 10 }}>{journalCloseErr}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
         {/* ── Summary bar ── */}
         {total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "repeat(4, 1fr)", gap: isNative ? NATIVE_SPACE.s : 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
@@ -9683,16 +9909,19 @@ async function loadWatchlistLive() {
     }
 
     // ── Shared sub-components ──────────────────────────────────────────────
+    // Every section box in every pane below reads bg/bdr/txt/txtS/txtG, so
+    // branching these here cascades the single-surface pattern across all
+    // 7 panes without touching each pane's markup individually.
     const dm = darkMode;
-    const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
-    const bdr  = dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
-    const txt  = dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)";
-    const txtS = dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)";
-    const txtG = dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)";
+    const bg   = isNative ? "#111110" : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
+    const bdr  = isNative ? "none" : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
+    const txt  = isNative ? "#f5f5f4" : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
+    const txtS = isNative ? "#8a8a86" : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
+    const txtG = isNative ? "#6a6a66" : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
 
     const FieldRow = ({ label, value, action }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", gap: 10, borderBottom: isNative ? "0.5px solid #1a1a19" : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
+        <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
           {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
         </div>
@@ -9704,7 +9933,7 @@ async function loadWatchlistLive() {
       <button
         onClick={onChange}
         style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
-          background: enabled ? "rgba(34,200,142,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          background: enabled ? (isNative ? "#3EE0A3" : "rgba(34,200,142,0.80)") : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
           position: "relative", transition: "background 0.2s" }}
       >
         <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
@@ -9732,7 +9961,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? "#0a0a0a" : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -9755,10 +9984,8 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-              border: `1px solid ${T.border}`,
-              borderRadius: NATIVE_SECONDARY_CARD.radius,
-              boxShadow: nativeCardShadow(darkMode),
+              background: "#111110",
+              borderRadius: 16,
               overflow: "hidden",
             } : undefined}
           >
@@ -9774,17 +10001,17 @@ async function loadWatchlistLive() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "14px 16px",
-                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${T.border}` : "none",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? "0.5px solid #1a1a19" : "none",
                     borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
                     background: "transparent", textAlign: "left",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: active ? 1 : 0.45, color: active ? av.text : T.textFaint, flexShrink: 0 }}>{n.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? T.text : T.textSec }}>{n.label}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? "#3EE0A3" : "#6a6a66", flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? "#f5f5f4" : "#8a8a86" }}>{n.label}</span>
                   </span>
                   {active ? (
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: av.text, boxShadow: `0 0 6px ${av.text}`, flexShrink: 0 }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3EE0A3" }} />
                   ) : null}
                 </motion.button>
               );
@@ -10042,7 +10269,7 @@ async function loadWatchlistLive() {
               </div>
               </div>
 
-              <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+              <div style={{ marginTop: 24, padding: isNative ? "0 2px" : "14px 16px", background: isNative ? "none" : bg, borderRadius: isNative ? 0 : 10, border: isNative ? "none" : bdr }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: txtS, marginBottom: 4 }}>7-day money-back guarantee</div>
                 <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
               </div>
@@ -10065,7 +10292,7 @@ async function loadWatchlistLive() {
                     value="Get notified on this device the moment the AI selects today's pick"
                     action={<Toggle enabled={pushEnabled} onChange={handleTogglePush} />}
                   />
-                  <div style={{ marginTop: 12, marginBottom: 28, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                  <div style={{ marginTop: 8, marginBottom: 28, padding: isNative ? "0 2px" : "14px 16px", background: isNative ? "none" : bg, borderRadius: isNative ? 0 : 10, border: isNative ? "none" : bdr }}>
                     <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
                       {canAccess(userPlan, "starter")
                         ? "You'll see the ticker and setup as soon as it's ready — even with the app closed."
@@ -10104,7 +10331,7 @@ async function loadWatchlistLive() {
                     value="Get emailed when a pick hits its target or stop loss"
                     action={<Toggle enabled={alertOutcome} onChange={() => { const n = !alertOutcome; _alertPrefsCache.outcome = n; setAlertOutcome(n); _saveAlertPrefs(alertNewPick, n); }} />}
                   />
-                  <div style={{ marginTop: 24, padding: "14px 16px", background: bg, borderRadius: 10, border: bdr }}>
+                  <div style={{ marginTop: 20, padding: isNative ? "0 2px" : "14px 16px", background: isNative ? "none" : bg, borderRadius: isNative ? 0 : 10, border: isNative ? "none" : bdr }}>
                     <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
                       Alerts are sent to <span style={{ color: txtS, fontWeight: 600 }}>{email || "your account email"}</span>. To change your email address, contact aurexis.app@gmail.com.
                     </div>
@@ -10174,26 +10401,48 @@ async function loadWatchlistLive() {
 
               <div style={{ marginTop: 28 }}>
                 <SectionTitle>Your Rights</SectionTitle>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
-                    { label: "Delete account & all data", action: "Settings → Account → Delete account" },
-                    { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
-                    { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#3EE0A3", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
-                  ].map(({ label, action }) => (
-                    <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", background: bg, borderRadius: 10, border: bdr }}>
-                      <div style={{ fontSize: 13, color: txt, fontWeight: 500 }}>{label}</div>
-                      <div style={{ fontSize: 12, color: txtS }}>{action}</div>
-                    </div>
-                  ))}
-                </div>
+                {isNative ? (
+                  <div style={{ background: "#111110", borderRadius: 16 }}>
+                    {[
+                      { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
+                      { label: "Delete account & all data", action: "Settings → Account → Delete account" },
+                      { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
+                      { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#3EE0A3", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
+                    ].map(({ label, action }, i, arr) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none" }}>
+                        <div style={{ fontSize: 13, color: "#f5f5f4", fontWeight: 500 }}>{label}</div>
+                        <div style={{ fontSize: 12, color: "#8a8a86" }}>{action}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
+                      { label: "Delete account & all data", action: "Settings → Account → Delete account" },
+                      { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
+                      { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#3EE0A3", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
+                    ].map(({ label, action }) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", background: bg, borderRadius: 10, border: bdr }}>
+                        <div style={{ fontSize: 13, color: txt, fontWeight: 500 }}>{label}</div>
+                        <div style={{ fontSize: 12, color: txtS }}>{action}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div style={{ marginTop: 24, padding: "14px 16px", background: "rgba(62,224,163,0.04)", borderRadius: 10, border: "1px solid rgba(62,224,163,0.12)" }}>
-                <div style={{ fontSize: 12, color: "rgba(62,224,163,0.75)", lineHeight: 1.65 }}>
+              {isNative ? (
+                <div style={{ fontSize: 12, color: "#6a6a66", lineHeight: 1.65, marginTop: 20, padding: "0 2px" }}>
                   Aurexis does not use advertising cookies, does not track you across other websites, and does not sell personal information to third parties.
                 </div>
-              </div>
+              ) : (
+                <div style={{ marginTop: 24, padding: "14px 16px", background: "rgba(62,224,163,0.04)", borderRadius: 10, border: "1px solid rgba(62,224,163,0.12)" }}>
+                  <div style={{ fontSize: 12, color: "rgba(62,224,163,0.75)", lineHeight: 1.65 }}>
+                    Aurexis does not use advertising cookies, does not track you across other websites, and does not sell personal information to third parties.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
