@@ -105,9 +105,12 @@ function AppGate() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  if (isMobile && !isMobilePreview() && !isNativeApp()) return <MobileBlock />;
-
-  // Capture OAuth token from URL before the gate check so it isn't lost
+  // Capture OAuth token from URL before the mobile gate check -- this used
+  // to run AFTER the `if (isMobile) return <MobileBlock />` below despite
+  // the comment here saying otherwise, so any Google/Apple web login that
+  // completed on a phone had its token silently dropped: MobileBlock
+  // rendered instead of ever reaching this code, the token never made it
+  // into localStorage, and the user was stuck logged out with no error.
   const params = new URLSearchParams(window.location.search);
   const urlToken = params.get("token");
   if (urlToken) {
@@ -117,6 +120,9 @@ function AppGate() {
     }
     window.history.replaceState({}, "", window.location.pathname);
   }
+
+  if (isMobile && !isMobilePreview() && !isNativeApp()) return <MobileBlock />;
+
   if (!localStorage.getItem("aurexis_token")) return <Navigate to="/login" replace />;
   return <App />;
 }
@@ -135,8 +141,14 @@ createRoot(rootEl).render(
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
         <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
-        <Route path="/login"      element={(window.innerWidth < 768 && !isMobilePreview() && !isNativeApp()) ? <MobileBlock /> : <Auth defaultView="login" />} />
-        <Route path="/signup"     element={(window.innerWidth < 768 && !isMobilePreview() && !isNativeApp()) ? <MobileBlock /> : <Auth defaultView="signup" />} />
+        {/* Login/signup are reachable on mobile web unconditionally -- they
+            were previously gated behind the same desktop-only MobileBlock
+            as the dashboard, which meant nobody on a phone could even see
+            the login form. That block made sense before the iOS app
+            existed; now the app's own paywall hands off to mobile Safari
+            expecting a working login/checkout flow there. */}
+        <Route path="/login"      element={<Auth defaultView="login" />} />
+        <Route path="/signup"     element={<Auth defaultView="signup" />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={isNativeApp() ? <Navigate to="/login" replace /> : <LandingPage />} />
       </Routes>
