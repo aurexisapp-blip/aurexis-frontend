@@ -7339,19 +7339,19 @@ async function loadWatchlistLive() {
                   {a && (Number.isFinite(Number(a?.aiScore)) || Number.isFinite(Number(a?.executionScore))) ? (
                     <div>
                       <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 14 }}>Score Rings</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: isNative ? "space-between" : "flex-start", gap: isNative ? 12 : 24, flexWrap: "wrap" }}>
                         <AIScoreRing
                           score={Number.isFinite(Number(a?.aiScore)) ? Number(a.aiScore) : null}
                           confidence={a?.confidence ?? null}
-                          size={150}
-                          strokeWidth={18}
+                          size={isNative ? 118 : 150}
+                          strokeWidth={isNative ? 14 : 18}
                           loading={false}
                         />
                         <AIScoreRing
                           score={Number.isFinite(Number(a?.executionScore)) ? Number(a.executionScore) : null}
                           label="EXECUTION"
-                          size={150}
-                          strokeWidth={18}
+                          size={isNative ? 118 : 150}
+                          strokeWidth={isNative ? 14 : 18}
                           loading={false}
                           showConfidence={false}
                         />
