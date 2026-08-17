@@ -7334,13 +7334,31 @@ async function loadWatchlistLive() {
                   ) : null}
 
                   {(() => {
-                    const explainer = String(a?.metrics_explainer || a?.reasoning?.metrics_explainer || "").trim();
-                    if (!explainer) return null;
+                    const interpretation = String(a?.metrics_interpretation || a?.reasoning?.metrics_interpretation || "").trim();
+                    const nextSteps = String(a?.metrics_next_steps || a?.reasoning?.metrics_next_steps || "").trim();
+                    if (!interpretation && !nextSteps) return null;
                     return (
-                      <div>
-                        <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>What This Means</div>
-                        <div className="mutedSmall" style={{ fontSize: 13, lineHeight: 1.65, color: T.textSec }}>
-                          {explainer}
+                      <div style={{ borderTop: `1px solid ${T.border}`, marginTop: 22, paddingTop: 20 }}>
+                        <div style={{ background: T.surface, borderRadius: 14, padding: "18px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+                            <span style={{ fontSize: 13, color: "#3EE0A3", lineHeight: 1 }}>✦</span>
+                            <div className="mutedSmall" style={{ fontWeight: 800 }}>What This Means</div>
+                          </div>
+                          {interpretation && (
+                            <div className="mutedSmall" style={{ fontSize: 13, lineHeight: 1.65, color: T.textSec, marginBottom: nextSteps ? 14 : 0 }}>
+                              {interpretation}
+                            </div>
+                          )}
+                          {nextSteps && (
+                            <div style={{ background: "rgba(62,224,163,0.07)", border: "1px solid rgba(62,224,163,0.16)", borderRadius: 10, padding: "10px 12px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#3EE0A3", marginBottom: 5 }}>
+                                Next Steps
+                              </div>
+                              <div className="mutedSmall" style={{ fontSize: 13, lineHeight: 1.6, color: T.text }}>
+                                {nextSteps}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
