@@ -2804,6 +2804,10 @@ function AppInner() {
     []
   );
   const NAV_ALL = useMemo(() => [...NAV.main, ...NAV.trading, ...NAV.account], [NAV]);
+  // Covers tabs reachable outside the sidebar nav (portfolio, pricing) --
+  // NAV_ALL alone is missing those. Used for the non-Dashboard page title
+  // that replaces the Analyze bar on every other tab.
+  const TAB_TITLES = { portfolio: "Portfolio", pricing: "Plans & Pricing", launch: "Aurexis" };
 
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("aurexis_darkMode") !== "false");
 
@@ -12378,7 +12382,13 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
-          {isNative ? (
+          {tab !== "dashboard" ? (
+            <div className="headerBar" style={isNative ? { display: "flex", alignItems: "center" } : undefined}>
+              <span style={{ fontSize: isNative ? 17 : 15, fontWeight: 700, color: isNative ? "#f5f5f4" : T.text, letterSpacing: "-0.01em" }}>
+                {TAB_TITLES[tab] || (NAV_ALL.find(n => n.key === tab)?.label) || "Aurexis"}
+              </span>
+            </div>
+          ) : isNative ? (
           <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
             <form
               onSubmit={onCmdSubmit}
