@@ -2632,6 +2632,203 @@ function NativeMoverTile({ symbol, right, rightColor, onClick, T, darkMode }) {
   );
 }
 
+// ── Native design system v2 (2026) ──────────────────────────────────────
+// Deliberately not flat: cool-tinted near-black bg, elevated surfaces with
+// a soft top highlight + drop shadow (real depth, not a single fill),
+// accent used expressively in a few key spots (hero glow, primary CTA
+// gradient) rather than minimized everywhere. Scoped to native via isNative
+// checks at each call site -- desktop/web-mobile keep the existing theme.
+const N = {
+  bg: "#0b0c10",
+  surface: "#15171d",
+  surface2: "#1b1e25",
+  divider: "rgba(255,255,255,0.07)",
+  hairline: "rgba(255,255,255,0.09)",
+  accent: "#3EE0A3",
+  accentBase: "#22C88E",
+  accentGradient: "linear-gradient(135deg, #4FF0B0 0%, #22C88E 100%)",
+  accentGlow: "rgba(62,224,163,0.30)",
+  accentWash: "rgba(62,224,163,0.12)",
+  negative: "#F0847A",
+  negativeWash: "rgba(240,132,122,0.12)",
+  warning: "#F0B860",
+  warningWash: "rgba(240,184,96,0.13)",
+  text: "#F5F6F7",
+  textSecondary: "#9A9DA6",
+  textMuted: "#6E7178",
+};
+
+const NT = {
+  hero: { fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", color: N.text },
+  screenTitle: { fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", color: N.text },
+  rowTitle: { fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: N.text },
+  rowSubtitle: { fontSize: 13, fontWeight: 500, color: N.textSecondary },
+  label: { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: N.textMuted },
+};
+
+// Soft lifted-card shadow -- inner top highlight + drop shadow -- this is
+// what separates "elevated surface" from "flat gray rectangle."
+function nCardShadow(glow) {
+  const base = "0 1px 0 rgba(255,255,255,0.045) inset, 0 10px 28px rgba(0,0,0,0.40)";
+  return glow ? `${base}, 0 0 40px ${N.accentGlow}` : base;
+}
+
+function nTier(tier) {
+  const t = String(tier || "").toUpperCase();
+  if (t === "VERY HIGH" || t === "HIGH" || t === "SOLID") return { bg: N.accentWash, text: N.accent };
+  if (t === "MODERATE") return { bg: N.warningWash, text: N.warning };
+  if (t === "LOW" || t === "AVOID") return { bg: N.negativeWash, text: N.negative };
+  return { bg: "rgba(255,255,255,0.07)", text: N.textSecondary };
+}
+
+function NScorePill({ label, tier }) {
+  const c = nTier(tier);
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      padding: "5px 11px", borderRadius: 999,
+      background: c.bg, color: c.text,
+      fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", whiteSpace: "nowrap",
+    }}>{label}</span>
+  );
+}
+
+// Shared list-row: avatar/initials, title+subtitle, trailing stat/pill/
+// chevron, hairline divider below. Entrance stagger via `index`.
+function NRow({ avatar, avatarBg, title, subtitle, trailing, trailingSub, trailingColor, chevron, onClick, last, index = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, delay: Math.min(index, 8) * 0.03, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={onClick ? { scale: 0.985, backgroundColor: "rgba(255,255,255,0.02)" } : undefined}
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: NATIVE_SPACE.m,
+        padding: `${NATIVE_SPACE.m}px 0`,
+        borderBottom: last ? "none" : `0.5px solid ${N.divider}`,
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
+      {avatar !== undefined && (
+        <div style={{
+          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: avatarBg || "rgba(255,255,255,0.06)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset",
+          color: N.text, fontSize: 13, fontWeight: 700,
+        }}>{avatar}</div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ ...NT.rowTitle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+        {subtitle != null && <div style={{ ...NT.rowSubtitle, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</div>}
+      </div>
+      {trailing != null && (
+        <div style={{ flexShrink: 0, textAlign: "right" }}>
+          {typeof trailing === "string" || typeof trailing === "number" ? (
+            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: trailingColor || N.text, fontVariantNumeric: "tabular-nums" }}>{trailing}</div>
+          ) : trailing}
+          {trailingSub != null && <div style={{ ...NT.rowSubtitle, marginTop: 2 }}>{trailingSub}</div>}
+        </div>
+      )}
+      {chevron && <span style={{ color: N.textMuted, fontSize: 17, flexShrink: 0, marginLeft: trailing != null ? 2 : 0 }}>›</span>}
+    </motion.div>
+  );
+}
+
+// A "card" is a real surface: elevated fill + soft shadow, not just a flat
+// background swatch. Used for every grouped section across all 5 screens.
+function NCard({ children, style, glow, padded = true }) {
+  return (
+    <div style={{
+      background: N.surface,
+      borderRadius: 22,
+      boxShadow: nCardShadow(glow),
+      padding: padded ? `0 ${NATIVE_SPACE.l}px` : 0,
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function NPrimaryButton({ children, onClick, disabled, style }) {
+  return (
+    <motion.button
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: "100%", padding: "14px 0", borderRadius: 16, border: "none",
+        background: disabled ? "rgba(255,255,255,0.08)" : N.accentGradient,
+        color: disabled ? N.textMuted : "#04140D",
+        fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", cursor: disabled ? "default" : "pointer",
+        boxShadow: disabled ? "none" : `0 8px 24px ${N.accentGlow}`,
+        ...style,
+      }}
+    >{children}</motion.button>
+  );
+}
+
+// ── SVG icon set (outline default, filled on active -- the iOS tab-bar
+// convention) so active/inactive states carry real visual weight instead
+// of just a color swap. currentColor-driven, real vectors not emoji. ──
+function IconFlame({ size = 23, active }) {
+  return active ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1.2 1 2 2.7 2 4.5A5.5 5.5 0 0 1 11.5 20 5.5 5.5 0 0 1 6 14.5C6 9 12 7 12 2Z" />
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1.2 1 2 2.7 2 4.5A5.5 5.5 0 0 1 11.5 20 5.5 5.5 0 0 1 6 14.5C6 9 12 7 12 2Z" />
+    </svg>
+  );
+}
+function IconStar({ size = 23, active }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.6l6-.9L12 3.2Z" />
+    </svg>
+  );
+}
+function IconFilter({ size = 23, active }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5h16M7 12h10M10 19h4" />
+    </svg>
+  );
+}
+function IconNotebook({ size = 23, active }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <rect x="5" y="3" width="14" height="18" rx="3" fill={active ? "currentColor" : "none"} />
+      <path d="M9 3v18" stroke={active ? "#04140D" : "currentColor"} strokeWidth="1.8" />
+      <path d="M13 8h3.2M13 12h3.2M13 16h1.8" stroke={active ? "#04140D" : "currentColor"} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconGear({ size = 23, active }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3.3" fill={active ? "currentColor" : "none"} />
+      <path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.9-1.5-2-3.4-2.3.6a7.5 7.5 0 0 0-2.6-1.5L14 2h-4l-.4 2.7a7.5 7.5 0 0 0-2.6 1.5l-2.3-.6-2 3.4L4.6 10.5a7.6 7.6 0 0 0 0 3L2.7 15l2 3.4 2.3-.6c.75.66 1.63 1.17 2.6 1.5L10 22h4l.4-2.7a7.5 7.5 0 0 0 2.6-1.5l2.3.6 2-3.4-1.9-1.5Z" />
+    </svg>
+  );
+}
+function IconChevronLeft({ size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  );
+}
+function IconChevronRight({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+const N_TAB_ICONS = { dashboard: IconFlame, watchlist: IconStar, screener: IconFilter, tradejournal: IconNotebook, settings: IconGear };
+
 function AppInner() {
   const isNative = isNativeApp();
 
@@ -2810,6 +3007,10 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
+  // Native per-pick detail screen. Lives at AppInner level (not
+  // Dashboard-local) so every "analyze this symbol" entry point -- search
+  // bar, Watchlist rows, Screener rows, leaders/history rows -- can open it.
+  const [pickDetailOpen, setPickDetailOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -4065,6 +4266,9 @@ async function loadWatchlistLive() {
 
       if (payload) {
         setAnalyzeModalSymbol?.(s);
+        // Native: AnalysisCard lives in the Pick Detail screen, not inline
+        // on the dashboard grid -- open it so the result is visible.
+        if (isNative) setPickDetailOpen(true);
       }
     } catch (e) {
       console.error("Analyze error:", e);
@@ -5484,17 +5688,66 @@ async function loadWatchlistLive() {
       };
       const fmt = (v) => v != null ? `$${Number(v).toFixed(2)}` : "—";
 
+      if (isNative) {
+        return (
+          <NCard style={{ padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
+              <div style={NT.rowTitle}>Your pick history</div>
+              {history.length > 0 ? (
+                <button onClick={() => { setBestPickLog([]); try { localStorage.removeItem("aurexis_best_pick_log"); } catch {} }}
+                  style={{ background: "none", border: "none", cursor: "pointer", ...NT.label, marginBottom: 0 }}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            {history.length === 0 ? (
+              <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Analyze a ticker to log your first pick.</div>
+            ) : history.map((item, i) => {
+              const vc = verdictCfg(item.decision, item.score);
+              return (
+                <div key={`${item.symbol}_${item.ts}`} style={{ position: "relative" }}>
+                  <div style={{ filter: isLocked ? "blur(14px)" : "none", opacity: isLocked ? 0.2 : 1, pointerEvents: isLocked ? "none" : "auto" }}>
+                    <NRow
+                      index={i}
+                      avatar={item.symbol.slice(0, 2)}
+                      avatarBg={vc ? nTier(vc.text).bg : "rgba(255,255,255,0.06)"}
+                      title={item.symbol}
+                      subtitle={timeAgo(item.ts)}
+                      trailing={vc ? <NScorePill label={vc.text} tier={vc.text} /> : (item.score != null ? item.score : "—")}
+                      trailingSub={item.entry != null ? `Entry ${fmt(item.entry)}` : null}
+                      onClick={isLocked ? undefined : () => { setSymbol(item.symbol); runAnalyze(item.symbol); setPickDetailOpen(true); }}
+                      last={i === history.length - 1}
+                    />
+                  </div>
+                  {isLocked && (
+                    <div
+                      onClick={() => setTab("pricing")}
+                      style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(11,12,16,0.85)", borderRadius: 999, padding: "6px 14px" }}>
+                        <span style={{ fontSize: 10 }}>🔒</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: N.accent }}>Starter to unlock</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </NCard>
+        );
+      }
+
       return (
         <div style={{
           background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
-          border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
-          boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
+          border: `1px solid ${T.border}`, borderRadius: 16, overflow: "hidden",
+          boxShadow: darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)",
           display: "flex", flexDirection: "column",
         }}>
           {/* Header */}
-          <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad : "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div>
-              <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Personal Best Pick Log</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Entry · Stop · Target from each analysis</div>
             </div>
             {history.length > 0 ? (
@@ -6412,7 +6665,9 @@ async function loadWatchlistLive() {
               <div className="heroLeft">
                 <div className="aiPickLabel">
                   Today's AI Pick
-                  {conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
+                  {/* Native: conviction badge shown once in .heroRight only
+                      -- this inline copy duplicated it. */}
+                  {!isNative && conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
                     <span
                       style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}
                       onMouseEnter={() => setConvTipVisible(true)}
@@ -6552,11 +6807,28 @@ async function loadWatchlistLive() {
               </div>
             </div>
 
-            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
+            {canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") && isNative ? (
+              <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", marginTop: NATIVE_SPACE.l, marginBottom: NATIVE_SPACE.l, boxShadow: nCardShadow() }}>
+                <div style={{ background: N.surface, filter: "blur(6px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  {["Entry", "Stop", "Target 1", "Target 2", "Target 3"].map((label, i, arr) => (
+                    <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`, borderBottom: i < arr.length - 1 ? `0.5px solid ${N.divider}` : "none" }}>
+                      <div style={NT.label}>{label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: N.text }}>$███.██</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(160deg, rgba(11,12,16,0.72), rgba(11,12,16,0.92))" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: N.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>Pro · $29/mo</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: N.text }}>Upgrade for the full trade plan</div>
+                  <div style={{ fontSize: 12, color: N.textSecondary, marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
+                  <motion.button whileTap={{ scale: 0.96 }} onClick={() => setTab("pricing")} style={{ marginTop: 8, padding: "10px 24px", borderRadius: 999, background: N.accentGradient, color: "#04140D", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: `0 8px 20px ${N.accentGlow}` }}>Upgrade to Pro →</motion.button>
+                </div>
+              </div>
+            ) : canAccess(userPlan, "starter") && !canAccess(userPlan, "pro") ? (
               /* Starter: show locked Pro overlay */
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.45, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6564,7 +6836,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -6579,6 +6851,79 @@ async function loadWatchlistLive() {
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
                   <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#00b450", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
                 </div>
+              </div>
+            ) : canAccess(userPlan, "pro") && isNative ? (
+              <div style={{ marginTop: NATIVE_SPACE.l, marginBottom: NATIVE_SPACE.l }}>
+                <div style={{ position: "relative", background: N.surface, borderRadius: 22, overflow: "hidden", boxShadow: nCardShadow() }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: N.accentGradient, opacity: 0.7 }} />
+                  {[
+                    { label: "Entry", val: entryN, color: N.text, sub: entryNote },
+                    { label: "Stop", val: stopN, color: N.negative, sub: Number.isFinite(stopPct) && stopPct > 0 ? `${stopPct.toFixed(1)}% below entry` : "Exit if thesis breaks" },
+                    { label: "Target 1 · Take 50%", val: target1, color: N.accent, sub: Number.isFinite(t1GainPct) && t1GainPct > 0 ? `+${t1GainPct.toFixed(1)}%` : "First profit target" },
+                    { label: "Target 2 · Take 25%", val: target2, color: N.accent, sub: Number.isFinite(t2GainPct) && t2GainPct > 0 ? `+${t2GainPct.toFixed(1)}%` : "Let winner run" },
+                    { label: "Target 3 · Trail rest", val: target3, color: N.accent, sub: Number.isFinite(t3GainPct) && t3GainPct > 0 ? `+${t3GainPct.toFixed(1)}%` : "Full extension" },
+                  ].map((row, i, arr) => (
+                    <motion.div
+                      key={row.label}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: `${NATIVE_SPACE.m + 1}px ${NATIVE_SPACE.l}px`,
+                        borderBottom: i < arr.length - 1 ? `0.5px solid ${N.divider}` : "none",
+                      }}
+                    >
+                      <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: row.color, flexShrink: 0, boxShadow: row.color === N.accent ? `0 0 6px ${N.accentGlow}` : "none" }} />
+                        <div>
+                          <div style={NT.label}>{row.label}</div>
+                          <div style={{ ...NT.rowSubtitle, marginTop: 2 }}>{row.sub}</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", color: row.color, fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.m }}>
+                        {Number.isFinite(row.val) && row.val > 0 ? `$${row.val.toFixed(2)}` : "—"}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: NATIVE_SPACE.s, marginTop: NATIVE_SPACE.m }}>
+                  {[
+                    { label: "Position size", val: positionSizePct !== null ? `${Number(positionSizePct).toFixed(1)}%` : "—" },
+                    { label: "Time horizon", val: horizonLabel || "—" },
+                    { label: "Market regime", val: marketRegime || "—" },
+                  ].map((s, i) => (
+                    <motion.div
+                      key={s.label}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.25 + i * 0.05 }}
+                      style={{ flex: 1, background: N.surface, borderRadius: 16, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.s}px`, textAlign: "center", boxShadow: nCardShadow() }}
+                    >
+                      <div style={NT.label}>{s.label}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: N.text, marginTop: 5 }}>{s.val}</div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {(pickRationale.length > 0 || riskFlags.length > 0 || trailingStopPlan.length > 0) && (
+                  <motion.div
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setPickDetailOpen(true)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      marginTop: NATIVE_SPACE.m, padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`,
+                      background: N.surface, borderRadius: 18, cursor: "pointer", boxShadow: nCardShadow(),
+                    }}
+                  >
+                    <span style={{ ...NT.rowTitle, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: N.accentGradient }} />
+                      View full analysis
+                    </span>
+                    <span style={{ color: N.textMuted }}><IconChevronRight size={18} /></span>
+                  </motion.div>
+                )}
               </div>
             ) : canAccess(userPlan, "pro") ? (
               <div style={{ marginTop: 8, marginBottom: 4 }}>
@@ -6676,10 +7021,27 @@ async function loadWatchlistLive() {
                   </div>
                 )}
               </div>
+            ) : isNative ? (
+              <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", marginTop: NATIVE_SPACE.l, marginBottom: NATIVE_SPACE.l, boxShadow: nCardShadow() }}>
+                <div style={{ background: N.surface, filter: "blur(6px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
+                  {["Entry", "Stop", "Target 1", "Target 2", "Target 3"].map((label, i, arr) => (
+                    <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px`, borderBottom: i < arr.length - 1 ? `0.5px solid ${N.divider}` : "none" }}>
+                      <div style={NT.label}>{label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: N.text }}>$███.██</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(160deg, rgba(11,12,16,0.68), rgba(11,12,16,0.90))" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: N.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: N.text }}>Unlock the full execution plan</div>
+                  <div style={{ fontSize: 12, color: N.textSecondary, marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
+                  <motion.button whileTap={{ scale: 0.96 }} onClick={() => setTab("pricing")} style={{ marginTop: 8, padding: "10px 24px", borderRadius: 999, background: N.accentGradient, color: "#04140D", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: `0 8px 20px ${N.accentGlow}` }}>Upgrade →</motion.button>
+                </div>
+              </div>
             ) : (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", margin: "8px 0" }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                     {[["Entry", "$███.██"], ["Stop Loss", "$███.██"]].map(([l, v]) => (
                       <div key={l} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px" }}>
                         <div style={{ fontSize: 9, color: T.textFaint, marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{l}</div>
@@ -6687,7 +7049,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
                       <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
                         <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
@@ -7271,10 +7633,141 @@ async function loadWatchlistLive() {
       );
     };
 
+    // Native only: merges Market Pulse's leaders strip and the standalone
+    // Top Movers card/Movers tab into one list -- same underlying `movers`
+    // data, previously shown three times in three places.
+    const TodaysLeadersCard = () => {
+      const isOpen = sessionFromClockOrHeuristic(clock) === "OPEN";
+      const eligible = (Array.isArray(movers) ? movers : []).filter((m) => {
+        const price = Number(m?.price ?? m?.last_price ?? m?.last);
+        const vol = m?.volume;
+        const volume = vol != null ? Number(vol) : null;
+        const sym = String(m?.symbol || "").toUpperCase();
+        if (sym.includes("ZVZ") || sym.includes("TEST")) return false;
+        return Number.isFinite(price) && price >= 1 && (volume === null || volume === 0 || volume >= 10000);
+      }).slice(0, 8);
+      const stillLoading = loadingMovers && eligible.length === 0 && !errMovers;
+
+      return (
+        <NCard glow style={{ padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
+            <div style={NT.rowTitle}>Today's leaders</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: isOpen ? N.accentWash : "rgba(255,255,255,0.05)" }}>
+              <motion.span
+                animate={isOpen ? { opacity: [1, 0.4, 1] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ width: 6, height: 6, borderRadius: "50%", background: isOpen ? N.accent : N.textMuted, display: "inline-block" }}
+              />
+              <span style={{ ...NT.label, marginBottom: 0, color: isOpen ? N.accent : N.textMuted }}>{isOpen ? "Open" : "Closed"}</span>
+            </div>
+          </div>
+          {errMovers ? (
+            <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Unable to load leaders.</div>
+          ) : stillLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.s }}>
+              {[0, 1, 2].map((i) => <SkeletonRow key={i} darkMode={darkMode} borderColor={N.divider} height={42} radius={12} />)}
+            </div>
+          ) : eligible.length === 0 ? (
+            <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>No leaders available right now.</div>
+          ) : eligible.map((m, i) => {
+            const pct = Number(m?.pct_change);
+            const isPos = pct >= 0;
+            const price = m?.price;
+            return (
+              <NRow
+                key={m.symbol}
+                index={i}
+                avatar={String(m.symbol || "").slice(0, 2)}
+                avatarBg={isPos ? N.accentWash : N.negativeWash}
+                title={m.symbol}
+                subtitle={price != null ? money(price) : null}
+                trailing={`${isPos ? "+" : ""}${Number.isFinite(pct) ? pct.toFixed(1) : "—"}%`}
+                trailingColor={isPos ? N.accent : N.negative}
+                onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); setPickDetailOpen(true); }}
+                last={i === eligible.length - 1}
+              />
+            );
+          })}
+        </NCard>
+      );
+    };
+
+    if (isNative && pickDetailOpen) {
+      const _bp = bestPickData && typeof bestPickData === "object" ? bestPickData : null;
+      const _best = (_bp?.pick && typeof _bp.pick === "object" ? _bp.pick : null)
+        || (_bp?.best_pick && typeof _bp.best_pick === "object" ? _bp.best_pick : null)
+        || _bp;
+      const _trailingStopPlan = Array.isArray(_best?.trailing_stop_plan) ? _best.trailing_stop_plan : [];
+      const _pickRationale = Array.isArray(_best?.pick_rationale) ? _best.pick_rationale : [];
+      const _riskFlags = Array.isArray(_best?.risk_flags) ? _best.risk_flags : [];
+
+      return (
+        <div style={{ background: N.bg, minHeight: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: NATIVE_SPACE.s, padding: `${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.m}px` }}>
+            <motion.button whileTap={{ scale: 0.88 }} onClick={() => setPickDetailOpen(false)} style={{ background: "none", border: "none", color: N.accent, cursor: "pointer", padding: 0, display: "flex" }}>
+              <IconChevronLeft size={26} />
+            </motion.button>
+            <div style={NT.screenTitle}>{analyzeSym || "Analysis"}</div>
+          </div>
+          <div style={{ padding: `0 ${NATIVE_SPACE.l}px ${NATIVE_SPACE.xl}px`, display: "flex", flexDirection: "column", gap: NATIVE_SPACE.m }}>
+            {(_pickRationale.length > 0 || _riskFlags.length > 0 || _trailingStopPlan.length > 0) && (
+              <NCard style={{ padding: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px` }}>
+                {_pickRationale.length > 0 && (
+                  <div style={{ marginBottom: (_riskFlags.length || _trailingStopPlan.length) ? NATIVE_SPACE.m : 0 }}>
+                    <div style={NT.label}>Why this setup</div>
+                    {_pickRationale.map((r, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 6 }}>
+                        <span style={{ color: N.accent, fontSize: 10, marginTop: 3, flexShrink: 0 }}>●</span>
+                        <span style={{ fontSize: 13, color: N.textSecondary, lineHeight: 1.5 }}>{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {_trailingStopPlan.length > 0 && (
+                  <div style={{ marginBottom: _riskFlags.length ? NATIVE_SPACE.m : 0, paddingTop: _pickRationale.length ? NATIVE_SPACE.m : 0, borderTop: _pickRationale.length ? `0.5px solid ${N.divider}` : "none" }}>
+                    <div style={NT.label}>Trailing stop plan</div>
+                    {_trailingStopPlan.map((step, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: N.warning, minWidth: 40, flexShrink: 0 }}>+{step.trigger_pct}%</span>
+                        <span style={{ fontSize: 13, color: N.textSecondary, lineHeight: 1.5 }}>{step.action}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {_riskFlags.length > 0 && (
+                  <div style={{ paddingTop: (_pickRationale.length || _trailingStopPlan.length) ? NATIVE_SPACE.m : 0, borderTop: (_pickRationale.length || _trailingStopPlan.length) ? `0.5px solid ${N.divider}` : "none" }}>
+                    <div style={{ ...NT.label, color: N.negative }}>Watch out for</div>
+                    {_riskFlags.map((f, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 6 }}>
+                        <span style={{ color: N.negative, fontSize: 10, marginTop: 3, flexShrink: 0 }}>▲</span>
+                        <span style={{ fontSize: 13, color: N.negative, lineHeight: 1.5 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </NCard>
+            )}
+            {analyzeIsLowConviction ? (
+              <NCard style={{ padding: NATIVE_SPACE.l }}>
+                <div style={{ ...NT.rowTitle, color: N.warning, marginBottom: 4 }}>⚠ Low Conviction — Trade Not Recommended</div>
+                <div style={NT.rowSubtitle}>
+                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
+                </div>
+              </NCard>
+            ) : (
+              <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+                <AnalysisCard />
+              </ProGate>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className="dashBoardGrid"
-        style={isNative ? { overflowX: "hidden", maxWidth: "100%", width: "100%", boxSizing: "border-box" } : undefined}
+        style={isNative ? { overflowX: "hidden", maxWidth: "100%", width: "100%", boxSizing: "border-box", background: N.bg } : undefined}
       >
         {isNative ? <style>{NATIVE_DASHBOARD_KEYFRAMES}</style> : null}
         {showDegradedBanner ? (
@@ -7292,40 +7785,56 @@ async function loadWatchlistLive() {
           <HeroCard />
         </motion.div>
 
-        <motion.div className="dashCell dashCell--performance"
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-          <MarketPulseCard />
-        </motion.div>
-        <motion.div className="dashCell dashCell--picks"
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-          <AnalyzeHistoryCard />
-        </motion.div>
-        <div className="dashCell dashCell--why">
-          {analyzeIsLowConviction ? (
-            <div className="card lowConvictionCard">
-              <div className="cardHead">
-                <div>
-                  <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
-                  <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
+        {isNative ? (
+          <>
+            <motion.div className="dashCell dashCell--performance"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
+              <TodaysLeadersCard />
+            </motion.div>
+            <motion.div className="dashCell dashCell--picks"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
+              <AnalyzeHistoryCard />
+            </motion.div>
+          </>
+        ) : (
+          <>
+            <motion.div className="dashCell dashCell--performance"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
+              <MarketPulseCard />
+            </motion.div>
+            <motion.div className="dashCell dashCell--picks"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
+              <AnalyzeHistoryCard />
+            </motion.div>
+            <div className="dashCell dashCell--why">
+              {analyzeIsLowConviction ? (
+                <div className="card lowConvictionCard">
+                  <div className="cardHead">
+                    <div>
+                      <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
+                      <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
+                    </div>
+                  </div>
+                  <div className="cardBody">
+                    <div className="mutedSmall">
+                      {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
+                      Consider waiting for a stronger setup or analyzing a different symbol.
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="cardBody">
-                <div className="mutedSmall">
-                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
-                  Consider waiting for a stronger setup or analyzing a different symbol.
-                </div>
-              </div>
+              ) : (
+                <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+                  <AnalysisCard />
+                </ProGate>
+              )}
             </div>
-          ) : (
-            <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
-              <AnalysisCard />
-            </ProGate>
-          )}
-        </div>
-
-        <div className="dashCell dashCell--summary"><TopMoversCard /></div>
+            <div className="dashCell dashCell--summary"><TopMoversCard /></div>
+          </>
+        )}
       </div>
     );
   };
@@ -10795,7 +11304,9 @@ async function loadWatchlistLive() {
     setSymbol(v.cleaned);
     setCmdErr("");
     showToast("Loaded");
-    runAnalyze(v.cleaned);
+    runAnalyze(v.cleaned).then((payload) => {
+      if (payload && isNative) setPickDetailOpen(true);
+    });
   };
 
 
@@ -11393,15 +11904,57 @@ const renderPage = () => {
             catch-all isn't needed. */}
         {(() => {
           const MOBILE_NAV_MIN_PLAN = { watchlist: "starter", tradejournal: "starter" };
-          const primaryKeys = ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
+          const primaryKeys = isNative
+            ? ["dashboard", "watchlist", "screener", "tradejournal", "settings"]
+            : ["dashboard", "movers", "screener", "watchlist", "tradejournal", "settings"];
+          const N_LABEL = { dashboard: "Today" };
           const primaryItems = primaryKeys.map((k) => NAV_ALL.find((n) => n.key === k)).filter(Boolean);
-          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support");
+          const moreItems = NAV_ALL.filter((n) => !primaryKeys.includes(n.key) && n.key !== "support" && !(isNative && n.key === "movers"));
           return (
             <>
-              <nav className="mobileBottomNav" aria-label="Primary">
+              <nav
+                className="mobileBottomNav"
+                aria-label="Primary"
+                style={isNative ? {
+                  background: "rgba(11,12,16,0.78)",
+                  backdropFilter: "blur(24px) saturate(1.4)", WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+                  borderTop: `0.5px solid ${N.divider}`,
+                } : undefined}
+              >
                 {primaryItems.map((n) => {
                   const isActive = tab === n.key && !mobileMoreOpen;
                   const navLocked = MOBILE_NAV_MIN_PLAN[n.key] && !canAccess(userPlan, MOBILE_NAV_MIN_PLAN[n.key]);
+                  if (isNative) {
+                    const Icon = N_TAB_ICONS[n.key];
+                    return (
+                      <motion.button
+                        key={n.key}
+                        whileTap={{ scale: 0.90 }}
+                        className="mobileBottomNav__item"
+                        onClick={() => { setMobileMoreOpen(false); setTab(n.key); }}
+                        style={{ color: isActive ? N.accent : N.textMuted }}
+                      >
+                        <span className="mobileBottomNav__iconWrap">
+                          <motion.span
+                            animate={{ y: isActive ? -1 : 0, scale: isActive ? 1.08 : 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 28 }}
+                            style={{ display: "inline-flex" }}
+                          >
+                            {Icon ? <Icon size={23} active={isActive} /> : null}
+                          </motion.span>
+                          {navLocked && <span className="mobileBottomNav__lockDot" />}
+                        </span>
+                        <span className="mobileBottomNav__label">{N_LABEL[n.key] || n.label}</span>
+                        {isActive && (
+                          <motion.span
+                            layoutId="navActiveDot"
+                            transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                            style={{ position: "absolute", bottom: 4, width: 4, height: 4, borderRadius: "50%", background: N.accent, boxShadow: `0 0 6px ${N.accentGlow}` }}
+                          />
+                        )}
+                      </motion.button>
+                    );
+                  }
                   return (
                     <button
                       key={n.key}
@@ -11494,6 +12047,7 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
+          {(!isNative || tab === "dashboard") && (
           <div className="headerBar">
             <form className="cmdBar" onSubmit={onCmdSubmit}>
               <span className="analyzeSectionLabel">Analyze Any Stock</span>
@@ -11554,7 +12108,7 @@ const renderPage = () => {
               </div>
             </div>
           </div>
-
+          )}
 
           <div className="page">
             {tab === "dashboard" && cmdErr ? (
