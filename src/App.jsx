@@ -9,6 +9,9 @@ import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
 import { PushNotifications } from "@capacitor/push-notifications";
+import { Browser as CapacitorBrowser } from "@capacitor/browser";
+import { App as CapacitorApp } from "@capacitor/app";
+import { PLAN_PRICING, planPriceLabel } from "./lib/pricing";
 
 import {
   apiFetch as apiClientFetch,
@@ -2299,10 +2302,14 @@ function usePlan() {
   const [plan, setPlan] = React.useState(read);
   React.useEffect(() => {
     const sync = () => setPlan(read());
-    window.addEventListener("storage", sync);
-    // Validate JWT plan against live DB on mount so upgrades/downgrades take effect immediately
-    const tok = localStorage.getItem("aurexis_token");
-    if (tok) {
+    // Validate JWT plan against live DB -- shared by mount, app-foreground
+    // (native subscribes via web checkout now, so this is how a plan
+    // bought in Safari actually shows up back in the app), the
+    // "storage"/aurexis:refresh-plan events below, and any manual
+    // "Refresh subscription status" button.
+    const refreshFromServer = () => {
+      const tok = localStorage.getItem("aurexis_token");
+      if (!tok) return;
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
         .then(r => {
           if (r.status === 401) {
@@ -2314,10 +2321,33 @@ function usePlan() {
         })
         .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
         .catch(() => {});
+    };
+    window.addEventListener("storage", sync);
+    window.addEventListener("aurexis:refresh-plan", refreshFromServer);
+    refreshFromServer();
+
+    let appStateHandle = null;
+    if (isNativeApp()) {
+      CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) refreshFromServer();
+      }).then(h => { appStateHandle = h; });
     }
-    return () => window.removeEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("aurexis:refresh-plan", refreshFromServer);
+      appStateHandle?.remove();
+    };
   }, []);
   return plan;
+}
+
+// Fire-and-forget: any component can call this (no prop drilling from
+// usePlan's owner) to force an immediate plan refetch -- the manual
+// "Refresh subscription status" affordance on the native Pricing tab uses
+// this after the user returns from paying on the website.
+function refreshPlanNow() {
+  window.dispatchEvent(new Event("aurexis:refresh-plan"));
 }
 function canAccess(userPlan, minPlan) {
   return (PLAN_RANK[userPlan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
@@ -2445,7 +2475,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
 
   const tierCfg = {
     starter: {
-      label: "Starter", price: "$9",
+      label: "Starter", price: planPriceLabel("starter"),
       accentRgb: "0,180,80", accent: "#3EE0A3",
       headline: "See the full trade plan every day",
       features: [
@@ -2455,7 +2485,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
       ],
     },
     pro: {
-      label: "Pro", price: "$29",
+      label: "Pro", price: planPriceLabel("pro"),
       accentRgb: "96,165,250", accent: "#60a5fa",
       headline: "Screen & track like a pro",
       features: [
@@ -2465,7 +2495,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
       ],
     },
     elite: {
-      label: "Elite", price: "$99",
+      label: "Elite", price: planPriceLabel("elite"),
       accentRgb: "167,139,250", accent: "#a78bfa",
       headline: "Institutional-grade intelligence",
       features: [
@@ -10062,7 +10092,14 @@ async function loadWatchlistLive() {
       const token = localStorage.getItem("aurexis_token");
       try {
         const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        if (r.ok) { const d = await r.json(); window.open(d.url, "_blank"); }
+        if (r.ok) {
+          const d = await r.json();
+          // window.open(url, "_blank") doesn't reliably escape a Capacitor
+          // WKWebView -- the system browser handoff needs the actual
+          // native bridge instead.
+          if (isNative) CapacitorBrowser.open({ url: d.url });
+          else window.open(d.url, "_blank");
+        }
       } catch { showToast("Couldn't open billing portal."); }
     };
 
@@ -10383,6 +10420,20 @@ async function loadWatchlistLive() {
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
+              {isNative && (
+                <div style={{ background: "#111110", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 12.5, color: "#8a8a86", lineHeight: 1.5 }}>
+                    Subscriptions are managed on the web, not in this app.
+                  </div>
+                  <button
+                    onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/app" })}
+                    style={{ background: "none", border: "0.5px solid #1a1a19", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#3EE0A3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+                  >
+                    useaurexis.com ↗
+                  </button>
+                </div>
+              )}
+
               {/* Current plan card */}
               <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "20px 22px", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -10688,6 +10739,13 @@ async function loadWatchlistLive() {
   const Pricing = () => {
     const [upgradeLoading, setUpgradeLoading] = React.useState(null);
     const [upgradeError, setUpgradeError] = React.useState("");
+    const [refreshingPlan, setRefreshingPlan] = React.useState(false);
+
+    function handleManualPlanRefresh() {
+      setRefreshingPlan(true);
+      refreshPlanNow();
+      window.setTimeout(() => setRefreshingPlan(false), 1200);
+    }
 
     // Feature matrix definition
     const FEATURE_CATEGORIES = [
@@ -10754,7 +10812,7 @@ async function loadWatchlistLive() {
       {
         id: "free",
         name: "FREE",
-        price: "$0",
+        price: planPriceLabel("free"),
         period: "forever",
         badge: null,
         badgeColor: null,
@@ -10764,7 +10822,7 @@ async function loadWatchlistLive() {
       {
         id: "starter",
         name: "STARTER",
-        price: "$9",
+        price: planPriceLabel("starter"),
         period: "per month",
         badge: "MOST POPULAR",
         badgeColor: "#22C88E",
@@ -10774,7 +10832,7 @@ async function loadWatchlistLive() {
       {
         id: "pro",
         name: "PRO",
-        price: "$29",
+        price: planPriceLabel("pro"),
         period: "per month",
         badge: null,
         badgeColor: null,
@@ -10784,7 +10842,7 @@ async function loadWatchlistLive() {
       {
         id: "elite",
         name: "ELITE",
-        price: "$99",
+        price: planPriceLabel("elite"),
         period: "per month",
         badge: "FOR SERIOUS TRADERS",
         badgeColor: "#f59e0b",
@@ -10796,6 +10854,17 @@ async function loadWatchlistLive() {
     async function handleUpgrade(plan) {
       if (plan.id === userPlan) return;
       setUpgradeError("");
+
+      // App Store policy requires StoreKit for any payment that happens
+      // inside the app -- so native never calls Stripe checkout itself.
+      // Instead it hands off to the system browser, same as web checkout
+      // at useaurexis.com. The user comes back to a plan that's already
+      // current by the time they reopen the app (see usePlan's
+      // appStateChange listener + the manual refresh button below).
+      if (isNative) {
+        CapacitorBrowser.open({ url: `https://useaurexis.com/pricing?plan=${plan.id}` });
+        return;
+      }
 
       if (plan.id === "free") {
         window.location.href = "/signup?plan=free";
@@ -10843,6 +10912,24 @@ async function loadWatchlistLive() {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>PRICING</div>
           <div style={{ fontSize: isNative ? 24 : 30, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>Simple, transparent pricing.</div>
           <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
+          {isNative && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 8 }}>
+                Subscriptions are managed on the web — pick a plan below to continue in Safari.
+              </div>
+              <button
+                onClick={handleManualPlanRefresh}
+                disabled={refreshingPlan}
+                style={{
+                  background: "none", border: "0.5px solid #1a1a19", borderRadius: 8,
+                  padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#8a8a86",
+                  cursor: refreshingPlan ? "default" : "pointer", fontFamily: "inherit",
+                }}
+              >
+                {refreshingPlan ? "Checking…" : "↻ Refresh subscription status"}
+              </button>
+            </div>
+          )}
         </div>
 
         {upgradeError && (
