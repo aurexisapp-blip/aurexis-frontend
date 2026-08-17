@@ -12414,14 +12414,25 @@ const renderPage = () => {
               subtitle = `You're on the ${planLabel} plan`;
             }
             return (
-              <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-                <span style={{ fontSize: isNative ? 17 : 15, fontWeight: 700, color: isNative ? "#f5f5f4" : T.text, letterSpacing: "-0.01em" }}>
-                  {title}
-                </span>
-                {subtitle ? (
-                  <span style={{ fontSize: isNative ? 12 : 11, color: isNative ? "#8a8a86" : T.textMuted }}>
-                    {subtitle}
+              <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  background: isNative ? "#111110" : T.bg2,
+                  border: isNative ? "none" : `1px solid ${T.border}`,
+                  borderRadius: 16,
+                  padding: isNative ? "13px 16px" : "12px 16px",
+                  boxSizing: "border-box",
+                }}>
+                  <span style={{ fontSize: isNative ? 16 : 15, fontWeight: 700, color: isNative ? "#f5f5f4" : T.text, letterSpacing: "-0.01em" }}>
+                    {title}
                   </span>
+                </div>
+                {subtitle ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px" }}>
+                    <span style={{ fontSize: isNative ? 12 : 11, color: isNative ? "#8a8a86" : T.textMuted }}>
+                      {subtitle}
+                    </span>
+                  </div>
                 ) : null}
               </div>
             );
