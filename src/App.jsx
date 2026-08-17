@@ -11494,6 +11494,69 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
+          {isNative ? (
+          <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+            <form
+              onSubmit={onCmdSubmit}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                background: "#111110", borderRadius: 16,
+                padding: "4px 6px 4px 16px",
+              }}
+            >
+              <span style={{ color: "#6a6a66", flexShrink: 0, display: "flex" }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+              </span>
+              <input
+                ref={cmdInputRef}
+                value={symbol}
+                onChange={onCmdChange}
+                placeholder="Analyze any stock"
+                style={{
+                  flex: 1, minWidth: 0, background: "none", border: "none", outline: "none",
+                  color: "#f5f5f4", fontSize: 15, fontWeight: 500, padding: "11px 0", fontFamily: "inherit",
+                }}
+              />
+              <RippleButton
+                type="button"
+                onClick={handleAnalyze}
+                disabled={loadingAnalyze || savingPortfolio}
+                style={{
+                  flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
+                  background: "#3EE0A3", color: "#06120c", border: "none",
+                  borderRadius: 12, padding: "9px 16px",
+                  fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+                }}
+              >
+                {loadingAnalyze ? <span className="btnSpinner" /> : null}
+                <span>{loadingAnalyze ? "Analyzing…" : "Analyze"}</span>
+                {!loadingAnalyze && !canAccess(userPlan, "starter") && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
+                    background: analyzeRemaining(userPlan) <= 1 ? "rgba(240,132,122,0.25)" : "rgba(6,18,12,0.15)",
+                    color: analyzeRemaining(userPlan) <= 1 ? "#7a1f16" : "#06120c",
+                    borderRadius: 4, padding: "1px 5px",
+                  }}>{analyzeRemaining(userPlan)}/{ANALYZE_FREE_LIMIT}</span>
+                )}
+              </RippleButton>
+            </form>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px" }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                background: marketSession === "OPEN" ? "#3EE0A3" : "#6a6a66",
+              }} />
+              <span style={{ fontSize: 12, color: "#8a8a86" }}>
+                {marketSession === "OPEN"
+                  ? `Market open · closes 4:00 PM ET · ${etToLocal(16, 0)} local`
+                  : `Market closed · opens 9:30 AM ET · ${etToLocal(9, 30)} local`}
+              </span>
+            </div>
+          </div>
+          ) : (
           <div className="headerBar">
             <form className="cmdBar" onSubmit={onCmdSubmit}>
               <span className="analyzeSectionLabel">Analyze Any Stock</span>
@@ -11554,6 +11617,7 @@ const renderPage = () => {
               </div>
             </div>
           </div>
+          )}
 
 
           <div className="page">
