@@ -1152,7 +1152,7 @@ a:hover{
      so .page's bottom-nav clearance (padding-bottom: calc(70px + env(
      safe-area-inset-bottom))) never applied here. Matching that value
      directly so content isn't clipped behind the fixed bottom nav. */
-  .settingsContent{ padding: 20px 16px calc(70px + env(safe-area-inset-bottom, 0px)) !important; }
+  .settingsContent{ padding: 20px 16px calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
 /* ---------- Chat FAB: lift above the mobile bottom nav so they don't overlap ----------

@@ -12020,7 +12020,7 @@ const renderPage = () => {
           )}
 
 
-          <div className="page" style={isNative ? { background: "#0a0a0a" } : undefined}>
+          <div className="page" style={isNative ? { background: "#0a0a0a", paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" } : undefined}>
             {tab === "dashboard" && cmdErr ? (
               <div className="monoBox monoBox--bad" style={{ marginBottom: 12 }}>
                 {cmdErr}
