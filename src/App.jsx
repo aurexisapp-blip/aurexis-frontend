@@ -10872,7 +10872,7 @@ async function loadWatchlistLive() {
                         value={phoneInput}
                         onChange={e => setPhoneInput(e.target.value)}
                         placeholder="+1 555 123 4567"
-                        style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 15, fontFamily: "inherit",
+                        style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 16, fontFamily: "inherit",
                           background: isNative ? "#1a1a19" : (dm ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
                           border: isNative ? "none" : bdr, color: txt, outline: "none" }}
                       />
@@ -10894,7 +10894,7 @@ async function loadWatchlistLive() {
                           value={codeInput}
                           onChange={e => setCodeInput(e.target.value.replace(/\D/g, ""))}
                           placeholder="6-digit code"
-                          style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 15, fontFamily: "inherit", letterSpacing: "0.1em",
+                          style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 8, fontSize: 16, fontFamily: "inherit", letterSpacing: "0.1em",
                             background: isNative ? "#1a1a19" : (dm ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
                             border: isNative ? "none" : bdr, color: txt, outline: "none" }}
                         />
