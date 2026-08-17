@@ -11,6 +11,7 @@ import { isNativeApp } from "./lib/platform";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Keyboard } from "@capacitor/keyboard";
 import { PLAN_PRICING, planPriceLabel } from "./lib/pricing";
 
 import {
@@ -2694,6 +2695,22 @@ function NativeMoverTile({ symbol, right, rightColor, onClick, T, darkMode }) {
 
 function AppInner() {
   const isNative = isNativeApp();
+
+  // Without this, iOS's default keyboard handling auto-scrolls the WebView's
+  // own content (a native UIScrollView content-offset change, not a CSS
+  // scroll) to keep a focused input visible -- which fights position:fixed
+  // full-screen elements like the chat panel: the panel's CSS position
+  // never moves, but the surrounding scroll offset does, so it can render
+  // as if the panel tore away from the top of the screen while the
+  // keyboard-adjacent bottom stayed correct. capacitor.config.json sets
+  // Keyboard.resize to "none" (webview frame never resizes, .chatFullscreen's
+  // dvh handles sizing instead) and this disables the matching native
+  // auto-scroll, so CSS is the only thing controlling layout during keyboard
+  // show/hide -- no native behavior fighting it underneath.
+  useEffect(() => {
+    if (!isNative) return;
+    Keyboard.setScroll({ isDisabled: true }).catch(() => {});
+  }, [isNative]);
 
   // Push notification wiring -- registered once app-wide (not just while
   // Settings is open) since a tap can arrive from any screen or from the

@@ -1,5 +1,10 @@
 {
   "appId": "com.useaurexis.app",
   "appName": "Aurexis",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "Keyboard": {
+      "resize": "none"
+    }
+  }
 }
