@@ -2944,6 +2944,11 @@ function AppInner() {
   }, [darkMode]);
 
   const [tab, setTab] = useState("dashboard");
+  // Native per-pick detail screen. Lifted to AppInner (not Dashboard-local)
+  // because every "analyze this symbol and show me the result" entry point
+  // -- the top search bar, Watchlist rows, Screener rows, leaders/history
+  // rows -- needs to be able to open it, not just the ones inside Dashboard.
+  const [pickDetailOpen, setPickDetailOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -4199,6 +4204,9 @@ async function loadWatchlistLive() {
 
       if (payload) {
         setAnalyzeModalSymbol?.(s);
+        // Native: AnalysisCard lives in the Pick Detail screen, not inline
+        // on the dashboard grid -- open it so the result is actually visible.
+        if (isNative) setPickDetailOpen(true);
       }
     } catch (e) {
       console.error("Analyze error:", e);
@@ -4498,7 +4506,7 @@ async function loadWatchlistLive() {
     // Native only: when true, the dashboard grid is replaced full-screen by
     // the per-pick detail view (Why This Trade / AI Summary / Advanced
     // Metrics, plus rationale/risk/trailing-stop content moved off Hero).
-    const [pickDetailOpen, setPickDetailOpen] = React.useState(false);
+    // pickDetailOpen/setPickDetailOpen come from AppInner (see there for why).
     const analysisObj = analyzeData && typeof analyzeData === "object" ? analyzeData : null;
 
     const statusRaw = analysisObj?.status;
@@ -6595,45 +6603,9 @@ async function loadWatchlistLive() {
           <div className="heroBody" style={isNative ? { padding: `${NATIVE_SPACE.xl}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px` } : undefined}>
             <div className="heroTop">
               <div className="heroLeft">
-                <div className="aiPickLabel">
-                  Today's AI Pick
-                  {conviction && conviction !== "WAIT" && conviction !== "NO TRADE" && (
-                    <span
-                      style={{ position: "relative", display: "inline-block", marginLeft: 10, verticalAlign: "middle" }}
-                      onMouseEnter={() => setConvTipVisible(true)}
-                      onMouseLeave={() => setConvTipVisible(false)}
-                      onClick={(e) => { e.stopPropagation(); setConvTipVisible((v) => !v); }}
-                    >
-                      <span style={{
-                        display: "inline-block",
-                        fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
-                        padding: "2px 7px", borderRadius: 4,
-                        background: convStyle.bg, border: `1px solid ${convStyle.border}`,
-                        color: convStyle.color, cursor: "default",
-                      }}>{convStyle.label}</span>
-                      {convTipVisible && CONV_TOOLTIP[conviction] && (
-                        <div style={{
-                          position: "absolute", top: "calc(100% + 8px)", left: 0,
-                          background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
-                          borderRadius: 6, padding: "8px 12px", width: 240, zIndex: 99,
-                          fontSize: 12, fontWeight: "normal", textTransform: "none",
-                          whiteSpace: "normal", wordWrap: "break-word",
-                          color: "rgba(255,255,255,0.75)", lineHeight: 1.4,
-                          boxShadow: `0 4px 20px rgba(0,0,0,0.5), ${convStyle.glow}`,
-                          pointerEvents: "none",
-                        }}>
-                          <div style={{
-                            position: "absolute", top: -5, left: 16,
-                            width: 8, height: 8, background: "rgba(10,14,22,0.97)",
-                            border: `1px solid ${convStyle.border}`, borderBottom: "none", borderRight: "none",
-                            transform: "rotate(45deg)",
-                          }} />
-                          {CONV_TOOLTIP[conviction]}
-                        </div>
-                      )}
-                    </span>
-                  )}
-                </div>
+                {/* Conviction badge shown once, in .heroRight below (not
+                    duplicated here) -- this label previously repeated it. */}
+                <div className="aiPickLabel">Today's AI Pick</div>
                 {false ? null : (
                   <>
                     <div className="heroTicker" style={isNative ? { fontSize: 30, fontWeight: 800 } : undefined}>{ticker || "—"}</div>
@@ -7606,7 +7578,7 @@ async function loadWatchlistLive() {
                 subtitle={price != null ? money(price) : null}
                 trailing={`${isPos ? "+" : ""}${Number.isFinite(pct) ? pct.toFixed(1) : "—"}%`}
                 trailingColor={isPos ? NATIVE_COLOR.accent : NATIVE_COLOR.negative}
-                onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
+                onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); setPickDetailOpen(true); }}
                 last={i === eligible.length - 1}
               />
             );
@@ -8580,7 +8552,7 @@ async function loadWatchlistLive() {
                   key={sym}
                   avatar={sym.slice(0, 2)}
                   title={sym}
-                  onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); }}
+                  onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); setPickDetailOpen(true); }}
                   trailing={
                     <button
                       onClick={(e) => { e.stopPropagation(); removeFromWatchlistLive(sym); }}
@@ -8618,7 +8590,7 @@ async function loadWatchlistLive() {
                     title={c.symbol}
                     subtitle={c.edgeSignals.length > 0 ? c.edgeSignals.slice(0, 2).map(fmt).join(" · ") : (c.noTradeReason || "Edge signals detected")}
                     trailing={<NativeScorePill label={c.score !== null ? `${c.score.toFixed(1)}/${AI_SCORE_THRESHOLD.toFixed(1)}` : "—"} tier={tier} />}
-                    onClick={() => { setSymbol(c.symbol); setTab("dashboard"); runAnalyze(c.symbol); }}
+                    onClick={() => { setSymbol(c.symbol); setTab("dashboard"); runAnalyze(c.symbol); setPickDetailOpen(true); }}
                     last={i === systemCandidates.length - 1}
                   />
                 );
@@ -8935,7 +8907,7 @@ async function loadWatchlistLive() {
                     title={row.symbol}
                     subtitle={row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
                     trailing={row.error ? null : <NativeScorePill label={row.aiScore ?? "—"} tier={scoreTier(row.aiScore)} />}
-                    onClick={row.error ? undefined : () => { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); }}
+                    onClick={row.error ? undefined : () => { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); setPickDetailOpen(true); }}
                     last={i === sortedResults.length - 1}
                   />
                 ))}
@@ -11486,7 +11458,11 @@ async function loadWatchlistLive() {
     setSymbol(v.cleaned);
     setCmdErr("");
     showToast("Loaded");
-    runAnalyze(v.cleaned);
+    runAnalyze(v.cleaned).then((payload) => {
+      // Native: AnalysisCard lives in the Pick Detail screen now -- open it
+      // so the result is actually visible instead of updating state silently.
+      if (payload && isNative) setPickDetailOpen(true);
+    });
   };
 
 
@@ -12217,6 +12193,7 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
+          {(!isNative || tab === "dashboard") && (
           <div className="headerBar">
             <form className="cmdBar" onSubmit={onCmdSubmit}>
               <span className="analyzeSectionLabel">Analyze Any Stock</span>
@@ -12277,7 +12254,7 @@ const renderPage = () => {
               </div>
             </div>
           </div>
-
+          )}
 
           <div className="page">
             {tab === "dashboard" && cmdErr ? (
