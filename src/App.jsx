@@ -38,14 +38,14 @@ const _billingCache = { fetched: false, paymentMethod: undefined, invoices: unde
 
 // Avatar presets — gradient + accent color + RGB for CSS variable
 const AVATAR_PRESETS = [
-  { id: "green",   rgb: "74,222,128",   bg: "linear-gradient(135deg,rgba(0,180,80,0.55),rgba(0,100,50,0.40))",    border: "rgba(74,222,128,0.50)",  text: "#4ade80" },
+  { id: "green",   rgb: "74,222,128",   bg: "linear-gradient(135deg,rgba(34,200,142,0.55),rgba(0,100,50,0.40))",    border: "rgba(62,224,163,0.50)",  text: "#3EE0A3" },
   { id: "violet",  rgb: "167,139,250",  bg: "linear-gradient(135deg,rgba(139,92,246,0.55),rgba(88,28,235,0.40))",  border: "rgba(167,139,250,0.50)", text: "#a78bfa" },
   { id: "blue",    rgb: "147,197,253",  bg: "linear-gradient(135deg,rgba(59,130,246,0.55),rgba(29,78,216,0.40))",  border: "rgba(147,197,253,0.50)", text: "#93c5fd" },
   { id: "cyan",    rgb: "103,232,249",  bg: "linear-gradient(135deg,rgba(6,182,212,0.55),rgba(8,145,178,0.40))",   border: "rgba(103,232,249,0.50)", text: "#67e8f9" },
   { id: "rose",    rgb: "253,164,175",  bg: "linear-gradient(135deg,rgba(244,63,94,0.55),rgba(190,18,60,0.40))",   border: "rgba(253,164,175,0.50)", text: "#fda4af" },
   { id: "amber",   rgb: "252,211,77",   bg: "linear-gradient(135deg,rgba(245,158,11,0.55),rgba(180,83,9,0.40))",   border: "rgba(252,211,77,0.50)",  text: "#fcd34d" },
   { id: "indigo",  rgb: "165,180,252",  bg: "linear-gradient(135deg,rgba(99,102,241,0.55),rgba(67,56,202,0.40))",  border: "rgba(165,180,252,0.50)", text: "#a5b4fc" },
-  { id: "emerald", rgb: "110,231,183",  bg: "linear-gradient(135deg,rgba(16,185,129,0.55),rgba(6,95,70,0.40))",    border: "rgba(110,231,183,0.50)", text: "#6ee7b7" },
+  { id: "emerald", rgb: "110,231,183",  bg: "linear-gradient(135deg,rgba(34,200,142,0.55),rgba(6,95,70,0.40))",    border: "rgba(110,231,183,0.50)", text: "#6ee7b7" },
   { id: "pink",    rgb: "249,168,212",  bg: "linear-gradient(135deg,rgba(236,72,153,0.55),rgba(157,23,77,0.40))",  border: "rgba(249,168,212,0.50)", text: "#f9a8d4" },
   { id: "orange",  rgb: "253,186,116",  bg: "linear-gradient(135deg,rgba(249,115,22,0.55),rgba(194,65,12,0.40))",  border: "rgba(253,186,116,0.50)", text: "#fdba74" },
   { id: "teal",    rgb: "94,234,212",   bg: "linear-gradient(135deg,rgba(20,184,166,0.55),rgba(15,118,110,0.40))", border: "rgba(94,234,212,0.50)",  text: "#5eead4" },
@@ -1317,7 +1317,7 @@ function ringColor10(score10) {
   if (!Number.isFinite(v)) return "rgba(255,255,255,0.30)";
   if (v <= 3) return "#ef4444";
   if (v <= 6) return "#facc15";
-  return "#22c55e";
+  return "#3EE0A3";
 }
 
 function ringColor100(score100) {
@@ -1325,7 +1325,7 @@ function ringColor100(score100) {
   if (!Number.isFinite(v)) return "rgba(255,255,255,0.30)";
   if (v <= 30) return "#ef4444";
   if (v <= 60) return "#facc15";
-  return "#22c55e";
+  return "#3EE0A3";
 }
 
 function ScoreRingSvg({ score100, variant = "md" }) {
@@ -2090,7 +2090,7 @@ function OnboardingModal({ onDone, userName = "" }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "#050810",
+      background: "#0a0a0a",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -2099,7 +2099,7 @@ function OnboardingModal({ onDone, userName = "" }) {
       {/* Grid */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: "linear-gradient(rgba(0,180,80,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,80,0.025) 1px,transparent 1px)",
+        backgroundImage: "linear-gradient(rgba(34,200,142,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(34,200,142,0.025) 1px,transparent 1px)",
         backgroundSize: "52px 52px",
       }} />
 
@@ -2107,7 +2107,7 @@ function OnboardingModal({ onDone, userName = "" }) {
       <div style={{
         position: "absolute", top: "38%", left: "50%",
         width: 900, height: 650, pointerEvents: "none",
-        background: "radial-gradient(ellipse, rgba(0,180,80,0.13) 0%, transparent 60%)",
+        background: "radial-gradient(ellipse, rgba(34,200,142,0.13) 0%, transparent 60%)",
         animation: "ob-glow 5s ease-in-out infinite",
       }} />
 
@@ -2124,7 +2124,7 @@ function OnboardingModal({ onDone, userName = "" }) {
         <div style={{
           height: "100%",
           width: `${((step + 1) / ONBOARDING_STEPS.length) * 100}%`,
-          background: "linear-gradient(90deg, #00b450, #00e676)",
+          background: "linear-gradient(90deg, #22C88E, #3EE0A3)",
           boxShadow: "0 0 10px rgba(0,200,80,0.8)",
           transition: "width 0.45s cubic-bezier(0.4,0,0.2,1)",
         }} />
@@ -2148,13 +2148,13 @@ function OnboardingModal({ onDone, userName = "" }) {
             <div style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: 84, height: 84, borderRadius: 24,
-              background: "linear-gradient(135deg, rgba(0,180,80,0.20), rgba(0,60,30,0.15))",
-              border: "1px solid rgba(0,180,80,0.28)",
-              boxShadow: "0 0 0 8px rgba(0,180,80,0.05), 0 0 60px rgba(0,180,80,0.15)",
+              background: "linear-gradient(135deg, rgba(34,200,142,0.20), rgba(0,60,30,0.15))",
+              border: "1px solid rgba(34,200,142,0.28)",
+              boxShadow: "0 0 0 8px rgba(34,200,142,0.05), 0 0 60px rgba(34,200,142,0.15)",
             }}>
               <span style={{
                 fontSize: 40, fontWeight: 900, letterSpacing: "-2px",
-                background: "linear-gradient(135deg, #00e676, #00b450)",
+                background: "linear-gradient(135deg, #3EE0A3, #22C88E)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               }}>A</span>
             </div>
@@ -2173,7 +2173,7 @@ function OnboardingModal({ onDone, userName = "" }) {
         {/* Eyebrow */}
         <div className="ob-a ob-d2" style={{
           fontSize: 10, fontWeight: 800, letterSpacing: "0.22em",
-          color: "#00b450", marginBottom: 16, textTransform: "uppercase",
+          color: "#22C88E", marginBottom: 16, textTransform: "uppercase",
         }}>{current.eyebrow}</div>
 
         {/* Title */}
@@ -2197,14 +2197,14 @@ function OnboardingModal({ onDone, userName = "" }) {
         {current.stat ? (
           <div className="ob-a ob-d4" style={{
             marginTop: 32, padding: "24px 36px",
-            background: "linear-gradient(135deg, rgba(0,180,80,0.09), rgba(0,180,80,0.04))",
-            border: "1px solid rgba(0,180,80,0.16)",
+            background: "linear-gradient(135deg, rgba(34,200,142,0.09), rgba(34,200,142,0.04))",
+            border: "1px solid rgba(34,200,142,0.16)",
             borderRadius: 18, display: "inline-block",
-            boxShadow: "0 0 40px rgba(0,180,80,0.07)",
+            boxShadow: "0 0 40px rgba(34,200,142,0.07)",
           }}>
             <div style={{
               fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
-              background: "linear-gradient(135deg, #00e676, #00b450)",
+              background: "linear-gradient(135deg, #3EE0A3, #22C88E)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: 8,
             }}>{current.stat.value}</div>
@@ -2223,15 +2223,15 @@ function OnboardingModal({ onDone, userName = "" }) {
             onClick={isLast ? onDone : () => setStep(s => s + 1)}
             style={{
               width: "100%", padding: "18px 0",
-              background: "linear-gradient(135deg, #00c853, #009c3b)",
+              background: "linear-gradient(135deg, #3EE0A3, #22C88E)",
               border: "none", borderRadius: 14,
               fontSize: 15, fontWeight: 700, color: "#fff",
               cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
-              boxShadow: "0 4px 40px rgba(0,180,80,0.38), 0 1px 0 rgba(255,255,255,0.12) inset",
+              boxShadow: "0 4px 40px rgba(34,200,142,0.38), 0 1px 0 rgba(255,255,255,0.12) inset",
               transition: "transform 0.15s, box-shadow 0.15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 52px rgba(0,180,80,0.52), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 40px rgba(0,180,80,0.38), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 52px rgba(34,200,142,0.52), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 40px rgba(34,200,142,0.38), 0 1px 0 rgba(255,255,255,0.12) inset"; }}
           >{isLast ? "Enter Aurexis →" : "Continue →"}</button>
 
           <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 24 }}>
@@ -2239,7 +2239,7 @@ function OnboardingModal({ onDone, userName = "" }) {
               <div key={i} onClick={() => setStep(i)} style={{
                 height: 4, borderRadius: 999, cursor: "pointer",
                 width: i === step ? 32 : 6,
-                background: i === step ? "#00b450" : i < step ? "rgba(0,180,80,0.40)" : "rgba(255,255,255,0.10)",
+                background: i === step ? "#22C88E" : i < step ? "rgba(34,200,142,0.40)" : "rgba(255,255,255,0.10)",
                 transition: "width 0.3s ease, background 0.3s ease",
               }} />
             ))}
@@ -2303,9 +2303,9 @@ function analyzeRemaining(plan) {
 }
 function StarterFakePreview() {
   return (
-    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "#111110", borderRadius: 14 }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-        {[["WIN RATE","73%","#4ade80"],["AVG RETURN","+8.4%","#4ade80"],["TOTAL PICKS","47","#fff"]].map(([lbl,val,clr]) => (
+        {[["WIN RATE","73%","#3EE0A3"],["AVG RETURN","+8.4%","#3EE0A3"],["TOTAL PICKS","47","#fff"]].map(([lbl,val,clr]) => (
           <div key={lbl} style={{ flex: 1, padding: "12px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", marginBottom: 5, letterSpacing: "0.05em" }}>{lbl}</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: clr }}>{val}</div>
@@ -2315,14 +2315,14 @@ function StarterFakePreview() {
       {[["NVDA","LONG","+12.4%","Hit T1"],["AAPL","LONG","+6.2%","Hit T1"],["TSLA","LONG","+18.7%","Hit T2"],["META","LONG","+9.1%","Pending"]].map(([sym,dir,ret,st]) => (
         <div key={sym} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 9, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, background: "rgba(0,180,80,0.12)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#4ade80" }}>{sym.slice(0,2)}</div>
+            <div style={{ width: 32, height: 32, background: "rgba(34,200,142,0.12)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#3EE0A3" }}>{sym.slice(0,2)}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym}</div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{dir}</div>
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{ret}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#3EE0A3" }}>{ret}</div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{st}</div>
           </div>
         </div>
@@ -2341,7 +2341,7 @@ function ProFakePreview() {
     { sym: "GOOGL",price: "$171.90", rsi: 55, mom: "Low",  signal: "HOLD" },
   ];
   return (
-    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "#111110", borderRadius: 14 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>SCREENER RESULTS · 21 matches</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 44px 50px 52px", gap: "0 8px", padding: "0 4px 8px", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: 6 }}>
         {["SYMBOL","PRICE","RSI","MOM","SIGNAL"].map(h => (
@@ -2352,10 +2352,10 @@ function ProFakePreview() {
         <div key={sym} style={{ display: "grid", gridTemplateColumns: "1fr 70px 44px 50px 52px", gap: "0 8px", padding: "9px 4px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym}</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "right" }}>{price}</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: rsi > 65 ? "#4ade80" : "rgba(255,255,255,0.5)", textAlign: "right" }}>{rsi}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: rsi > 65 ? "#3EE0A3" : "rgba(255,255,255,0.5)", textAlign: "right" }}>{rsi}</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "right" }}>{mom}</div>
           <div style={{ textAlign: "right" }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: signal === "BUY" ? "#4ade80" : signal === "HOLD" ? "rgba(255,255,255,0.35)" : "rgba(251,191,36,0.7)" }}>{signal}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: signal === "BUY" ? "#3EE0A3" : signal === "HOLD" ? "rgba(255,255,255,0.35)" : "rgba(251,191,36,0.7)" }}>{signal}</span>
           </div>
         </div>
       ))}
@@ -2365,7 +2365,7 @@ function ProFakePreview() {
 
 function EliteFakePreview() {
   return (
-    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))", borderRadius: 14 }}>
+    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "#111110", borderRadius: 14 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>OPTIONS FLOW · UNUSUAL ACTIVITY</div>
       {[
         { sym: "NVDA", type: "CALL", strike: "$900C", exp: "Jun 21", size: "$2.4M", sentiment: "Bullish" },
@@ -2375,7 +2375,7 @@ function EliteFakePreview() {
       ].map(({ sym, type, strike, exp, size, sentiment }) => (
         <div key={sym+strike} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 9, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ padding: "3px 8px", borderRadius: 6, background: type === "CALL" ? "rgba(0,180,80,0.15)" : "rgba(248,113,113,0.15)", fontSize: 10, fontWeight: 800, color: type === "CALL" ? "#4ade80" : "#f87171" }}>{type}</div>
+            <div style={{ padding: "3px 8px", borderRadius: 6, background: type === "CALL" ? "rgba(34,200,142,0.15)" : "rgba(248,113,113,0.15)", fontSize: 10, fontWeight: 800, color: type === "CALL" ? "#3EE0A3" : "#f87171" }}>{type}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym} <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{strike}</span></div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Exp {exp}</div>
@@ -2383,7 +2383,7 @@ function EliteFakePreview() {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{size}</div>
-            <div style={{ fontSize: 10, color: type === "CALL" ? "#4ade80" : "#f87171" }}>{sentiment}</div>
+            <div style={{ fontSize: 10, color: type === "CALL" ? "#3EE0A3" : "#f87171" }}>{sentiment}</div>
           </div>
         </div>
       ))}
@@ -2416,7 +2416,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
   const tierCfg = {
     starter: {
       label: "Starter", price: "$9",
-      accentRgb: "0,180,80", accent: "#4ade80",
+      accentRgb: "0,180,80", accent: "#3EE0A3",
       headline: "See the full trade plan every day",
       features: [
         "Entry price, stop loss & profit targets",
@@ -2452,7 +2452,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
 
   const fakePreview = requires === "pro" ? <ProFakePreview /> : requires === "elite" ? <EliteFakePreview /> : <StarterFakePreview />;
   const btnGrad = {
-    starter: "linear-gradient(135deg,#00c853,#15803d)",
+    starter: "linear-gradient(135deg,#3EE0A3,#22C88E)",
     pro:     "linear-gradient(135deg,#3b82f6,#1d4ed8)",
     elite:   "linear-gradient(135deg,#8b5cf6,#6d28d9)",
   }[requires];
@@ -2482,7 +2482,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
       }}>
         <div style={{
           width: "100%", maxWidth: 400,
-          background: "rgba(12,16,28,0.72)",
+          background: "rgba(10,10,10,0.72)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 16, padding: "20px 22px 18px",
           backdropFilter: "blur(20px)",
@@ -2546,7 +2546,7 @@ function nativeCardShadow(darkMode, glow) {
   const base = darkMode
     ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 26px rgba(0,0,0,0.42)"
     : "0 1px 0 rgba(255,255,255,0.75) inset, 0 8px 20px rgba(0,0,0,0.08)";
-  return glow ? `${base}, 0 0 0 1px rgba(0,180,80,0.12)` : base;
+  return glow ? `${base}, 0 0 0 1px rgba(34,200,142,0.12)` : base;
 }
 
 const NATIVE_DASHBOARD_KEYFRAMES = `
@@ -2597,8 +2597,8 @@ const NATIVE_TILE = { radius: 12, gap: NATIVE_SPACE.s, height: 46 };
 
 function nativeTabStyle(active) {
   return {
-    background: active ? "rgba(0,180,80,0.14)" : "transparent",
-    border: `1px solid ${active ? "rgba(0,180,80,0.30)" : "transparent"}`,
+    background: active ? "rgba(34,200,142,0.14)" : "transparent",
+    border: `1px solid ${active ? "rgba(34,200,142,0.30)" : "transparent"}`,
     borderRadius: 999, cursor: "pointer",
     padding: "7px 13px", fontSize: 12,
     fontWeight: active ? 700 : 500,
@@ -2781,8 +2781,8 @@ function AppInner() {
     bg:         "rgba(255,255,255,0.02)",
     bg2:        "rgba(255,255,255,0.04)",
     bg3:        "rgba(255,255,255,0.025)",
-    surface:    "rgba(10,12,16,0.82)",
-    surfaceCard:"rgba(10,13,22,0.98)",
+    surface:    "#111110",
+    surfaceCard:"#111110",
     surfaceDeep:"rgba(0,0,0,0.18)",
     overlay:    "rgba(0,0,0,0.60)",
     inputBg:    "rgba(0,0,0,0.18)",
@@ -4623,7 +4623,7 @@ async function loadWatchlistLive() {
               const rrDisplay = computedRR !== null ? computedRR
                 : (Number.isFinite(rrNum) && rrNum > 0 ? rrNum : null);
               const rrColor = rrDisplay === null ? T.textMuted
-                : rrDisplay >= 2.0 ? "rgba(74,222,128,0.85)"
+                : rrDisplay >= 2.0 ? "rgba(62,224,163,0.85)"
                 : rrDisplay >= 1.5 ? "rgba(250,204,21,0.85)"
                 : "rgba(248,113,113,0.75)";
 
@@ -4661,9 +4661,9 @@ async function loadWatchlistLive() {
                       <span style={{
                         fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4,
                         letterSpacing: "0.06em",
-                        background: dir === "LONG" ? "rgba(74,222,128,0.10)" : "rgba(248,113,113,0.10)",
-                        border: `1px solid ${dir === "LONG" ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)"}`,
-                        color: dir === "LONG" ? "rgba(74,222,128,0.80)" : "rgba(248,113,113,0.80)",
+                        background: dir === "LONG" ? "rgba(62,224,163,0.10)" : "rgba(248,113,113,0.10)",
+                        border: `1px solid ${dir === "LONG" ? "rgba(62,224,163,0.22)" : "rgba(248,113,113,0.22)"}`,
+                        color: dir === "LONG" ? "rgba(62,224,163,0.80)" : "rgba(248,113,113,0.80)",
                       }}>{dir}</span>
                     ) : null}
                   </div>
@@ -4706,12 +4706,12 @@ async function loadWatchlistLive() {
                     {/* Target 1 */}
                     <div style={cellStyle}>
                       <div style={labelStyle}>Target 1</div>
-                      <div style={{ ...numStyle, color: "rgba(74,222,128,0.80)" }}>
+                      <div style={{ ...numStyle, color: "rgba(62,224,163,0.80)" }}>
                         {t1 != null ? `$${t1.toFixed(2)}` : "—"}
                         {targetUnrealistic ? <span style={{ fontSize: 13, marginLeft: 5, verticalAlign: "middle" }}>⚠</span> : null}
                       </div>
                       {t1Pct !== null ? (
-                        <div style={{ fontSize: 11, color: targetUnrealistic ? "rgba(251,191,36,0.65)" : "rgba(74,222,128,0.45)", marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: targetUnrealistic ? "rgba(251,191,36,0.65)" : "rgba(62,224,163,0.45)", marginTop: 2 }}>
                           +{t1Pct.toFixed(1)}% from entry{targetUnrealistic ? " (target may be unrealistic)" : ""}
                         </div>
                       ) : null}
@@ -4791,7 +4791,7 @@ async function loadWatchlistLive() {
         if (v === null) return { background: "rgba(255,255,255,0.16)" };
         if (v <= 39) return { background: "rgba(239,68,68,0.9)" };
         if (v <= 69) return { background: "rgba(250,204,21,0.9)" };
-        return { background: "rgba(34,197,94,0.9)" };
+        return { background: "rgba(62,224,163,0.9)" };
       };
 
       const BarRow = ({ label, value }) => {
@@ -4914,7 +4914,7 @@ async function loadWatchlistLive() {
       const stillLoadingFirstFetch = isNative && loadingMovers && eligibleMovers.length === 0 && !errMovers;
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: isNative ? 18 : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
@@ -4975,7 +4975,7 @@ async function loadWatchlistLive() {
                         <span style={{ fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m?.symbol ?? "—"}</span>
                         <span style={{ fontSize: 11, color: T.textFaint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lastVal === null || lastVal === undefined ? "—" : money(lastVal)}</span>
                       </div>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: isPos ? "#4ade80" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.s }}>{chg.text}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: isPos ? "#3EE0A3" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: NATIVE_SPACE.s }}>{chg.text}</span>
                     </motion.button>
                   );
                 })}
@@ -5110,7 +5110,7 @@ async function loadWatchlistLive() {
 
     const barFillStyleForScore = (score) => {
       const band = scoreBand(score);
-      if (band === "good") return { background: "rgba(34,197,94,0.9)" };
+      if (band === "good") return { background: "rgba(62,224,163,0.9)" };
       if (band === "warn") return { background: "rgba(250,204,21,0.9)" };
       if (band === "bad") return { background: "rgba(239,68,68,0.9)" };
       return { background: "rgba(255,255,255,0.16)" };
@@ -5323,7 +5323,7 @@ async function loadWatchlistLive() {
       const marketRegime = String(best0?.market_regime || bestPayload0?.market_regime || "").trim().toUpperCase();
       const regimeLabel = marketRegime === "BULL" ? "Bullish" : marketRegime === "BEAR" ? "Bearish" : marketRegime || "Neutral";
       const regimeDesc = marketRegime === "BULL" ? "Momentum setups have edge" : marketRegime === "BEAR" ? "Defensive positioning preferred" : "Mixed signals — wait for clarity";
-      const regimeColor = marketRegime === "BULL" ? { fg: "#4ade80", bg: "rgba(74,222,128,0.08)", border: "rgba(74,222,128,0.18)" }
+      const regimeColor = marketRegime === "BULL" ? { fg: "#3EE0A3", bg: "rgba(62,224,163,0.08)", border: "rgba(62,224,163,0.18)" }
         : marketRegime === "BEAR" ? { fg: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.18)" }
         : { fg: "#fbbf24", bg: "rgba(251,191,36,0.07)", border: "rgba(251,191,36,0.18)" };
 
@@ -5342,7 +5342,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          background: darkMode ? "#111110" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
           border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           height: "100%", display: "flex", flexDirection: "column",
@@ -5353,9 +5353,9 @@ async function loadWatchlistLive() {
               <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Market Pulse</div>
               <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Live session & regime context</div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: isOpen ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(74,222,128,0.20)" : "rgba(255,255,255,0.10)"}` }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: isOpen ? "#4ade80" : "rgba(255,255,255,0.25)", display: "inline-block", boxShadow: isOpen ? "0 0 6px #4ade80" : "none" }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: isOpen ? "#4ade80" : T.textFaint, letterSpacing: "0.05em" }}>{isOpen ? "OPEN" : "CLOSED"}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: isOpen ? "rgba(62,224,163,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${isOpen ? "rgba(62,224,163,0.20)" : "rgba(255,255,255,0.10)"}` }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: isOpen ? "#3EE0A3" : "rgba(255,255,255,0.25)", display: "inline-block", boxShadow: isOpen ? "0 0 6px #3EE0A3" : "none" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: isOpen ? "#3EE0A3" : T.textFaint, letterSpacing: "0.05em" }}>{isOpen ? "OPEN" : "CLOSED"}</span>
             </div>
           </div>
 
@@ -5408,7 +5408,7 @@ async function loadWatchlistLive() {
                       }}
                     >
                       <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: T.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.symbol}</span>
-                      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: isPos ? "#4ade80" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: 8 }}>{pctText}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: isPos ? "#3EE0A3" : "#f87171", fontVariantNumeric: "tabular-nums", flexShrink: 0, marginLeft: 8 }}>{pctText}</span>
                     </button>
                   );
                 })}
@@ -5423,15 +5423,15 @@ async function loadWatchlistLive() {
                       key={m.symbol}
                       onClick={() => { setSymbol(m.symbol); runAnalyze(m.symbol); }}
                       style={{
-                        background: isPos ? "rgba(74,222,128,0.06)" : "rgba(248,113,113,0.06)",
-                        border: `1px solid ${isPos ? "rgba(74,222,128,0.14)" : "rgba(248,113,113,0.14)"}`,
+                        background: isPos ? "rgba(62,224,163,0.06)" : "rgba(248,113,113,0.06)",
+                        border: `1px solid ${isPos ? "rgba(62,224,163,0.14)" : "rgba(248,113,113,0.14)"}`,
                         borderRadius: 9, padding: "9px 11px", cursor: "pointer", textAlign: "left",
                         display: "flex", justifyContent: "space-between", alignItems: "center",
                         transition: "background 0.12s",
                       }}
                     >
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{m.symbol}</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: isPos ? "#4ade80" : "#f87171" }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: isPos ? "#3EE0A3" : "#f87171" }}>
                         {isPos ? "+" : ""}{Number.isFinite(pct) ? pct.toFixed(1) : "—"}%
                       </span>
                     </button>
@@ -5451,19 +5451,19 @@ async function loadWatchlistLive() {
 
       const scoreColor = (sc) => {
         if (sc == null) return T.textGhost;
-        if (sc >= 70) return "#4ade80";
+        if (sc >= 70) return "#3EE0A3";
         if (sc >= 45) return "#fbbf24";
         return "#f87171";
       };
       const scoreBg = (sc) => {
         if (sc == null) return T.bg3;
-        if (sc >= 70) return "rgba(74,222,128,0.10)";
+        if (sc >= 70) return "rgba(62,224,163,0.10)";
         if (sc >= 45) return "rgba(251,191,36,0.09)";
         return "rgba(248,113,113,0.09)";
       };
       const scoreBorder = (sc) => {
         if (sc == null) return T.border2;
-        if (sc >= 70) return "rgba(74,222,128,0.22)";
+        if (sc >= 70) return "rgba(62,224,163,0.22)";
         if (sc >= 45) return "rgba(251,191,36,0.20)";
         return "rgba(248,113,113,0.20)";
       };
@@ -5477,9 +5477,9 @@ async function loadWatchlistLive() {
       const verdictCfg = (dec, score) => {
         const s = score != null ? Number(score) : null;
         if (s !== null && Number.isFinite(s)) {
-          if (s >= 85) return { text: "VERY HIGH", color: "#00b450", bg: "rgba(0,180,80,0.12)", border: "rgba(0,180,80,0.32)" };
-          if (s >= 75) return { text: "HIGH",      color: "#22c55e", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.28)" };
-          if (s >= 62) return { text: "SOLID",     color: "#84cc16", bg: "rgba(132,204,22,0.08)", border: "rgba(132,204,22,0.25)" };
+          if (s >= 85) return { text: "VERY HIGH", color: "#22C88E", bg: "rgba(34,200,142,0.12)", border: "rgba(34,200,142,0.32)" };
+          if (s >= 75) return { text: "HIGH",      color: "#3EE0A3", bg: "rgba(62,224,163,0.10)", border: "rgba(62,224,163,0.28)" };
+          if (s >= 62) return { text: "SOLID",     color: "#22C88E", bg: "rgba(34,200,142,0.08)", border: "rgba(34,200,142,0.25)" };
           if (s >= 45) return { text: "MODERATE",  color: "#f59e0b", bg: "rgba(245,158,11,0.09)", border: "rgba(245,158,11,0.25)" };
           return         { text: "LOW",       color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.22)" };
         }
@@ -5494,7 +5494,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg,rgba(10,13,22,0.98),rgba(13,17,30,0.98))" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          background: darkMode ? "#111110" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
           border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
@@ -5567,7 +5567,7 @@ async function loadWatchlistLive() {
                         {[
                           { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
                           { label: "Stop", value: fmt(item.stop), color: "#f87171" },
-                          { label: "Target", value: fmt(item.target), color: "#4ade80" },
+                          { label: "Target", value: fmt(item.target), color: "#3EE0A3" },
                         ].map(({ label, value, color }, i) => (
                           <div key={label} style={{ flex: 1, padding: "0 10px", borderLeft: i > 0 ? "0.5px solid #1a1a19" : "none" }}>
                             <div style={{ fontSize: 9, fontWeight: 600, color: T.textGhost, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</div>
@@ -5581,7 +5581,7 @@ async function loadWatchlistLive() {
                         {[
                           { label: "Entry", value: fmt(item.entry), color: "#60a5fa" },
                           { label: "Stop", value: fmt(item.stop), color: "#f87171" },
-                          { label: "Target", value: fmt(item.target), color: "#4ade80" },
+                          { label: "Target", value: fmt(item.target), color: "#3EE0A3" },
                         ].map(({ label, value, color }) => (
                           <div key={label} style={{ flex: 1, background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 7, padding: "5px 8px" }}>
                             <div style={{ fontSize: 9, fontWeight: 600, color: T.textGhost, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</div>
@@ -5602,12 +5602,12 @@ async function loadWatchlistLive() {
                     >
                       <div style={{
                         display: "flex", alignItems: "center", gap: 5,
-                        background: darkMode ? "rgba(10,13,22,0.80)" : "rgba(255,255,255,0.88)",
-                        border: "1px solid rgba(0,180,80,0.25)", borderRadius: 8,
+                        background: darkMode ? "rgba(10,10,10,0.80)" : "rgba(255,255,255,0.88)",
+                        border: "1px solid rgba(34,200,142,0.25)", borderRadius: 8,
                         padding: "5px 12px", backdropFilter: "blur(6px)",
                       }}>
                         <span style={{ fontSize: 10 }}>🔒</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80" }}>Starter to unlock</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#3EE0A3" }}>Starter to unlock</span>
                       </div>
                     </div>
                   )}
@@ -5653,7 +5653,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
@@ -5677,9 +5677,9 @@ async function loadWatchlistLive() {
             {allTimeWinRate !== null ? (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
-                background: allTimeWinRate >= 50 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
-                border: `1px solid ${allTimeWinRate >= 50 ? "rgba(74,222,128,0.20)" : "rgba(248,113,113,0.20)"}`,
-                color: allTimeWinRate >= 50 ? "#4ade80" : "#f87171",
+                background: allTimeWinRate >= 50 ? "rgba(62,224,163,0.08)" : "rgba(248,113,113,0.08)",
+                border: `1px solid ${allTimeWinRate >= 50 ? "rgba(62,224,163,0.20)" : "rgba(248,113,113,0.20)"}`,
+                color: allTimeWinRate >= 50 ? "#3EE0A3" : "#f87171",
                 letterSpacing: "0.04em",
               }}>{allTimeWinRate.toFixed(1)}% WR</span>
             ) : null}
@@ -5698,7 +5698,7 @@ async function loadWatchlistLive() {
                     label: "Win Rate",
                     value: allTimeWinRate !== null ? `${allTimeWinRate.toFixed(1)}%` : "—",
                     sub: (wonAllTime > 0 || lostAllTime > 0) ? `${wonAllTime}W / ${lostAllTime}L` : null,
-                    color: allTimeWinRate !== null ? (allTimeWinRate >= 50 ? "#4ade80" : "#f87171") : T.textMuted,
+                    color: allTimeWinRate !== null ? (allTimeWinRate >= 50 ? "#3EE0A3" : "#f87171") : T.textMuted,
                   },
                   {
                     label: "Picks",
@@ -5710,7 +5710,7 @@ async function loadWatchlistLive() {
                     label: "Avg Return",
                     value: allTimeAvgReturn !== null ? `${allTimeAvgReturn >= 0 ? "+" : ""}${allTimeAvgReturn.toFixed(1)}%` : "—",
                     sub: null,
-                    color: allTimeAvgReturn !== null ? (allTimeAvgReturn >= 0 ? "#4ade80" : "#f87171") : T.textMuted,
+                    color: allTimeAvgReturn !== null ? (allTimeAvgReturn >= 0 ? "#3EE0A3" : "#f87171") : T.textMuted,
                   },
                 ].map(({ label, value, sub, color }) => (
                   <div key={label} style={{ background: darkMode ? "rgba(9,12,22,0.90)" : "rgba(0,0,0,0.04)", padding: "14px 16px" }}>
@@ -5739,7 +5739,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
@@ -5804,10 +5804,10 @@ async function loadWatchlistLive() {
                 catch { return false; }
               })();
 
-              const retColor = isWin ? "#4ade80" : isLoss ? "#f87171" : T.textMuted;
-              const outcomeBg     = isWin ? "rgba(74,222,128,0.08)" : isLoss ? "rgba(248,113,113,0.08)" : isExpired ? "rgba(251,191,36,0.06)" : T.bg2;
-              const outcomeBorder = isWin ? "rgba(74,222,128,0.20)" : isLoss ? "rgba(248,113,113,0.20)" : isExpired ? "rgba(251,191,36,0.18)" : T.border2;
-              const outcomeColor  = isWin ? "#4ade80"               : isLoss ? "#f87171"               : isExpired ? "#fbbf24"               : T.textFaint;
+              const retColor = isWin ? "#3EE0A3" : isLoss ? "#f87171" : T.textMuted;
+              const outcomeBg     = isWin ? "rgba(62,224,163,0.08)" : isLoss ? "rgba(248,113,113,0.08)" : isExpired ? "rgba(251,191,36,0.06)" : T.bg2;
+              const outcomeBorder = isWin ? "rgba(62,224,163,0.20)" : isLoss ? "rgba(248,113,113,0.20)" : isExpired ? "rgba(251,191,36,0.18)" : T.border2;
+              const outcomeColor  = isWin ? "#3EE0A3"               : isLoss ? "#f87171"               : isExpired ? "#fbbf24"               : T.textFaint;
               const outcomeLabel  = isWin ? "Won" : isLoss ? "Lost" : isExpired ? "Expired" : "Pending";
 
               return (
@@ -6018,26 +6018,26 @@ async function loadWatchlistLive() {
           bgKey: "low",
         },
         SOLID: {
-          color: "#84cc16",
-          glow: "0 0 20px rgba(132,204,22,0.22)",
-          bg: "rgba(132,204,22,0.08)",
-          border: "rgba(132,204,22,0.25)",
+          color: "#22C88E",
+          glow: "0 0 20px rgba(34,200,142,0.22)",
+          bg: "rgba(34,200,142,0.08)",
+          border: "rgba(34,200,142,0.25)",
           label: "SOLID",
           bgKey: "high",
         },
         HIGH: {
-          color: "#22c55e",
-          glow: "0 0 20px rgba(34,197,94,0.32), 0 0 40px rgba(34,197,94,0.12)",
-          bg: "rgba(34,197,94,0.10)",
-          border: "rgba(34,197,94,0.28)",
+          color: "#3EE0A3",
+          glow: "0 0 20px rgba(62,224,163,0.32), 0 0 40px rgba(62,224,163,0.12)",
+          bg: "rgba(62,224,163,0.10)",
+          border: "rgba(62,224,163,0.28)",
           label: "HIGH",
           bgKey: "high",
         },
         "VERY HIGH": {
-          color: "#00b450",
-          glow: "0 0 24px rgba(0,180,80,0.38), 0 0 48px rgba(0,180,80,0.14)",
-          bg: "rgba(0,180,80,0.12)",
-          border: "rgba(0,180,80,0.32)",
+          color: "#22C88E",
+          glow: "0 0 24px rgba(34,200,142,0.38), 0 0 48px rgba(34,200,142,0.14)",
+          bg: "rgba(34,200,142,0.12)",
+          border: "rgba(34,200,142,0.32)",
           label: "VERY HIGH",
           bgKey: "high",
           pulse: true,
@@ -6114,15 +6114,15 @@ async function loadWatchlistLive() {
               alignItems: "center", justifyContent: "center",
               padding: "32px 24px", gap: 12,
             }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#22C88E", textTransform: "uppercase", marginBottom: 4 }}>
                 {isNoTradeFreeDay ? "AI Signal" : "Members Only"}
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>{_gateTitle}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>{_gateSub}</div>
               <button onClick={() => setTab("pricing")} style={{
                 padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14,
-                background: "linear-gradient(90deg, #00b450, #00d462)",
-                color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+                background: "linear-gradient(90deg, #22C88E, #3EE0A3)",
+                color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(34,200,142,0.35)",
               }}>
                 Upgrade to Starter →
               </button>
@@ -6163,7 +6163,7 @@ async function loadWatchlistLive() {
         const candidatePrice = (Number.isFinite(livePrice) && livePrice > 0) ? livePrice
           : (Number.isFinite(entryN) && entryN > 0) ? entryN : null;
 
-        const regimeColor = marketRegime === "BULL" ? { fg: "#4ade80", bg: "rgba(74,222,128,0.08)", border: "rgba(74,222,128,0.22)" }
+        const regimeColor = marketRegime === "BULL" ? { fg: "#3EE0A3", bg: "rgba(62,224,163,0.08)", border: "rgba(62,224,163,0.22)" }
           : marketRegime === "BEAR"  ? { fg: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.22)" }
           : marketRegime             ? { fg: "#fbbf24", bg: "rgba(251,191,36,0.08)",  border: "rgba(251,191,36,0.22)" }
           : null;
@@ -6180,8 +6180,8 @@ async function loadWatchlistLive() {
 
         return (
           <div style={{
-            background: darkMode ? "linear-gradient(145deg, rgba(10,13,20,0.98) 0%, rgba(12,16,26,0.98) 100%)" : "#ffffff",
-            border: `1px solid ${isNative ? "rgba(0,180,80,0.16)" : T.border}`,
+            background: darkMode ? "#111110" : "#ffffff",
+            border: `1px solid ${isNative ? "rgba(34,200,142,0.16)" : T.border}`,
             borderRadius: isNative ? 20 : 16,
             padding: "28px 28px 24px",
             position: "relative",
@@ -6399,7 +6399,7 @@ async function loadWatchlistLive() {
               alignItems: "center", justifyContent: "center",
               padding: "32px 24px", gap: 12,
             }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#00b450", textTransform: "uppercase", marginBottom: 4 }}>Weekly Limit</div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#22C88E", textTransform: "uppercase", marginBottom: 4 }}>Weekly Limit</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used your 3 picks this week</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>
                 Resets Monday. Upgrade to Pro for unlimited daily picks.
@@ -6409,8 +6409,8 @@ async function loadWatchlistLive() {
                 style={{
                   padding: "12px 32px", borderRadius: 10, cursor: "pointer",
                   fontWeight: 700, fontSize: 14,
-                  background: "linear-gradient(90deg, #00b450, #00d462)",
-                  color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(0,180,80,0.35)",
+                  background: "linear-gradient(90deg, #22C88E, #3EE0A3)",
+                  color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(34,200,142,0.35)",
                 }}
               >
                 Upgrade to Pro for unlimited →
@@ -6425,7 +6425,7 @@ async function loadWatchlistLive() {
           className={`card heroCard heroCard--${convStyle.bgKey}`}
           style={isNative ? {
             borderRadius: 20,
-            border: "1px solid rgba(0,180,80,0.16)",
+            border: "1px solid rgba(34,200,142,0.16)",
             boxShadow: nativeCardShadow(darkMode, true),
           } : undefined}
         >
@@ -6454,7 +6454,7 @@ async function loadWatchlistLive() {
                       {convTipVisible && CONV_TOOLTIP[conviction] && (
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", left: 0,
-                          background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
+                          background: "rgba(10,10,10,0.97)", border: `1px solid ${convStyle.border}`,
                           borderRadius: 6, padding: "8px 12px", width: 240, zIndex: 99,
                           fontSize: 12, fontWeight: "normal", textTransform: "none",
                           whiteSpace: "normal", wordWrap: "break-word",
@@ -6464,7 +6464,7 @@ async function loadWatchlistLive() {
                         }}>
                           <div style={{
                             position: "absolute", top: -5, left: 16,
-                            width: 8, height: 8, background: "rgba(10,14,22,0.97)",
+                            width: 8, height: 8, background: "rgba(10,10,10,0.97)",
                             border: `1px solid ${convStyle.border}`, borderBottom: "none", borderRight: "none",
                             transform: "rotate(45deg)",
                           }} />
@@ -6528,7 +6528,7 @@ async function loadWatchlistLive() {
                       {convTipVisible && CONV_TOOLTIP[conviction] && (
                         <div style={{
                           position: "absolute", top: "calc(100% + 8px)", right: 0,
-                          background: "rgba(10,14,22,0.97)", border: `1px solid ${convStyle.border}`,
+                          background: "rgba(10,10,10,0.97)", border: `1px solid ${convStyle.border}`,
                           borderRadius: 6, padding: "8px 12px", width: 240, zIndex: 99,
                           fontSize: 12, fontWeight: "normal", textTransform: "none",
                           whiteSpace: "normal", wordWrap: "break-word",
@@ -6538,7 +6538,7 @@ async function loadWatchlistLive() {
                         }}>
                           <div style={{
                             position: "absolute", top: -5, right: 16,
-                            width: 8, height: 8, background: "rgba(10,14,22,0.97)",
+                            width: 8, height: 8, background: "rgba(10,10,10,0.97)",
                             border: `1px solid ${convStyle.border}`, borderBottom: "none", borderRight: "none",
                             transform: "rotate(45deg)",
                           }} />
@@ -6591,18 +6591,18 @@ async function loadWatchlistLive() {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
-                      <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
-                        <div style={{ fontSize: 9, color: "rgba(134,239,172,0.5)" }}>{v}</div>
+                      <div key={v} style={{ background: "rgba(62,224,163,0.05)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(62,224,163,0.85)" }}>$███</div>
+                        <div style={{ fontSize: 9, color: "rgba(62,224,163,0.5)" }}>{v}</div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.75),rgba(7,11,18,0.65))", borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Pro · $29/mo</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Pro · $29/mo</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>Upgrade for full trade plan</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#00b450", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
                 </div>
               </div>
             ) : canAccess(userPlan, "pro") ? (
@@ -6656,9 +6656,9 @@ async function loadWatchlistLive() {
                      .heroTargetBox__* (see App.css @767px) ── */}
                 <div className="heroTargetsGrid" style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: isNative ? NATIVE_SPACE.s : 6, marginBottom: isNative ? NATIVE_SPACE.s : 8 }}>
                   {[
-                    { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(134,239,172,0.85)", bg: "rgba(134,239,172,0.05)", border: "rgba(134,239,172,0.15)" },
-                    { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(52,211,153,0.85)", bg: "rgba(52,211,153,0.05)", border: "rgba(52,211,153,0.15)" },
-                    { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(16,185,129,0.85)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
+                    { label: "T1 — Take 50%", val: target1, pct: t1GainPct, note: "First profit target", color: "rgba(62,224,163,0.85)", bg: "rgba(62,224,163,0.05)", border: "rgba(62,224,163,0.15)" },
+                    { label: "T2 — Take 25%", val: target2, pct: t2GainPct, note: "Let winner run", color: "rgba(34,200,142,0.85)", bg: "rgba(34,200,142,0.05)", border: "rgba(34,200,142,0.15)" },
+                    { label: "T3 — Trail rest", val: target3, pct: t3GainPct, note: "Full extension", color: "rgba(34,200,142,0.85)", bg: "rgba(34,200,142,0.05)", border: "rgba(34,200,142,0.15)" },
                   ].map(({ label, val, pct, note, color, bg, border }) => (
                     <div key={label} className="heroTargetBox" style={{ background: bg, border: `1px solid ${border}`, borderRadius: isNative ? 12 : 10, padding: isNative ? "12px 12px" : "10px 12px" }}>
                       <div className="heroTargetBox__label" style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color, marginBottom: 3 }}>{label}</div>
@@ -6705,7 +6705,7 @@ async function loadWatchlistLive() {
                     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 6 }}>Why This Setup</div>
                     {pickRationale.map((r, i) => (
                       <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 4 }}>
-                        <span style={{ color: "#00b450", fontSize: 10, marginTop: 2, flexShrink: 0 }}>▸</span>
+                        <span style={{ color: "#22C88E", fontSize: 10, marginTop: 2, flexShrink: 0 }}>▸</span>
                         <span style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{r}</span>
                       </div>
                     ))}
@@ -6738,18 +6738,18 @@ async function loadWatchlistLive() {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)" : "1fr 1fr 1fr", gap: 6 }}>
                     {["T1 +█.█%", "T2 +██%", "T3 +██%"].map(v => (
-                      <div key={v} style={{ background: "rgba(134,239,172,0.05)", borderRadius: 10, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(134,239,172,0.85)" }}>$███</div>
-                        <div style={{ fontSize: 9, color: "rgba(134,239,172,0.5)" }}>{v}</div>
+                      <div key={v} style={{ background: "rgba(62,224,163,0.05)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: "rgba(62,224,163,0.85)" }}>$███</div>
+                        <div style={{ fontSize: 9, color: "rgba(62,224,163,0.5)" }}>{v}</div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.7),rgba(7,11,18,0.6))", borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Unlock full execution plan</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#00b450", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
                 </div>
               </div>
             )}
@@ -6885,7 +6885,7 @@ async function loadWatchlistLive() {
         if (v === null) return "rgba(255,255,255,0.14)";
         if (v <= 39) return "rgba(239,68,68,0.85)";
         if (v <= 69) return "rgba(250,204,21,0.85)";
-        return "rgba(34,197,94,0.85)";
+        return "rgba(62,224,163,0.85)";
       };
 
       const ep =
@@ -6925,7 +6925,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
           borderRadius: isNative ? 18 : 16, overflow: "hidden",
           boxShadow: isNative
@@ -6967,11 +6967,11 @@ async function loadWatchlistLive() {
                       <motion.div
                         layoutId="analysisTabIndicator"
                         transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                        style={{ position: "absolute", inset: 0, background: "rgba(74,222,128,0.16)", borderRadius: 10, zIndex: -1 }}
+                        style={{ position: "absolute", inset: 0, background: "rgba(62,224,163,0.16)", borderRadius: 10, zIndex: -1 }}
                       />
                     )}
-                    <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, letterSpacing: "0.01em", color: active ? "#4ade80" : T.textFaint }}>{t.label}</span>
-                    {tabLocked && <span style={{ fontSize: 9, background: "rgba(0,180,80,0.15)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
+                    <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, letterSpacing: "0.01em", color: active ? "#3EE0A3" : T.textFaint }}>{t.label}</span>
+                    {tabLocked && <span style={{ fontSize: 9, background: "rgba(34,200,142,0.15)", color: "#3EE0A3", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
                   </motion.button>
                 );
               }
@@ -6991,7 +6991,7 @@ async function loadWatchlistLive() {
                   }}
                 >
                   {t.label}
-                  {tabLocked && <span style={{ fontSize: 9, background: "rgba(0,180,80,0.15)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
+                  {tabLocked && <span style={{ fontSize: 9, background: "rgba(34,200,142,0.15)", color: "#3EE0A3", borderRadius: 3, padding: "1px 4px", fontWeight: 700, letterSpacing: "0.04em" }}>STARTER</span>}
                 </button>
               );
             })}
@@ -7075,7 +7075,7 @@ async function loadWatchlistLive() {
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 6 }}>KEY DRIVERS</div>
                     {["Bullish catalyst in earnings revision cycle", "Institutional accumulation across 3 consecutive sessions", "Short interest declining — covering pressure building", "Analyst upgrade: PT raised from $820 → $950", "Call/Put ratio at 2.4x — unusual bullish flow"].map((txt, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
-                        <span style={{ color: "#4ade80", fontSize: 11, marginTop: 1 }}>●</span>
+                        <span style={{ color: "#3EE0A3", fontSize: 11, marginTop: 1 }}>●</span>
                         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{txt}</span>
                       </div>
                     ))}
@@ -7092,12 +7092,12 @@ async function loadWatchlistLive() {
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock AI news & sentiment analysis</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Catalysts, risk flags, and analyst sentiment — updated on every analysis.</div>
-                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(0,180,80,0.25)" }}>Upgrade to Starter →</button>
+                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>
                   </div>
                 </div>
               </div>
@@ -7149,7 +7149,7 @@ async function loadWatchlistLive() {
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 8 }}>TECHNICAL SCORES</div>
                     {[["Momentum", 78],["Trend", 71],["Volatility", 55],["Liquidity", 84],["Risk", 38]].map(([lbl, val]) => {
-                      const clr = val >= 70 ? "rgba(74,222,128,0.8)" : val >= 40 ? "rgba(251,191,36,0.7)" : "rgba(248,113,113,0.7)";
+                      const clr = val >= 70 ? "rgba(62,224,163,0.8)" : val >= 40 ? "rgba(251,191,36,0.7)" : "rgba(248,113,113,0.7)";
                       return (
                         <div key={lbl} style={{ display: "grid", gridTemplateColumns: "90px 1fr 28px", gap: 10, alignItems: "center", marginBottom: 8 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "capitalize" }}>{lbl}</div>
@@ -7172,9 +7172,9 @@ async function loadWatchlistLive() {
                   </div>
                   <div style={{ display: "flex", gap: 10 }}>
                     {[["AI SCORE","87","High Conviction"],["EXECUTION","79","Strong Setup"]].map(([lbl,sc,desc]) => (
-                      <div key={lbl} style={{ flex: 1, padding: "10px", background: "rgba(0,180,80,0.06)", borderRadius: 9, border: "1px solid rgba(0,180,80,0.12)", textAlign: "center" }}>
+                      <div key={lbl} style={{ flex: 1, padding: "10px", background: "rgba(34,200,142,0.06)", borderRadius: 9, border: "1px solid rgba(34,200,142,0.12)", textAlign: "center" }}>
                         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em" }}>{lbl}</div>
-                        <div style={{ fontSize: 26, fontWeight: 800, color: "#4ade80" }}>{sc}</div>
+                        <div style={{ fontSize: 26, fontWeight: 800, color: "#3EE0A3" }}>{sc}</div>
                         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{desc}</div>
                       </div>
                     ))}
@@ -7182,12 +7182,12 @@ async function loadWatchlistLive() {
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: "#4ade80", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock technical scores & execution plan</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Momentum, trend, volatility, R/R ratio, stop loss, and AI score rings.</div>
-                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#00b450,#15803d)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(0,180,80,0.25)" }}>Upgrade to Starter →</button>
+                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>
                   </div>
                 </div>
               </div>
@@ -7241,7 +7241,7 @@ async function loadWatchlistLive() {
                           <div className="kvRow">
                             <div className="kvKey">Targets</div>
                             <div className="kvVal">
-                              <span style={{ color: "rgba(74,222,128,0.80)" }}>{_advTargets.map(t => `$${t.toFixed(2)}`).join(", ")}</span>
+                              <span style={{ color: "rgba(62,224,163,0.80)" }}>{_advTargets.map(t => `$${t.toFixed(2)}`).join(", ")}</span>
                               {_advTargetUnrealistic ? <span style={{ marginLeft: 6, fontSize: 11, color: "rgba(251,191,36,0.55)", fontStyle: "italic" }}>(may be unrealistic)</span> : null}
                             </div>
                           </div>
@@ -7979,8 +7979,8 @@ async function loadWatchlistLive() {
                     }}>
                       <div style={{
                         fontSize: 11, fontWeight: 800, letterSpacing: "0.10em",
-                        color: "#00d462", textTransform: "uppercase",
-                        background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)",
+                        color: "#3EE0A3", textTransform: "uppercase",
+                        background: "rgba(34,200,142,0.10)", border: "1px solid rgba(34,200,142,0.22)",
                         borderRadius: 20, padding: "4px 14px",
                       }}>
                         {hiddenCount} more movers
@@ -7993,9 +7993,9 @@ async function loadWatchlistLive() {
                       </div>
                       <button onClick={() => setTab("pricing")} style={{
                         padding: "11px 28px", borderRadius: 10, cursor: "pointer",
-                        background: "linear-gradient(90deg,#00b450,#00d462)",
+                        background: "linear-gradient(90deg,#22C88E,#3EE0A3)",
                         color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
-                        boxShadow: "0 4px 20px rgba(0,180,80,0.30)",
+                        boxShadow: "0 4px 20px rgba(34,200,142,0.30)",
                       }}>
                         Upgrade to Starter →
                       </button>
@@ -8112,7 +8112,7 @@ async function loadWatchlistLive() {
       const progress = score !== null ? Math.min(100, Math.round((score / AI_SCORE_THRESHOLD) * 100)) : null;
       const progressColor =
         progress === null ? "rgba(255,255,255,0.12)" :
-        progress >= 90 ? "rgba(74,222,128,0.65)" :
+        progress >= 90 ? "rgba(62,224,163,0.65)" :
         progress >= 72 ? "rgba(251,191,36,0.65)" :
         "rgba(147,197,253,0.50)";
 
@@ -8396,12 +8396,12 @@ async function loadWatchlistLive() {
 
     const scoreColor = (s) =>
       s === null ? "rgba(255,255,255,0.28)"
-      : s >= 70  ? "#4ade80"
+      : s >= 70  ? "#3EE0A3"
       : s >= 50  ? "#fbbf24"
       : "#f87171";
 
     const dirStyle = (dir) =>
-      dir === "BULLISH" ? { color: "#4ade80", bg: "rgba(74,222,128,0.09)",    border: "rgba(74,222,128,0.22)" }
+      dir === "BULLISH" ? { color: "#3EE0A3", bg: "rgba(62,224,163,0.09)",    border: "rgba(62,224,163,0.22)" }
       : dir === "BEARISH" ? { color: "#f87171", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)" }
       : { color: T.textFaint, bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.10)" };
 
@@ -8867,7 +8867,7 @@ async function loadWatchlistLive() {
                 <div style={{
                   fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em",
                   color: colored !== null && colored !== undefined
-                    ? (colored >= 0 ? "#4ade80" : "#f87171")
+                    ? (colored >= 0 ? "#3EE0A3" : "#f87171")
                     : "rgba(255,255,255,0.88)",
                 }}>{value}</div>
               </div>
@@ -8982,12 +8982,12 @@ async function loadWatchlistLive() {
                           <td style={{ fontWeight: 700, letterSpacing: "0.05em", fontSize: 13 }}>{trade.symbol}</td>
                           <td style={{ fontFamily: "monospace", fontSize: 12 }}>{fmtP(trade.entryPrice)}</td>
                           <td style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(248,113,113,0.75)" }}>{fmtP(trade.stopPrice)}</td>
-                          <td style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(74,222,128,0.75)" }}>{fmtP(trade.targetPrice)}</td>
+                          <td style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(62,224,163,0.75)" }}>{fmtP(trade.targetPrice)}</td>
                           <td><span className={`pill ${statusClass}`} style={{ fontSize: 10 }}>{trade.status}</span></td>
                           <td style={{
                             fontWeight: 700, fontSize: 12, whiteSpace: "nowrap",
                             color: trade.returnPct !== null
-                              ? (trade.returnPct >= 0 ? "#4ade80" : "#f87171")
+                              ? (trade.returnPct >= 0 ? "#3EE0A3" : "#f87171")
                               : "rgba(255,255,255,0.25)",
                           }}>
                             {trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : "—"}
@@ -9021,7 +9021,7 @@ async function loadWatchlistLive() {
                                   />
                                   <button
                                     title="Confirm close"
-                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "#4ade80", borderColor: "rgba(74,222,128,0.28)", fontSize: 14, lineHeight: 1 }}
+                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 14, lineHeight: 1 }}
                                     onClick={() => submitClose(trade.id)}
                                   >✓</button>
                                   <button
@@ -9080,13 +9080,13 @@ async function loadWatchlistLive() {
                         </div>
                         <div>
                           <div className="journalCard__statLabel">Target</div>
-                          <div className="journalCard__statValue" style={{ color: "rgba(74,222,128,0.75)" }}>{fmtP(trade.targetPrice)}</div>
+                          <div className="journalCard__statValue" style={{ color: "rgba(62,224,163,0.75)" }}>{fmtP(trade.targetPrice)}</div>
                         </div>
                         <div>
                           <div className="journalCard__statLabel">Return</div>
                           <div className="journalCard__statValue" style={{
                             color: trade.returnPct !== null
-                              ? (trade.returnPct >= 0 ? "#4ade80" : "#f87171")
+                              ? (trade.returnPct >= 0 ? "#3EE0A3" : "#f87171")
                               : "rgba(255,255,255,0.25)",
                           }}>
                             {trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : "—"}
@@ -9116,7 +9116,7 @@ async function loadWatchlistLive() {
                               />
                               <button
                                 title="Confirm close"
-                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#4ade80", borderColor: "rgba(74,222,128,0.28)", fontSize: 16, lineHeight: 1 }}
+                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 16, lineHeight: 1 }}
                                 onClick={() => submitClose(trade.id)}
                               >✓</button>
                               <button
@@ -9317,7 +9317,7 @@ async function loadWatchlistLive() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
-                background: "rgba(74,222,128,0.1)",
+                background: "rgba(62,224,163,0.1)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
               }}>◈</div>
               <div>
@@ -9328,10 +9328,10 @@ async function loadWatchlistLive() {
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
               padding: "9px 0", borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
-              color: "#4ade80",
+              background: "rgba(62,224,163,0.06)", border: "1px solid rgba(62,224,163,0.15)",
+              color: "#3EE0A3",
             }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", display: "inline-block", boxShadow: "0 0 6px #4ade80" }} />
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3EE0A3", display: "inline-block", boxShadow: "0 0 6px #3EE0A3" }} />
               All systems operational
             </div>
           </div>
@@ -9381,7 +9381,7 @@ async function loadWatchlistLive() {
 
     const multColor = (m) => {
       if (!m) return "rgba(255,255,255,0.4)";
-      if (m >= 1.3) return "#4ade80";
+      if (m >= 1.3) return "#3EE0A3";
       if (m <= 0.7) return "#fb7185";
       return "rgba(255,255,255,0.6)";
     };
@@ -9443,8 +9443,8 @@ async function loadWatchlistLive() {
                             <td style={{ padding: "6px 8px" }}>
                               <span style={{
                                 fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700,
-                                background: s.status === "boosted" ? "rgba(74,222,128,0.12)" : s.status === "penalized" ? "rgba(251,113,133,0.12)" : T.bg3,
-                                color: s.status === "boosted" ? "#4ade80" : s.status === "penalized" ? "#fb7185" : T.textMuted,
+                                background: s.status === "boosted" ? "rgba(62,224,163,0.12)" : s.status === "penalized" ? "rgba(251,113,133,0.12)" : T.bg3,
+                                color: s.status === "boosted" ? "#3EE0A3" : s.status === "penalized" ? "#fb7185" : T.textMuted,
                               }}>{s.status.toUpperCase()}</span>
                             </td>
                           </tr>
@@ -9475,7 +9475,7 @@ async function loadWatchlistLive() {
                             <td style={{ padding: "6px 8px", fontWeight: 700, color: T.text }}>{p.symbol}</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.score}</td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textMuted }}>{p.entry != null ? `$${p.entry}` : "—"}</td>
-                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#4ade80" : p.change_pct < 0 ? "#fb7185" : T.textMuted }}>
+                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: p.change_pct > 0 ? "#3EE0A3" : p.change_pct < 0 ? "#fb7185" : T.textMuted }}>
                               {p.change_pct != null ? `${p.change_pct > 0 ? "+" : ""}${p.change_pct}%` : "pending"}
                             </td>
                             <td style={{ padding: "6px 8px", textAlign: "right", color: T.textFaint }}>{p.days != null ? `${p.days}d` : "—"}</td>
@@ -9483,7 +9483,7 @@ async function loadWatchlistLive() {
                               {p.won == null
                                 ? <span style={{ color: T.textFaint, fontSize: 11 }}>PENDING</span>
                                 : p.won
-                                  ? <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 11 }}>WIN</span>
+                                  ? <span style={{ color: "#3EE0A3", fontWeight: 700, fontSize: 11 }}>WIN</span>
                                   : <span style={{ color: "#fb7185", fontWeight: 700, fontSize: 11 }}>MISS</span>
                               }
                             </td>
@@ -9704,7 +9704,7 @@ async function loadWatchlistLive() {
       <button
         onClick={onChange}
         style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
-          background: enabled ? "rgba(0,180,80,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          background: enabled ? "rgba(34,200,142,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
           position: "relative", transition: "background 0.2s" }}
       >
         <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
@@ -9729,7 +9729,7 @@ async function loadWatchlistLive() {
       { id: "support",     icon: "◌", label: "Support" },
     ];
 
-    const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
+    const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
       <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
@@ -9755,7 +9755,7 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+              background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
               border: `1px solid ${T.border}`,
               borderRadius: NATIVE_SECONDARY_CARD.radius,
               boxShadow: nativeCardShadow(darkMode),
@@ -9872,7 +9872,7 @@ async function loadWatchlistLive() {
               <FieldRow label="Email address" value={email} />
               <FieldRow label="Plan" value={`${planLabel} plan`} action={
                 plan !== "elite" && (
-                  <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#00b450", color: "#fff" }}>
+                  <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#22C88E", color: "#fff" }}>
                     Upgrade
                   </button>
                 )
@@ -9932,7 +9932,7 @@ async function loadWatchlistLive() {
                     <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: txtG, marginBottom: 4 }}>Current plan</div>
                     <div style={{ fontSize: 22, fontWeight: 800, color: txt, letterSpacing: "-0.02em" }}>{planLabel}</div>
                   </div>
-                  <div style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: "rgba(0,180,80,0.10)", border: "1px solid rgba(0,180,80,0.22)", color: "rgba(0,180,80,0.90)" }}>
+                  <div style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: "rgba(34,200,142,0.10)", border: "1px solid rgba(34,200,142,0.22)", color: "rgba(34,200,142,0.90)" }}>
                     {isPaidPlan ? (isCancelling ? "CANCELLING" : "ACTIVE") : "FREE"}
                   </div>
                 </div>
@@ -10003,7 +10003,7 @@ async function loadWatchlistLive() {
                           <div key={inv.id} style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) 70px 60px 40px" : "1fr 80px 70px 50px", gap: 8, padding: "11px 18px", alignItems: "center", borderBottom: i < invoices.length - 1 ? (dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)") : "none" }}>
                             <div style={{ fontSize: 13, color: txtS }}>{inv.date}</div>
                             <div style={{ fontSize: 13, color: txt, fontWeight: 600 }}>{inv.amount}</div>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#4ade80" : txtG }}>{inv.status}</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#3EE0A3" : txtG }}>{inv.status}</div>
                             <div>{inv.url ? <a href={inv.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none" }}>View</a> : null}</div>
                           </div>
                         ))}
@@ -10027,7 +10027,7 @@ async function loadWatchlistLive() {
                 <div key={row.label} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "9px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)", alignItems: "center" }}>
                   <div style={{ fontSize: 13, color: txtS }}>{row.label}</div>
                   {["free","starter","pro","elite"].map(p => (
-                    <div key={p} style={{ fontSize: 12, color: plan === p ? "#4ade80" : txtG, fontWeight: plan === p ? 700 : 400, textAlign: "center" }}>
+                    <div key={p} style={{ fontSize: 12, color: plan === p ? "#3EE0A3" : txtG, fontWeight: plan === p ? 700 : 400, textAlign: "center" }}>
                       {row[p]}
                     </div>
                   ))}
@@ -10036,7 +10036,7 @@ async function loadWatchlistLive() {
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "6px 0" }}>
                 <div />
                 {["Free","Starter","Pro","Elite"].map(p => (
-                  <div key={p} style={{ fontSize: 10, fontWeight: 700, color: plan === p.toLowerCase() ? "#4ade80" : txtG, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p}</div>
+                  <div key={p} style={{ fontSize: 10, fontWeight: 700, color: plan === p.toLowerCase() ? "#3EE0A3" : txtG, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p}</div>
                 ))}
               </div>
               </div>
@@ -10086,7 +10086,7 @@ async function loadWatchlistLive() {
                       action={
                         <div onClick={() => setTab("pricing")} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
                           <span style={{ fontSize: 13, opacity: 0.5 }}>🔒</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: "#4ade80", background: "rgba(0,180,80,0.12)", border: "1px solid rgba(0,180,80,0.22)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.01em", whiteSpace: "nowrap" }}>Upgrade</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "#3EE0A3", background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.22)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.01em", whiteSpace: "nowrap" }}>Upgrade</span>
                         </div>
                       }
                     />
@@ -10122,7 +10122,7 @@ async function loadWatchlistLive() {
               <SectionTitle>Theme</SectionTitle>
               <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
                 {[
-                  { id: true,  label: "Dark",  sub: "Easy on the eyes at night", preview: "#07090f" },
+                  { id: true,  label: "Dark",  sub: "Easy on the eyes at night", preview: "#0a0a0a" },
                   { id: false, label: "Light", sub: "Clean and bright", preview: "#f8fafc" },
                 ].map(({ id, label, sub, preview }) => (
                   <button
@@ -10130,13 +10130,13 @@ async function loadWatchlistLive() {
                     onClick={() => setDarkMode(id)}
                     style={{
                       flex: 1, padding: "14px 16px", borderRadius: 12, cursor: "pointer", border: "none", fontFamily: "inherit", textAlign: "left",
-                      background: darkMode === id ? "rgba(0,180,80,0.10)" : bg,
-                      outline: darkMode === id ? "1.5px solid rgba(0,180,80,0.35)" : bdr,
+                      background: darkMode === id ? "rgba(34,200,142,0.10)" : bg,
+                      outline: darkMode === id ? "1.5px solid rgba(34,200,142,0.35)" : bdr,
                       transition: "all 0.15s",
                     }}
                   >
                     <div style={{ width: "100%", height: 48, borderRadius: 8, background: preview, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 10 }} />
-                    <div style={{ fontSize: 13, fontWeight: 600, color: darkMode === id ? "#4ade80" : txt }}>{label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: darkMode === id ? "#3EE0A3" : txt }}>{label}</div>
                     <div style={{ fontSize: 11, color: txtG, marginTop: 2 }}>{sub}</div>
                   </button>
                 ))}
@@ -10179,7 +10179,7 @@ async function loadWatchlistLive() {
                     { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
                     { label: "Delete account & all data", action: "Settings → Account → Delete account" },
                     { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
-                    { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#4ade80", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
+                    { label: "Full privacy policy", action: <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#3EE0A3", textDecoration: "none", fontSize: 12, fontWeight: 600 }}>View policy ↗</a> },
                   ].map(({ label, action }) => (
                     <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", background: bg, borderRadius: 10, border: bdr }}>
                       <div style={{ fontSize: 13, color: txt, fontWeight: 500 }}>{label}</div>
@@ -10189,8 +10189,8 @@ async function loadWatchlistLive() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 24, padding: "14px 16px", background: "rgba(34,197,94,0.04)", borderRadius: 10, border: "1px solid rgba(34,197,94,0.12)" }}>
-                <div style={{ fontSize: 12, color: "rgba(134,239,172,0.75)", lineHeight: 1.65 }}>
+              <div style={{ marginTop: 24, padding: "14px 16px", background: "rgba(62,224,163,0.04)", borderRadius: 10, border: "1px solid rgba(62,224,163,0.12)" }}>
+                <div style={{ fontSize: 12, color: "rgba(62,224,163,0.75)", lineHeight: 1.65 }}>
                   Aurexis does not use advertising cookies, does not track you across other websites, and does not sell personal information to third parties.
                 </div>
               </div>
@@ -10287,8 +10287,8 @@ async function loadWatchlistLive() {
         price: "$9",
         period: "per month",
         badge: "MOST POPULAR",
-        badgeColor: "#00b450",
-        accent: "rgba(0,180,80,0.55)",
+        badgeColor: "#22C88E",
+        accent: "rgba(34,200,142,0.55)",
         btnLabel: "Get Starter",
       },
       {
@@ -10388,7 +10388,7 @@ async function loadWatchlistLive() {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                boxShadow: isPopular ? `0 0 0 1px ${plan.accent}, 0 4px 28px rgba(0,180,80,0.10)` : "none",
+                boxShadow: isPopular ? `0 0 0 1px ${plan.accent}, 0 4px 28px rgba(34,200,142,0.10)` : "none",
               }}>
                 {/* Badge */}
                 {plan.badge && (
@@ -10430,7 +10430,7 @@ async function loadWatchlistLive() {
                             <div key={feat.key} style={{ display: "flex", alignItems: "flex-start", gap: 7 }}>
                               <span style={{
                                 flexShrink: 0, marginTop: 1, fontSize: 12, fontWeight: 700,
-                                color: included ? "#00b450" : (darkMode ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.20)"),
+                                color: included ? "#22C88E" : (darkMode ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.20)"),
                               }}>
                                 {included ? "✓" : "✗"}
                               </span>
@@ -10468,7 +10468,7 @@ async function loadWatchlistLive() {
                     background: isCurrent
                       ? (darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)")
                       : isPopular
-                        ? "#00b450"
+                        ? "#22C88E"
                         : darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
                     color: isCurrent ? T.textFaint : isPopular ? "#fff" : T.text,
                     border: isPopular && !isCurrent ? "none" : `1px solid ${T.border2}`,
@@ -10896,7 +10896,7 @@ const Intelligence = () => {
   const SignalBar = ({ signal, weight, wins, losses }) => {
     const total = (wins || 0) + (losses || 0);
     const wr = total > 0 ? wins / total : null;
-    const barColor = weight >= 1.3 ? "#22c55e" : weight >= 0.8 ? T.textMuted : "#ef4444";
+    const barColor = weight >= 1.3 ? "#3EE0A3" : weight >= 0.8 ? T.textMuted : "#ef4444";
     const barW = Math.min(100, Math.max(4, (weight / 4.0) * 100));
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
@@ -10934,7 +10934,7 @@ const Intelligence = () => {
 
   const wr = data.win_rate != null ? `${Math.round(data.win_rate * 100)}%` : "—";
   const avgRet = data.avg_return_pct != null ? `${data.avg_return_pct > 0 ? "+" : ""}${data.avg_return_pct}%` : "—";
-  const retColor = data.avg_return_pct > 0 ? "#22c55e" : data.avg_return_pct < 0 ? "#ef4444" : T.text;
+  const retColor = data.avg_return_pct > 0 ? "#3EE0A3" : data.avg_return_pct < 0 ? "#ef4444" : T.text;
 
   return (
     <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 20px 60px" }}>
@@ -10954,10 +10954,10 @@ const Intelligence = () => {
           sub={`${data.total_picks_logged ?? 0} total`} />
         <StatBox label="Win Rate" value={wr}
           sub={`${data.wins ?? 0}W / ${data.losses ?? 0}L`}
-          color={(data.win_rate || 0) >= 0.6 ? "#22c55e" : (data.win_rate || 0) >= 0.45 ? "#f59e0b" : "#ef4444"} />
+          color={(data.win_rate || 0) >= 0.6 ? "#3EE0A3" : (data.win_rate || 0) >= 0.45 ? "#f59e0b" : "#ef4444"} />
         <StatBox label="Avg Return" value={avgRet} color={retColor} />
         <StatBox label="Kelly Size" value={data.kelly_position_size ? `${data.kelly_position_size}%` : "—"}
-          sub="optimal position" color="#84cc16" />
+          sub="optimal position" color="#22C88E" />
         {data.macro_penalty_today > 0 && (
           <StatBox label="Macro Caution" value={`-${data.macro_penalty_today}`}
             sub="event today/tomorrow" color="#f59e0b" />
@@ -10972,9 +10972,9 @@ const Intelligence = () => {
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
                 { label: "MODERATE", val: data.dynamic_thresholds.low, color: "#f59e0b" },
-                { label: "SOLID",    val: data.dynamic_thresholds.moderate, color: "#84cc16" },
-                { label: "HIGH",     val: data.dynamic_thresholds.solid, color: "#22c55e" },
-                { label: "VERY HIGH",val: data.dynamic_thresholds.high, color: "#00b450" },
+                { label: "SOLID",    val: data.dynamic_thresholds.moderate, color: "#22C88E" },
+                { label: "HIGH",     val: data.dynamic_thresholds.solid, color: "#3EE0A3" },
+                { label: "VERY HIGH",val: data.dynamic_thresholds.high, color: "#22C88E" },
               ].map(({ label, val, color }) => (
                 <div key={label} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color }}>{val}+</div>
@@ -10998,7 +10998,7 @@ const Intelligence = () => {
             padding: "14px 16px" }}>
             {data.strongest_signals?.length > 0 && (
               <>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 6 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#3EE0A3", marginBottom: 6 }}>
                   STRONGEST ↑
                 </div>
                 {data.strongest_signals.map(s => (
@@ -11029,7 +11029,7 @@ const Intelligence = () => {
             padding: "14px 16px" }}>
             {data.score_calibration.map(row => {
               const wr = row.win_rate;
-              const barColor = wr >= 0.6 ? "#22c55e" : wr >= 0.5 ? "#84cc16" : wr >= 0.4 ? "#f59e0b" : "#ef4444";
+              const barColor = wr >= 0.6 ? "#3EE0A3" : wr >= 0.5 ? "#22C88E" : wr >= 0.4 ? "#f59e0b" : "#ef4444";
               return (
                 <div key={row.bucket} style={{ display: "flex", alignItems: "center", gap: 10,
                   padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
@@ -11062,7 +11062,7 @@ const Intelligence = () => {
             {data.sector_performance.map(s => {
               const total = s.wins + s.losses;
               const swr = total > 0 ? s.wins / total : 0;
-              const color = swr >= 0.6 ? "#22c55e" : swr >= 0.5 ? "#84cc16" : "#f59e0b";
+              const color = swr >= 0.6 ? "#3EE0A3" : swr >= 0.5 ? "#22C88E" : "#f59e0b";
               return (
                 <div key={s.sector} style={{ display: "flex", alignItems: "center", gap: 10,
                   padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
@@ -11070,7 +11070,7 @@ const Intelligence = () => {
                   <div style={{ fontSize: 11, color, fontWeight: 700 }}>{Math.round(swr * 100)}% wr</div>
                   <div style={{ fontSize: 10, color: T.textGhost }}>{s.wins}W/{s.losses}L</div>
                   <div style={{ fontSize: 11, fontWeight: 700,
-                    color: s.total_return >= 0 ? "#22c55e" : "#ef4444" }}>
+                    color: s.total_return >= 0 ? "#3EE0A3" : "#ef4444" }}>
                     {s.total_return > 0 ? "+" : ""}{s.total_return}%
                   </div>
                 </div>
@@ -11095,7 +11095,7 @@ const Intelligence = () => {
                     fontFamily: "monospace" }}>{c.signal}</div>
                   <div style={{ fontSize: 10, color: T.textGhost }}>{c.regime}</div>
                   <div style={{ fontSize: 11, fontWeight: 700,
-                    color: up ? "#22c55e" : "#ef4444" }}>
+                    color: up ? "#3EE0A3" : "#ef4444" }}>
                     {c.from.toFixed(2)} → {c.to.toFixed(2)} {up ? "↑" : "↓"}
                   </div>
                   <div style={{ fontSize: 10, color: T.textGhost }}>
@@ -11532,7 +11532,7 @@ const renderPage = () => {
                 padding: 12,
                 borderRadius: 12,
                 border: `1px solid ${T.border2}`,
-                background: "rgba(15, 16, 20, 0.92)",
+                background: "rgba(10, 10, 10, 0.92)",
                 backdropFilter: "blur(10px)",
               }}
             >
@@ -11661,7 +11661,7 @@ const renderPage = () => {
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
-                  background: marketSession === "OPEN" ? "#22c55e" : "rgba(255,255,255,0.25)",
+                  background: marketSession === "OPEN" ? "#3EE0A3" : "rgba(255,255,255,0.25)",
                   flexShrink: 0,
                 }} />
                 <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -11784,7 +11784,7 @@ const renderPage = () => {
           maxWidth: "calc(100vw - 40px)",
           height: "min(520px, calc(100vh - 160px))",
           borderRadius: 16,
-          background: darkMode ? "rgba(14,17,28,0.97)" : "rgba(248,250,252,0.98)",
+          background: darkMode ? "rgba(10,10,10,0.97)" : "rgba(248,250,252,0.98)",
           backdropFilter: "blur(20px)",
           border: `1px solid ${T.border2}`,
           boxShadow: darkMode
@@ -11814,7 +11814,7 @@ const renderPage = () => {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>StackIQ AI</div>
               <div style={{ fontSize: 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 4px #22c55e" }} />
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3EE0A3", display: "inline-block", boxShadow: "0 0 4px #3EE0A3" }} />
                 Live market context
               </div>
             </div>
@@ -12098,7 +12098,7 @@ const renderPage = () => {
                   </div>
                   <div>
                     <div className="mutedSmall" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Target Price</div>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: "rgba(134,239,172,0.9)" }}>{fmt2(target)}</div>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: "rgba(62,224,163,0.9)" }}>{fmt2(target)}</div>
                   </div>
                   <div>
                     <div className="mutedSmall" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Position Size (2% risk)</div>
@@ -12115,7 +12115,7 @@ const renderPage = () => {
                 <div style={{ display: "flex", gap: 10 }}>
                   <button
                     className="btn btn--primary"
-                    style={{ background: "rgba(34,197,94,0.18)", borderColor: "rgba(34,197,94,0.5)", color: "rgba(134,239,172,1)" }}
+                    style={{ background: "rgba(62,224,163,0.18)", borderColor: "rgba(62,224,163,0.5)", color: "rgba(62,224,163,1)" }}
                     disabled={paperTradeExecuting}
                     onClick={async () => {
                       setPaperTradeExecuting(true);
