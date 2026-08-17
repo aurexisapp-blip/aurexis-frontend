@@ -10857,12 +10857,17 @@ async function loadWatchlistLive() {
 
       // App Store policy requires StoreKit for any payment that happens
       // inside the app -- so native never calls Stripe checkout itself.
-      // Instead it hands off to the system browser, same as web checkout
-      // at useaurexis.com. The user comes back to a plan that's already
-      // current by the time they reopen the app (see usePlan's
+      // Instead it hands off to the system browser: a dedicated,
+      // single-plan checkout page (not the general marketing pricing
+      // page), same as the standalone mobile checkout page built for
+      // this handoff specifically. The user comes back to a plan that's
+      // already current by the time they reopen the app (see usePlan's
       // appStateChange listener + the manual refresh button below).
       if (isNative) {
-        CapacitorBrowser.open({ url: `https://useaurexis.com/pricing?plan=${plan.id}` });
+        const url = plan.id === "free"
+          ? "https://useaurexis.com/signup?plan=free"
+          : `https://useaurexis.com/mobile-checkout?plan=${plan.id}`;
+        CapacitorBrowser.open({ url });
         return;
       }
 

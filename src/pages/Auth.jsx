@@ -132,7 +132,6 @@ export default function Auth({ defaultView = "login" }) {
   const [otpCode, setOtpCode] = useState("");
   const [otpResending, setOtpResending] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
-  const [pendingPlan, setPendingPlan] = useState("free");
   const [pendingFirstName, setPendingFirstName] = useState("");
   // Forgot-password flow: 0=hidden, 1=enter email, 2=enter code+new pw, 3=success
   const [forgotStep, setForgotStep] = useState(0);
@@ -146,6 +145,55 @@ export default function Auth({ defaultView = "login" }) {
   });
 
   function switchView(v) { setView(v); setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setError(""); setTermsAccepted(false); setOtpView(false); setOtpCode(""); }
+
+  // Single place every successful auth path routes through. Two jobs:
+  // (1) land on `next` (a query param) instead of the hardcoded /app when
+  // one is given -- e.g. the standalone mobile checkout page bounces here
+  // for a login/signup step and wants the user back there afterward; (2)
+  // hand off straight to Stripe checkout for a paid plan instead of
+  // landing anywhere, which previously only happened for brand-new
+  // email/password signups (see the old inline block this replaced) --
+  // now also happens for an existing user logging in via any method when
+  // they arrived from the checkout page, since "log in then continue to
+  // checkout" is exactly what that page needs.
+  async function completeAuth(token, { isNewUser: isNewSignup = false } = {}) {
+    const params = new URLSearchParams(window.location.search);
+    const nextRaw = params.get("next") || "";
+    const nextTarget = nextRaw.startsWith("/") ? nextRaw : "/app";
+    const viaMobileCheckout = nextRaw.startsWith("/mobile-checkout");
+    const shouldAutoCheckout = Boolean(token) && plan && plan !== "free" && (isNewSignup || viaMobileCheckout);
+
+    if (shouldAutoCheckout) {
+      const successUrl = viaMobileCheckout
+        ? `${window.location.origin}/mobile-checkout?plan=${plan}&success=1`
+        : `${window.location.origin}/app?payment=success`;
+      const cancelUrl = viaMobileCheckout
+        ? `${window.location.origin}/mobile-checkout?plan=${plan}`
+        : `${window.location.origin}/`;
+      try {
+        const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ plan, success_url: successUrl, cancel_url: cancelUrl }),
+        });
+        const checkoutData = await checkoutRes.json();
+        const url = checkoutData?.url || checkoutData?.checkout_url;
+        if (url) {
+          let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
+          if (parsed && ["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
+            window.location.href = parsed.href;
+            return;
+          }
+        }
+        // No usable URL back (e.g. backend's 409 for an already-active
+        // subscription) -- fall through to normal navigation rather than
+        // stranding the user with no feedback.
+      } catch {
+        // Network error creating the session -- still get them logged in.
+      }
+    }
+    navigate(nextTarget);
+  }
 
   // Catches the redirect back from the in-app Google auth browser sheet.
   // The backend sends the native app to `aurexis://auth/...` (see
@@ -165,7 +213,7 @@ export default function Auth({ defaultView = "login" }) {
         if (parsed.searchParams.get("new_user") === "1") {
           localStorage.setItem("aurexis_force_onboarding", "1");
         }
-        navigate("/app");
+        completeAuth(token);
         return;
       }
       const err = parsed.searchParams.get("error");
@@ -206,7 +254,7 @@ export default function Auth({ defaultView = "login" }) {
         localStorage.setItem("aurexis_token", token);
         localStorage.setItem("aurexis_user_email", email);
       }
-      navigate("/app");
+      await completeAuth(token);
     } catch {
       setError("Network error — check your connection.");
     } finally { setLoading(false); }
@@ -247,7 +295,7 @@ export default function Auth({ defaultView = "login" }) {
           if (data?.first_name) localStorage.setItem("aurexis_user_first_name", data.first_name);
         }
       }
-      navigate("/app");
+      await completeAuth(token);
     } catch (err) {
       // User cancelling the native Apple sheet isn't a real error.
       const msg = String(err?.message || err || "");
@@ -310,7 +358,7 @@ export default function Auth({ defaultView = "login" }) {
           if (data?.first_name) localStorage.setItem("aurexis_user_first_name", data.first_name);
         }
       }
-      navigate("/app");
+      await completeAuth(token);
     } catch (err) {
       // User closing the popup isn't a real error.
       const msg = String(err?.error || err?.message || err || "");
@@ -338,23 +386,9 @@ export default function Auth({ defaultView = "login" }) {
           if (pendingFirstName) localStorage.setItem("aurexis_user_first_name", pendingFirstName);
         }
       }
-      // New user on a paid plan — go to Stripe after OTP
-      if (isNewUser && pendingPlan !== "free") {
-        const checkoutRes = await fetch(`${API}/stripe/create-checkout-session`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({ plan: pendingPlan, success_url: `${window.location.origin}/app?payment=success`, cancel_url: `${window.location.origin}/` }),
-        });
-        const checkoutData = await checkoutRes.json();
-        const url = checkoutData?.url || checkoutData?.checkout_url;
-        if (url) {
-          let parsed; try { parsed = new URL(String(url)); } catch { parsed = null; }
-          if (parsed && ["https://checkout.stripe.com", "https://billing.stripe.com"].includes(parsed.origin)) {
-            window.location.href = parsed.href; return;
-          }
-        }
-      }
-      navigate("/app");
+      // completeAuth handles the new-user-on-a-paid-plan -> Stripe handoff
+      // itself (isNewUser gates it same as this used to inline here).
+      await completeAuth(token, { isNewUser });
     } catch {
       setError("Network error — check your connection.");
     } finally { setLoading(false); }
@@ -376,7 +410,6 @@ export default function Auth({ defaultView = "login" }) {
       if (signupData?.requires_2fa) {
         setOtpEmail(signupData.email || email);
         setIsNewUser(true);
-        setPendingPlan(plan);
         setPendingFirstName(signupData.first_name || firstName.trim());
         setOtpView(true);
         return;
@@ -389,7 +422,7 @@ export default function Auth({ defaultView = "login" }) {
         localStorage.setItem("aurexis_user_email", email);
         if (signupData?.first_name) localStorage.setItem("aurexis_user_first_name", signupData.first_name);
       }
-      navigate("/app");
+      await completeAuth(newToken, { isNewUser: true });
     } catch {
       setError("Network error — check your connection.");
     } finally { setLoading(false); }

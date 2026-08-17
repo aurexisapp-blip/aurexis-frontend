@@ -14,3 +14,31 @@ export function planPriceLabel(planId) {
   const cents = PLAN_PRICING[planId];
   return cents === undefined ? "" : `$${cents}`;
 }
+
+export const PLAN_LABEL = {
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro",
+  elite: "Elite",
+};
+
+// Short highlight bullets for the standalone mobile checkout page --
+// deliberately not the full feature-matrix copy PlanGate/Pricing use,
+// since that page is a comparison table and this one is single-plan-only.
+export const PLAN_HIGHLIGHTS = {
+  starter: [
+    "Entry price, stop loss & profit targets",
+    "Edge signal breakdown for every pick",
+    "Full picks history with outcomes",
+  ],
+  pro: [
+    "Live screener across 1,200+ stocks",
+    "Portfolio tracker with P&L analytics",
+    "Advanced filtering & custom signals",
+  ],
+  elite: [
+    "Real-time unusual options flow",
+    "Insider buying & institutional activity",
+    "Elite signals & dark pool data",
+  ],
+};

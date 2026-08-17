@@ -11,6 +11,7 @@ import Disclaimer from "./pages/Disclaimer";
 import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Legal from "./pages/Legal";
+import MobileCheckout from "./pages/MobileCheckout";
 import "./index.css";
 
 function MobileBlock() {
@@ -149,6 +150,13 @@ createRoot(rootEl).render(
             expecting a working login/checkout flow there. */}
         <Route path="/login"      element={<Auth defaultView="login" />} />
         <Route path="/signup"     element={<Auth defaultView="signup" />} />
+        {/* Standalone destination for the iOS paywall's Safari handoff --
+            no site nav, no marketing sections, just the selected plan and
+            a path into Stripe checkout. Deliberately its own route rather
+            than reusing /signup: that page shows all 3 tiers plus the
+            two-column marketing layout, neither of which belongs on the
+            other end of an in-app "Get Starter" tap. */}
+        <Route path="/mobile-checkout" element={<MobileCheckout />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={isNativeApp() ? <Navigate to="/login" replace /> : <LandingPage />} />
       </Routes>
