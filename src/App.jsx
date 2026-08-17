@@ -11407,8 +11407,8 @@ const renderPage = () => {
 
 
   return (
-    <div className="appShell">
-      <div className="layout" style={{ display: "flex" }}>
+    <div className="appShell" style={isNative ? { background: "#0a0a0a" } : undefined}>
+      <div className="layout" style={{ display: "flex", background: isNative ? "#0a0a0a" : undefined }}>
         <aside
           className="sidebar"
           style={{
@@ -11762,7 +11762,7 @@ const renderPage = () => {
           );
         })()}
 
-        <main className="main" style={{ flex: 1, minWidth: 0 }}>
+        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? "#0a0a0a" : undefined }}>
           {tab === "dashboard" && marketDataFailure ? (
             <SystemAlert type="warning" message="Market data degraded — analytics delayed." />
           ) : null}
@@ -11929,7 +11929,7 @@ const renderPage = () => {
           )}
 
 
-          <div className="page">
+          <div className="page" style={isNative ? { background: "#0a0a0a" } : undefined}>
             {tab === "dashboard" && cmdErr ? (
               <div className="monoBox monoBox--bad" style={{ marginBottom: 12 }}>
                 {cmdErr}
