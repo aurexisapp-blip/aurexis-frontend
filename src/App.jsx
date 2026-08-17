@@ -8695,7 +8695,12 @@ async function loadWatchlistLive() {
             ) : (
               sortedResults.map((row, i) => {
                 const tier = row.error ? null : scoreTier(row.aiScore);
-                const ds = dirStyle(row.direction);
+                // Dot + direction word both track Bullish/Bearish/Neutral --
+                // was tracking AI-score conviction instead, which could show
+                // an amber dot next to the word "Bullish" (different metric,
+                // same row, no shared color language).
+                const biasColor = row.direction === "BULLISH" ? "#3EE0A3" : row.direction === "BEARISH" ? "#e8756b" : "#8a8a86";
+                const biasLabel = row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral";
                 return (
                   <div
                     key={`scr_n_${row.symbol}_${i}`}
@@ -8706,11 +8711,18 @@ async function loadWatchlistLive() {
                       cursor: row.error ? "default" : "pointer",
                     }}
                   >
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: tier ? tierColor(tier) : "#1a1a19", flexShrink: 0 }} />
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: row.error ? "#1a1a19" : biasColor, flexShrink: 0 }} />
                     <div style={{ flex: 1.2, minWidth: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? "#6a6a66" : "#f5f5f4" }}>{row.symbol}</div>
-                      <div style={{ fontSize: 12, color: "#8a8a86", marginTop: 2 }}>
-                        {row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
+                      <div style={{ fontSize: 12, marginTop: 2 }}>
+                        {row.error ? (
+                          <span style={{ color: "#8a8a86" }}>Unavailable</span>
+                        ) : (
+                          <>
+                            <span style={{ color: biasColor, fontWeight: 600 }}>{biasLabel}</span>
+                            <span style={{ color: "#8a8a86" }}> · Momentum {row.momentum ?? "—"}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     {!row.error && (
