@@ -12435,7 +12435,16 @@ const renderPage = () => {
       {chatOpen && (
         <div className={isNative ? "chatFullscreen" : "chatPanel"} style={isNative ? {
           position: "fixed",
-          inset: 0,
+          // top+left+right, no bottom -- .chatFullscreen's height:100dvh is
+          // what actually determines how tall this is. Using inset:0
+          // instead (which implies bottom:0 too) over-constrains a
+          // fixed-position box against an explicit height, and the two
+          // fighting each other is what pushed the header above the top of
+          // the screen: only the input row's position (anchored off the
+          // bottom edge) stayed correct.
+          top: 0,
+          left: 0,
+          right: 0,
           width: "100%",
           background: "#0a0a0a",
           display: "flex",
@@ -12510,6 +12519,14 @@ const renderPage = () => {
             ref={chatMessagesRef}
             style={{
               flex: 1,
+              // Flex items default to min-height:auto, which refuses to
+              // shrink a flex:1 child below its own content height -- so
+              // when the keyboard opened and .chatFullscreen's 100dvh gave
+              // this column less room, this area held its full content
+              // height instead of scrolling, and the whole column (header
+              // included) got pushed out of view. minHeight:0 overrides
+              // that default so it actually shrinks and scrolls instead.
+              minHeight: 0,
               overflowY: "auto",
               padding: isNative ? "20px 16px 10px" : "14px 12px 8px",
               display: "flex",
