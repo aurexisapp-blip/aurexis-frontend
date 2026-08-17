@@ -2937,6 +2937,29 @@ function AppInner() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  // With Keyboard.resize set to "none", the webview frame never resizes and
+  // the keyboard shows as a true overlay -- so 100vh is now a stable, always-
+  // correct value (unlike before), but nothing in CSS reserves the space the
+  // keyboard actually occupies. dvh/visualViewport turned out not to reflect
+  // that reliably in this resize:none + native-overlay configuration (the
+  // input row was rendering underneath the keyboard). The Keyboard plugin's
+  // own show/hide events report the exact pixel height directly from the
+  // native layer instead, so use that as ground truth and reserve the space
+  // with real padding rather than guessing at a viewport unit.
+  const [chatKeyboardHeight, setChatKeyboardHeight] = useState(0);
+  React.useEffect(() => {
+    if (!isNative || !chatOpen) return;
+    let showHandle, hideHandle;
+    Keyboard.addListener("keyboardWillShow", (info) => setChatKeyboardHeight(info?.keyboardHeight || 0))
+      .then(h => { showHandle = h; });
+    Keyboard.addListener("keyboardWillHide", () => setChatKeyboardHeight(0))
+      .then(h => { hideHandle = h; });
+    return () => {
+      showHandle?.remove();
+      hideHandle?.remove();
+      setChatKeyboardHeight(0);
+    };
+  }, [isNative, chatOpen]);
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", content: "Hey! I'm AURO, your AI analyst. I can see your live picks, win rates, and scanner signals. Ask me anything." }
   ]);
@@ -12463,6 +12486,13 @@ const renderPage = () => {
           left: 0,
           right: 0,
           width: "100%",
+          // Reserves exactly the space the keyboard occupies (see
+          // chatKeyboardHeight above) -- with box-sizing:border-box set
+          // globally, this shrinks the available flex space without the box
+          // growing past 100vh, so the input row ends up sitting right above
+          // the keyboard instead of underneath it.
+          paddingBottom: chatKeyboardHeight,
+          transition: "padding-bottom 0.12s ease-out",
           background: "#0a0a0a",
           display: "flex",
           flexDirection: "column",
