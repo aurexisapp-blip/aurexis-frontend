@@ -8638,6 +8638,74 @@ async function loadWatchlistLive() {
       );
     };
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l, background: N.bg, minHeight: "100%" }}>
+          <div style={NT.screenTitle}>Watchlist</div>
+
+          <div>
+            <div style={{ ...NT.label, marginBottom: NATIVE_SPACE.s }}>Saved</div>
+            <NCard>
+              {loadingWatchlist && watchlistLive.length === 0 ? (
+                <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Loading…</div>
+              ) : watchlistLive.length === 0 ? (
+                <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Symbols you save will appear here.</div>
+              ) : watchlistLive.map((sym, i) => (
+                <NRow
+                  key={sym}
+                  index={i}
+                  avatar={sym.slice(0, 2)}
+                  title={sym}
+                  onClick={() => { setSymbol(sym); setTab("dashboard"); runAnalyze(sym); setPickDetailOpen(true); }}
+                  trailing={
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeFromWatchlistLive(sym); }}
+                      style={{ background: "none", border: "none", color: N.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 0" }}
+                    >Remove</button>
+                  }
+                  last={i === watchlistLive.length - 1}
+                />
+              ))}
+            </NCard>
+          </div>
+
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: NATIVE_SPACE.s }}>
+              <div style={NT.label}>System candidates</div>
+              <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", ...NT.label, marginBottom: 0, cursor: "pointer" }}>
+                {loadingCandidates ? "Scanning…" : "Refresh"}
+              </button>
+            </div>
+            <NCard>
+              {loadingCandidates ? (
+                <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>Scanning market for close candidates…</div>
+              ) : candidatesError ? (
+                <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>{candidatesError}</div>
+              ) : systemCandidates.length === 0 ? (
+                <div style={{ ...NT.rowSubtitle, padding: `${NATIVE_SPACE.m}px 0` }}>No close candidates right now — this fills in as stocks build momentum.</div>
+              ) : systemCandidates.map((c, i) => {
+                const progress = c.score !== null ? Math.min(100, Math.round((c.score / AI_SCORE_THRESHOLD) * 100)) : null;
+                const tier = progress === null ? "LOW" : progress >= 90 ? "HIGH" : progress >= 72 ? "MODERATE" : "LOW";
+                return (
+                  <NRow
+                    key={c.symbol}
+                    index={i}
+                    avatar={c.symbol.slice(0, 2)}
+                    avatarBg={nTier(tier).bg}
+                    title={c.symbol}
+                    subtitle={c.edgeSignals.length > 0 ? c.edgeSignals.slice(0, 2).map(fmt).join(" · ") : (c.noTradeReason || "Edge signals detected")}
+                    trailing={<NScorePill label={c.score !== null ? `${c.score.toFixed(1)}/${AI_SCORE_THRESHOLD.toFixed(1)}` : "—"} tier={tier} />}
+                    onClick={() => { setSymbol(c.symbol); setTab("dashboard"); runAnalyze(c.symbol); setPickDetailOpen(true); }}
+                    last={i === systemCandidates.length - 1}
+                  />
+                );
+              })}
+            </NCard>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
 
@@ -8878,6 +8946,81 @@ async function loadWatchlistLive() {
     };
 
     const loadingSymCount = (screenerInputRef.current?.value || "").split(/[,\s]+/).filter((s) => s.trim()).length;
+
+    if (isNative) {
+      // No filter/category data exists anywhere in this model (screenOne
+      // only returns aiScore/momentum/trend/confidence/direction), so the
+      // chip row drives the existing sort-by-column state rather than
+      // inventing categories that aren't real.
+      const scoreTier = (s) => (s === null ? "LOW" : s >= 70 ? "HIGH" : s >= 50 ? "MODERATE" : "LOW");
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l, background: N.bg, minHeight: "100%" }}>
+          <div style={NT.screenTitle}>Screener</div>
+
+          <NCard style={{ padding: NATIVE_SPACE.l }}>
+            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: 16, padding: "0 14px", gap: 8, marginBottom: NATIVE_SPACE.m }}>
+              <span style={{ color: N.textMuted, flexShrink: 0 }}><IconFilter size={16} /></span>
+              <input
+                ref={screenerInputRef}
+                defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
+                onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
+                placeholder="AAPL, NVDA, MSFT, TSLA…"
+                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: N.text, fontSize: 15, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
+              />
+            </div>
+            <NPrimaryButton onClick={runScreen} disabled={loading}>
+              {loading ? `Screening ${loadingSymCount} symbol${loadingSymCount !== 1 ? "s" : ""}…` : "Screen"}
+            </NPrimaryButton>
+          </NCard>
+
+          {!loading && hasScreened && results.length > 0 && (
+            <>
+              <div style={{ display: "flex", gap: NATIVE_SPACE.s, overflowX: "auto", paddingBottom: 2 }}>
+                {COL_HEADERS.map((h) => {
+                  const active = sortCol === h.key;
+                  return (
+                    <motion.button
+                      key={h.key}
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => handleSort(h.key)}
+                      style={{
+                        flexShrink: 0, display: "flex", alignItems: "center", gap: 5,
+                        padding: "8px 15px", borderRadius: 999, border: "none", cursor: "pointer",
+                        background: active ? N.accentWash : "rgba(255,255,255,0.05)",
+                        color: active ? N.accent : N.textSecondary,
+                        fontSize: 13, fontWeight: active ? 700 : 500, whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h.label}
+                      {active && <span style={{ fontSize: 10 }}>{sortDir === "desc" ? "↓" : "↑"}</span>}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              <NCard>
+                {sortedResults.map((row, i) => (
+                  <NRow
+                    key={`scr_${row.symbol}_${i}`}
+                    index={i}
+                    avatar={row.symbol.slice(0, 2)}
+                    avatarBg={row.error ? undefined : nTier(scoreTier(row.aiScore)).bg}
+                    title={row.symbol}
+                    subtitle={row.error ? "Unavailable" : `${row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral"} · Momentum ${row.momentum ?? "—"}`}
+                    trailing={row.error ? null : <NScorePill label={row.aiScore ?? "—"} tier={scoreTier(row.aiScore)} />}
+                    onClick={row.error ? undefined : () => { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); setPickDetailOpen(true); }}
+                    last={i === sortedResults.length - 1}
+                  />
+                ))}
+              </NCard>
+            </>
+          )}
+          {!loading && (!hasScreened || results.length === 0) && (
+            <div style={{ ...NT.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.xl}px 0` }}>Add tickers above and tap Screen.</div>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className="pageGrid">
@@ -9301,11 +9444,120 @@ async function loadWatchlistLive() {
       { label: "Best Trade",    value: bestTrade ? `${bestTrade.symbol} +${bestRet.toFixed(1)}%` : "—", colored: bestRet },
     ];
 
+    if (isNative) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: NATIVE_SPACE.l, padding: NATIVE_SPACE.l, background: N.bg, minHeight: "100%" }}>
+          <div style={NT.screenTitle}>Trade Journal</div>
+
+          {total > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap" }}>
+              <NCard style={{ flex: 1, minWidth: "100%", padding: NATIVE_SPACE.l, display: "flex", flexWrap: "wrap" }}>
+                {summaryStats.map(({ label, value, colored }, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: i * 0.05 }}
+                    style={{ flex: "1 1 45%", marginBottom: NATIVE_SPACE.s }}
+                  >
+                    <div style={NT.label}>{label}</div>
+                    <div style={{
+                      fontSize: 21, fontWeight: 700, letterSpacing: "-0.01em", marginTop: 4,
+                      color: colored !== null && colored !== undefined ? (colored >= 0 ? N.accent : N.negative) : N.text,
+                    }}>{value}</div>
+                  </motion.div>
+                ))}
+              </NCard>
+            </div>
+          )}
+
+          <NPrimaryButton
+            onClick={() => journalAddOpen ? closeForm() : setJournalAddOpen(true)}
+            style={journalAddOpen ? { background: "rgba(255,255,255,0.06)", color: N.text, boxShadow: "none" } : undefined}
+          >
+            {journalAddOpen ? "Cancel" : "+ Add Trade"}
+          </NPrimaryButton>
+
+          {journalAddOpen && (
+            <NCard style={{ padding: NATIVE_SPACE.l, display: "flex", flexDirection: "column", gap: NATIVE_SPACE.s }}>
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={symRef}
+                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 14, paddingRight: fetchingSymbol ? 28 : undefined }}
+                  placeholder="Symbol"
+                  onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
+                  onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+                {fetchingSymbol && <span className="btnSpinner" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />}
+              </div>
+              {[
+                { ref: entryRef, placeholder: "Entry $", fkey: "entry" },
+                { ref: stopRef, placeholder: "Stop $", fkey: "stop" },
+                { ref: targetRef, placeholder: "Target $", fkey: "target" },
+                { ref: notesRef, placeholder: "Notes (optional)", fkey: "notes" },
+              ].map(({ ref, placeholder, fkey }) => (
+                <input
+                  key={fkey} ref={ref}
+                  style={{ ...inp, width: "100%", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 14 }}
+                  placeholder={placeholder}
+                  onChange={e => saveField(fkey, e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
+                />
+              ))}
+              {journalAddErr && <div style={{ fontSize: 12, color: N.negative }}>{journalAddErr}</div>}
+              <NPrimaryButton onClick={submitAdd}>Submit</NPrimaryButton>
+            </NCard>
+          )}
+
+          <NCard>
+            {journalTrades.length === 0 ? (
+              <div style={{ ...NT.rowSubtitle, textAlign: "center", padding: `${NATIVE_SPACE.m}px 0` }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
+            ) : journalTrades.map((trade, i) => {
+              const isClosing = journalCloseId === trade.id;
+              const tier = trade.status === "won" ? "HIGH" : trade.status === "lost" ? "LOW" : "MODERATE";
+              const statusLabel = trade.status === "won" ? "Won" : trade.status === "lost" ? "Lost" : "Open";
+              return (
+                <div key={trade.id}>
+                  <NRow
+                    index={i}
+                    avatar={trade.symbol.slice(0, 2)}
+                    avatarBg={nTier(tier).bg}
+                    title={trade.symbol}
+                    subtitle={fmtD(trade.enteredAt)}
+                    trailing={<NScorePill label={statusLabel} tier={tier} />}
+                    trailingSub={trade.returnPct !== null ? `${trade.returnPct >= 0 ? "+" : ""}${trade.returnPct.toFixed(2)}%` : null}
+                    onClick={trade.status === "open" ? () => { setJournalCloseId(isClosing ? null : trade.id); setJournalClosePrice(""); setJournalCloseErr(""); } : undefined}
+                    last={i === journalTrades.length - 1 && !isClosing}
+                  />
+                  {isClosing && (
+                    <div style={{ display: "flex", gap: NATIVE_SPACE.s, padding: `0 0 ${NATIVE_SPACE.m}px` }}>
+                      <input
+                        style={{ ...inp, flex: 1, background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 12 }}
+                        placeholder="Exit price"
+                        value={journalClosePrice}
+                        autoFocus
+                        onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                        onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
+                      />
+                      <motion.button whileTap={{ scale: 0.94 }} onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 12, background: N.accentGradient, border: "none", color: "#04140D", fontWeight: 700, cursor: "pointer" }}>✓</motion.button>
+                      <motion.button whileTap={{ scale: 0.94 }} onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "none", color: N.textMuted, cursor: "pointer" }}>⌫</motion.button>
+                    </div>
+                  )}
+                  {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: N.negative, paddingBottom: NATIVE_SPACE.s }}>{journalCloseErr}</div>}
+                </div>
+              );
+            })}
+          </NCard>
+        </div>
+      );
+    }
+
     return (
       <div className="pageGrid">
         {/* ── Summary bar ── */}
         {total > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: isNative ? "minmax(0,1fr) minmax(0,1fr)" : "repeat(4, 1fr)", gap: isNative ? NATIVE_SPACE.s : 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
             {summaryStats.map(({ label, value, colored }) => (
               <div key={label} style={{
                 padding: "16px 18px", borderRadius: 10,
@@ -10132,16 +10384,19 @@ async function loadWatchlistLive() {
     }
 
     // ── Shared sub-components ──────────────────────────────────────────────
+    // Every section box in every pane below reads bg/bdr/txt/txtS/txtG, so
+    // branching these here cascades the v2 native palette across all 7
+    // panes without touching each pane's markup individually.
     const dm = darkMode;
-    const bg   = dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
-    const bdr  = dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
-    const txt  = dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)";
-    const txtS = dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)";
-    const txtG = dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)";
+    const bg   = isNative ? N.surface : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
+    const bdr  = isNative ? "none" : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
+    const txt  = isNative ? N.text : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
+    const txtS = isNative ? N.textSecondary : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
+    const txtG = isNative ? N.textMuted : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
 
     const FieldRow = ({ label, value, action }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)" }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", gap: 10, borderBottom: isNative ? `0.5px solid ${N.divider}` : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
+        <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
           {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
         </div>
@@ -10150,15 +10405,20 @@ async function loadWatchlistLive() {
     );
 
     const Toggle = ({ enabled, onChange }) => (
-      <button
+      <motion.button
+        whileTap={{ scale: 0.92 }}
         onClick={onChange}
-        style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
-          background: enabled ? "rgba(0,180,80,0.80)" : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+        style={{ width: 44, height: 26, borderRadius: 13, border: "none", cursor: "pointer", flexShrink: 0,
+          background: enabled ? (isNative ? N.accentGradient : "rgba(0,180,80,0.80)") : dm ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)",
+          boxShadow: enabled && isNative ? `0 0 12px ${N.accentGlow}` : "none",
           position: "relative", transition: "background 0.2s" }}
       >
-        <span style={{ position: "absolute", top: 3, left: enabled ? 20 : 3, width: 16, height: 16, borderRadius: "50%",
-          background: "#fff", transition: "left 0.18s", boxShadow: "0 1px 4px rgba(0,0,0,0.35)" }} />
-      </button>
+        <motion.span
+          animate={{ left: enabled ? 21 : 3 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+          style={{ position: "absolute", top: 3, width: 20, height: 20, borderRadius: "50%",
+          background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.35)" }} />
+      </motion.button>
     );
 
     const SectionTitle = ({ children }) => (
@@ -10181,7 +10441,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#4ade80" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)", borderRadius: 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? N.bg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -10204,10 +10464,9 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: darkMode ? "linear-gradient(160deg, rgba(10,13,22,0.98) 0%, rgba(13,17,30,0.98) 100%)" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-              border: `1px solid ${T.border}`,
-              borderRadius: NATIVE_SECONDARY_CARD.radius,
-              boxShadow: nativeCardShadow(darkMode),
+              background: N.surface,
+              borderRadius: 22,
+              boxShadow: nCardShadow(),
               overflow: "hidden",
             } : undefined}
           >
@@ -10223,17 +10482,17 @@ async function loadWatchlistLive() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "14px 16px",
-                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `1px solid ${T.border}` : "none",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `0.5px solid ${N.divider}` : "none",
                     borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
                     background: "transparent", textAlign: "left",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", opacity: active ? 1 : 0.45, color: active ? av.text : T.textFaint, flexShrink: 0 }}>{n.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? T.text : T.textSec }}>{n.label}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? N.accent : N.textMuted, flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? N.text : N.textSecondary }}>{n.label}</span>
                   </span>
                   {active ? (
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: av.text, boxShadow: `0 0 6px ${av.text}`, flexShrink: 0 }} />
+                    <motion.span layoutId="settingsActiveDot" style={{ width: 6, height: 6, borderRadius: "50%", background: N.accent, boxShadow: `0 0 8px ${N.accentGlow}`, flexShrink: 0 }} />
                   ) : null}
                 </motion.button>
               );
