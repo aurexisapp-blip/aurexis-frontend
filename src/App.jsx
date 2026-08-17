@@ -8515,9 +8515,9 @@ async function loadWatchlistLive() {
       return "NEUTRAL";
     };
 
-    const screenOne = async (sym) => {
+    const screenOneAttempt = async (sym, timeoutMs) => {
       const controller = new AbortController();
-      const t = window.setTimeout(() => controller.abort(), 30000);
+      const t = window.setTimeout(() => controller.abort(), timeoutMs);
       try {
         const _tok = localStorage.getItem("aurexis_token");
         const res = await fetch(
@@ -8525,10 +8525,10 @@ async function loadWatchlistLive() {
           { signal: controller.signal, headers: _tok ? { Authorization: `Bearer ${_tok}` } : {} }
         );
         window.clearTimeout(t);
-        if (!res.ok) return { symbol: sym, error: true };
+        if (!res.ok) return null;
         const raw = await res.json();
         const d = unwrapAnalysis(raw);
-        if (!d) return { symbol: sym, error: true };
+        if (!d) return null;
         const tech = d?.technicals?.technical_analysis || d?.technical_analysis || {};
         const dbp = d?.best_pick && typeof d.best_pick === "object" ? d.best_pick : null;
         return {
@@ -8542,8 +8542,19 @@ async function loadWatchlistLive() {
         };
       } catch {
         window.clearTimeout(t);
-        return { symbol: sym, error: true };
+        return null;
       }
+    };
+
+    // First hit after the backend's been idle can be slow enough to time
+    // out (cold path — cache/data warm-up), which is why a symbol that
+    // fails always succeeds on a manual retry. Retry once automatically
+    // instead of making the user re-run Screen.
+    const screenOne = async (sym) => {
+      const first = await screenOneAttempt(sym, 30000);
+      if (first) return first;
+      const retry = await screenOneAttempt(sym, 30000);
+      return retry || { symbol: sym, error: true };
     };
 
     async function batchedScreen(symbols) {
@@ -8655,8 +8666,19 @@ async function loadWatchlistLive() {
             <button
               onClick={runScreen}
               disabled={loading}
-              style={{ width: "100%", padding: "12px 0", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontSize: 15, fontWeight: 700, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}
+              style={{
+                width: "100%", padding: "12px 0", borderRadius: 12, background: "#3EE0A3", border: "none",
+                color: "#06120c", fontSize: 15, fontWeight: 700, cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.85 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
             >
+              {loading && (
+                <span style={{
+                  width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
+                  border: "2px solid rgba(6,18,12,0.30)", borderTopColor: "#06120c",
+                  animation: "aurexisSpin 0.8s linear infinite", display: "inline-block",
+                }} />
+              )}
               {loading ? `Screening ${loadingSymCount} symbol${loadingSymCount !== 1 ? "s" : ""}…` : "Screen"}
             </button>
           </div>
