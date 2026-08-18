@@ -132,7 +132,7 @@ function SkeletonCard({ title }) {
       <div className="cardHead">
         <div>
           <div className="cardTitle">{title || "Analyzing market structure…"}</div>
-          <div className="cardSub">Please wait.</div>
+          <div className="cardSub">This can take up to a minute.</div>
         </div>
       </div>
       <div className="cardBody">
@@ -4104,6 +4104,7 @@ async function loadWatchlistLive() {
       setAnalyzeData(null);
     }
 
+    showToast?.("Analyzing — this can take up to a minute");
     setLoadingAnalyze(true);
     setErrAnalyze("");
     setCmdErr("");
