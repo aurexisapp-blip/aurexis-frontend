@@ -11055,9 +11055,16 @@ async function loadWatchlistLive() {
       // already current by the time they reopen the app (see usePlan's
       // appStateChange listener + the manual refresh button below).
       if (isNative) {
+        // The native app's WKWebView and the external Safari view CapacitorBrowser
+        // opens are separate storage contexts -- localStorage.aurexis_token never
+        // crosses that boundary, so /mobile-checkout always saw a logged-out user
+        // and forced a redundant web login before it could reach Stripe. Passing
+        // the token through the URL (captured on the other end, same pattern
+        // AppGate already uses for the OAuth redirect) skips that entirely.
+        const authToken = localStorage.getItem("aurexis_token") || "";
         const url = plan.id === "free"
           ? "https://useaurexis.com/signup?plan=free"
-          : `https://useaurexis.com/mobile-checkout?plan=${plan.id}`;
+          : `https://useaurexis.com/mobile-checkout?plan=${plan.id}${authToken ? `&token=${encodeURIComponent(authToken)}` : ""}`;
         CapacitorBrowser.open({ url });
         return;
       }

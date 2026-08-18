@@ -16,8 +16,27 @@ function getPlanFromUrl() {
   return p === "starter" || p === "pro" || p === "elite" ? p : "starter";
 }
 
+// This page opens in the system browser (Safari), a separate storage context
+// from the native app's own WebView -- localStorage.aurexis_token never
+// crosses that boundary on its own. The app passes the token through the URL
+// when it hands off here (see handleUpgrade in App.jsx); capture it into this
+// browser's localStorage before anything checks for it, same pattern AppGate
+// already uses for the OAuth redirect. Without this, every native purchase
+// hit a redundant "log in again" screen before ever reaching Stripe.
+function captureTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("token");
+  if (urlToken) {
+    localStorage.setItem("aurexis_token", urlToken);
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("token");
+    window.history.replaceState({}, "", clean.pathname + clean.search);
+  }
+}
+
 export default function MobileCheckout() {
   const navigate = useNavigate();
+  captureTokenFromUrl();
   const [plan, setPlan] = useState(getPlanFromUrl);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
