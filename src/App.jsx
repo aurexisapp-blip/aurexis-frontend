@@ -2916,6 +2916,20 @@ function AppInner() {
     inputBg:    "rgba(0,0,0,0.04)",
   }, [darkMode]);
 
+  // Native screens were built with their own flat-hex dark palette (not T,
+  // which web uses) and those hex values were hardcoded everywhere with no
+  // light-mode branch at all -- toggling Light in Settings had zero visual
+  // effect on native. These reuse T's already-shipped light-mode values
+  // (same colors web light mode uses) for the light branch, and keep the
+  // exact same hex native already had for the dark branch, so dark mode is
+  // pixel-identical to before this fix -- only light mode is new behavior.
+  const nBg         = darkMode ? nBg : "#f0f2f6";
+  const nCard       = darkMode ? nCard : "#ffffff";
+  const nHairline   = darkMode ? nHairline : "rgba(0,0,0,0.08)";
+  const nText       = darkMode ? nText : "#0a0d1a";
+  const nTextSec    = darkMode ? nTextSec : "rgba(10,13,26,0.55)";
+  const nTextFaint  = darkMode ? nTextFaint : "rgba(10,13,26,0.40)";
+
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
@@ -5110,7 +5124,7 @@ async function loadWatchlistLive() {
       const stillLoadingFirstFetch = isNative && loadingMovers && eligibleMovers.length === 0 && !errMovers;
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? nCard : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: isNative ? 18 : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
@@ -5538,7 +5552,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          background: darkMode ? nCard : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
           border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           height: "100%", display: "flex", flexDirection: "column",
@@ -5583,7 +5597,7 @@ async function loadWatchlistLive() {
             ) : topM.length === 0 ? (
               <div style={{ fontSize: 11, color: T.textGhost }}>Loading movers…</div>
             ) : isNative ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: "#111110", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: nCard, borderRadius: 12, overflow: "hidden" }}>
                 {topM.map((m, i) => {
                   const pct = Number(m.pct_change);
                   const isPos = pct >= 0;
@@ -5598,8 +5612,8 @@ async function loadWatchlistLive() {
                       style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "12px", background: "none", border: "none", cursor: "pointer",
-                        borderRight: col === 0 ? "0.5px solid #1a1a19" : "none",
-                        borderBottom: row < totalRows - 1 ? "0.5px solid #1a1a19" : "none",
+                        borderRight: col === 0 ? `0.5px solid ${nHairline}` : "none",
+                        borderBottom: row < totalRows - 1 ? `0.5px solid ${nHairline}` : "none",
                         fontFamily: "inherit", textAlign: "left", minWidth: 0,
                       }}
                     >
@@ -5690,7 +5704,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
+          background: darkMode ? nCard : "linear-gradient(160deg,rgba(248,250,252,0.98),rgba(242,246,250,0.98))",
           border: `1px solid ${T.border}`, borderRadius: isNative ? NATIVE_SECONDARY_CARD.radius : 16, overflow: "hidden",
           boxShadow: isNative ? nativeCardShadow(darkMode) : (darkMode ? "0 8px 40px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
@@ -5765,7 +5779,7 @@ async function loadWatchlistLive() {
                           { label: "Stop", value: fmt(item.stop), color: "#f87171" },
                           { label: "Target", value: fmt(item.target), color: "#3EE0A3" },
                         ].map(({ label, value, color }, i) => (
-                          <div key={label} style={{ flex: 1, padding: "0 10px", borderLeft: i > 0 ? "0.5px solid #1a1a19" : "none" }}>
+                          <div key={label} style={{ flex: 1, padding: "0 10px", borderLeft: i > 0 ? `0.5px solid ${nHairline}` : "none" }}>
                             <div style={{ fontSize: 9, fontWeight: 600, color: T.textGhost, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</div>
                             <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
                           </div>
@@ -5849,7 +5863,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? nCard : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
@@ -5935,7 +5949,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? nCard : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${T.border}`,
           borderRadius: 16,
           overflow: "hidden",
@@ -6376,7 +6390,7 @@ async function loadWatchlistLive() {
 
         return (
           <div style={{
-            background: darkMode ? "#111110" : "#ffffff",
+            background: darkMode ? nCard : "#ffffff",
             border: `1px solid ${isNative ? "rgba(34,200,142,0.16)" : T.border}`,
             borderRadius: isNative ? 20 : 16,
             padding: "28px 28px 24px",
@@ -6807,9 +6821,9 @@ async function loadWatchlistLive() {
                 {isNative ? (
                   <div style={{
                     display: "grid", gridTemplateColumns: "1fr 1fr",
-                    background: "#111110", borderRadius: 16, marginBottom: NATIVE_SPACE.s,
+                    background: nCard, borderRadius: 16, marginBottom: NATIVE_SPACE.s,
                   }}>
-                    <div style={{ padding: "14px 16px", borderRight: "0.5px solid #1a1a19" }}>
+                    <div style={{ padding: "14px 16px", borderRight: `0.5px solid ${nHairline}` }}>
                       <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.10em", textTransform: "uppercase", color: T.textFaint, marginBottom: 4 }}>Entry</div>
                       <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.02em", marginBottom: 3 }}>
                         {Number.isFinite(entryN) && entryN > 0 ? `$${entryN.toFixed(2)}` : "—"}
@@ -7121,7 +7135,7 @@ async function loadWatchlistLive() {
 
       return (
         <div style={{
-          background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
+          background: darkMode ? nCard : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
           border: `1px solid ${_advIsWarn && analysisActiveTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
           borderRadius: isNative ? 18 : 16, overflow: "hidden",
           boxShadow: isNative
@@ -7141,7 +7155,7 @@ async function loadWatchlistLive() {
           </div>
 
           <div style={isNative
-            ? { display: "flex", gap: 2, padding: 4, margin: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px 0`, background: "#111110", borderRadius: 14 }
+            ? { display: "flex", gap: 2, padding: 4, margin: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px 0`, background: nCard, borderRadius: 14 }
             : { display: "flex", gap: 0, borderBottom: `1px solid ${T.border2}`, paddingLeft: 20, paddingRight: 20, marginTop: 12 }
           }>
             {tabs.map(t => {
@@ -8092,31 +8106,31 @@ async function loadWatchlistLive() {
       const hasAuthError = Array.isArray(movers) && movers.some((m) => String(m?.data_status || m?.dataStatus || "").toLowerCase() === "auth_error");
 
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Movers</div>
-            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>Market leaders by momentum — tap any row to analyze</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Movers</div>
+            <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Market leaders by momentum — tap any row to analyze</div>
           </div>
 
-          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ background: nCard, borderRadius: 16, overflow: "hidden" }}>
             {hasAuthError || moversFailure || errMovers ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 12, color: "#e8756b", marginBottom: 12 }}>
                   {hasAuthError ? "Market data unavailable — check Alpaca keys." : "Unable to load movers"}
                 </div>
-                <button onClick={loadMovers} style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                <button onClick={loadMovers} style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: `1px solid ${nHairline}`, color: nTextSec, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                   Retry
                 </button>
               </div>
             ) : !sorted.length ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "#8a8a86" }}>No liquid movers available right now.</div>
+                <div style={{ fontSize: 13, color: nTextSec }}>No liquid movers available right now.</div>
               </div>
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6a6a66" }}>Top movers</span>
-                  <button onClick={loadMovers} disabled={loadingMovers} style={{ background: "none", border: "none", color: "#6a6a66", fontSize: 12, cursor: "pointer", padding: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: nTextFaint }}>Top movers</span>
+                  <button onClick={loadMovers} disabled={loadingMovers} style={{ background: "none", border: "none", color: nTextFaint, fontSize: 12, cursor: "pointer", padding: 0 }}>
                     {loadingMovers ? "Refreshing…" : "Refresh"}
                   </button>
                 </div>
@@ -8142,12 +8156,12 @@ async function loadWatchlistLive() {
                         onClick={() => onSelectMover(m.symbol)}
                         style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "13px 18px",
-                          borderTop: "0.5px solid #1a1a19", cursor: "pointer",
+                          borderTop: `0.5px solid ${nHairline}`, cursor: "pointer",
                         }}
                       >
                         <div style={{ flex: 1.2, minWidth: 0 }}>
-                          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{m?.symbol ?? "—"}</div>
-                          <div style={{ fontSize: 12, color: "#8a8a86", marginTop: 2 }}>
+                          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: nText }}>{m?.symbol ?? "—"}</div>
+                          <div style={{ fontSize: 12, color: nTextSec, marginTop: 2 }}>
                             {lastVal === null || lastVal === undefined || !Number.isFinite(Number(lastVal)) || Number(lastVal) <= 0 ? "—" : money(lastVal)}
                             {volVal !== null && volVal !== undefined && Number.isFinite(Number(volVal)) && Number(volVal) > 0 ? ` · Vol ${fmtVol(volVal)}` : ""}
                           </div>
@@ -8162,10 +8176,10 @@ async function loadWatchlistLive() {
           </div>
 
           {isFreeUser && hiddenCount > 0 && (
-            <div style={{ background: "#111110", borderRadius: 16, padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
+            <div style={{ background: nCard, borderRadius: 16, padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#3EE0A3" }}>{hiddenCount} more movers</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f5f4" }}>Unlock the full leaderboard</div>
-              <div style={{ fontSize: 12, color: "#8a8a86", lineHeight: 1.6, maxWidth: 260 }}>See every momentum mover, live — updated throughout the trading day.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: nText }}>Unlock the full leaderboard</div>
+              <div style={{ fontSize: 12, color: nTextSec, lineHeight: 1.6, maxWidth: 260 }}>See every momentum mover, live — updated throughout the trading day.</div>
               <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "10px 24px", borderRadius: 999, background: "#3EE0A3", color: "#06120c", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 Upgrade to Starter →
               </button>
@@ -8517,20 +8531,20 @@ async function loadWatchlistLive() {
 
     if (isNative) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Watchlist</div>
-            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Watchlist</div>
+            <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>
               Setups close to clearing our conviction threshold
             </div>
           </div>
 
-          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ background: nCard, borderRadius: 16, overflow: "hidden" }}>
             {loadingCandidates ? (
               <div style={{ padding: "36px 22px", textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                   <span className="btnSpinner" style={{ width: 14, height: 14, borderWidth: 2, display: "inline-block" }} />
-                  <span style={{ fontSize: 13, color: "#8a8a86" }}>Scanning market for close candidates…</span>
+                  <span style={{ fontSize: 13, color: nTextSec }}>Scanning market for close candidates…</span>
                 </div>
               </div>
             ) : candidatesError ? (
@@ -8538,7 +8552,7 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, color: "#e8756b", marginBottom: 12 }}>{candidatesError}</div>
                 <button
                   onClick={loadSystemCandidates}
-                  style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                  style={{ padding: "8px 18px", borderRadius: 999, background: "none", border: `1px solid ${nHairline}`, color: nTextSec, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                 >
                   Retry scan
                 </button>
@@ -8546,28 +8560,28 @@ async function loadWatchlistLive() {
             ) : systemCandidates.length === 0 ? (
               <div style={{ padding: "40px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 24, opacity: 0.12, marginBottom: 12 }}>◈</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#8a8a86", marginBottom: 6 }}>No close candidates right now</div>
-                <div style={{ fontSize: 12, color: "#6a6a66", maxWidth: 260, margin: "0 auto" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: nTextSec, marginBottom: 6 }}>No close candidates right now</div>
+                <div style={{ fontSize: 12, color: nTextFaint, maxWidth: 260, margin: "0 auto" }}>
                   The system will populate this list as stocks build enough momentum to be near-threshold.
                 </div>
               </div>
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6a6a66" }}>Building momentum</span>
-                  <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", color: "#6a6a66", fontSize: 12, cursor: "pointer", padding: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: nTextFaint }}>Building momentum</span>
+                  <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", color: nTextFaint, fontSize: 12, cursor: "pointer", padding: 0 }}>
                     {loadingCandidates ? "Scanning…" : "Refresh"}
                   </button>
                 </div>
                 {systemCandidates.map((candidate, i) => {
                   const { symbol: sym, score, edgeSignals, noTradeReason } = candidate;
                   const progress = score !== null ? Math.min(100, Math.round((score / AI_SCORE_THRESHOLD) * 100)) : null;
-                  const progressColor = progress === null ? "#1a1a19" : progress >= 90 ? "#3EE0A3" : "#e9b459";
+                  const progressColor = progress === null ? nHairline : progress >= 90 ? "#3EE0A3" : "#e9b459";
                   const signalText = edgeSignals.length > 0 ? edgeSignals.slice(0, 3).map((s) => fmt(s)).join(" · ") : (noTradeReason || "Edge signals detected");
                   return (
-                    <div key={sym} style={{ padding: "14px 18px", borderTop: "0.5px solid #1a1a19" }}>
+                    <div key={sym} style={{ padding: "14px 18px", borderTop: `0.5px solid ${nHairline}` }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{sym}</span>
+                        <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", color: nText }}>{sym}</span>
                         <span style={{
                           display: "inline-flex", alignItems: "center", gap: 5,
                           padding: "3px 9px", borderRadius: 999,
@@ -8578,20 +8592,20 @@ async function loadWatchlistLive() {
                           WATCHING
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: "#8a8a86", marginBottom: 10, lineHeight: 1.5 }}>{signalText}</div>
+                      <div style={{ fontSize: 12, color: nTextSec, marginBottom: 10, lineHeight: 1.5 }}>{signalText}</div>
 
                       {score !== null ? (
                         <div style={{ marginBottom: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-                            <span style={{ fontSize: 10, color: "#6a6a66", letterSpacing: "0.04em", textTransform: "uppercase" }}>Conviction</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "#8a8a86" }}>{score.toFixed(1)}/{AI_SCORE_THRESHOLD.toFixed(1)}</span>
+                            <span style={{ fontSize: 10, color: nTextFaint, letterSpacing: "0.04em", textTransform: "uppercase" }}>Conviction</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: nTextSec }}>{score.toFixed(1)}/{AI_SCORE_THRESHOLD.toFixed(1)}</span>
                           </div>
-                          <div style={{ height: 2, background: "#1a1a19", borderRadius: 1 }}>
+                          <div style={{ height: 2, background: nHairline, borderRadius: 1 }}>
                             <div style={{ width: `${progress}%`, height: "100%", background: progressColor, borderRadius: 1 }} />
                           </div>
                         </div>
                       ) : (
-                        <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 12 }}>Score pending scan</div>
+                        <div style={{ fontSize: 12, color: nTextFaint, marginBottom: 12 }}>Score pending scan</div>
                       )}
 
                       <div style={{ display: "flex", gap: 8 }}>
@@ -8609,8 +8623,8 @@ async function loadWatchlistLive() {
                           disabled={addingWatchlist}
                           style={{
                             padding: "8px 16px", borderRadius: 12,
-                            background: "none", border: "1px solid #1a1a19",
-                            color: "#8a8a86", fontSize: 13, fontWeight: 600,
+                            background: "none", border: `1px solid ${nHairline}`,
+                            color: nTextSec, fontSize: 13, fontWeight: 600,
                             cursor: "pointer",
                           }}
                         >+ Watch</button>
@@ -8879,23 +8893,23 @@ async function loadWatchlistLive() {
 
     if (isNative) {
       const scoreTier = (s) => (s === null ? null : s >= 70 ? "high" : s >= 45 ? "moderate" : "low");
-      const tierColor = (t) => t === "high" ? "#3EE0A3" : t === "moderate" ? "#e9b459" : "#8a8a86";
+      const tierColor = (t) => t === "high" ? "#3EE0A3" : t === "moderate" ? "#e9b459" : nTextSec;
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Screener</div>
-            <div style={{ fontSize: 13, color: "#8a8a86", marginTop: 4 }}>Enter symbols separated by commas</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Screener</div>
+            <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Enter symbols separated by commas</div>
           </div>
 
-          <div style={{ background: "#111110", borderRadius: 16, padding: 16 }}>
+          <div style={{ background: nCard, borderRadius: 16, padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "0 14px", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 12, color: "#6a6a66", flexShrink: 0 }}>⊞</span>
+              <span style={{ fontSize: 12, color: nTextFaint, flexShrink: 0 }}>⊞</span>
               <input
                 ref={screenerInputRef}
                 defaultValue={DEFAULT_SCREENER_SYMBOLS.join(", ")}
                 onKeyDown={(e) => { if (e.key === "Enter") runScreen(); }}
                 placeholder="AAPL, NVDA, MSFT, TSLA…"
-                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: "#f5f5f4", fontSize: 16, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
+                style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: nText, fontSize: 16, fontWeight: 500, padding: "12px 0", fontFamily: "inherit" }}
               />
             </div>
             <button
@@ -8918,15 +8932,15 @@ async function loadWatchlistLive() {
             </button>
           </div>
 
-          <div style={{ background: "#111110", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ background: nCard, borderRadius: 16, overflow: "hidden" }}>
             {loading ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "#8a8a86" }}>Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…</div>
-                <div style={{ fontSize: 12, color: "#6a6a66", marginTop: 4 }}>This can take up to a minute</div>
+                <div style={{ fontSize: 13, color: nTextSec }}>Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…</div>
+                <div style={{ fontSize: 12, color: nTextFaint, marginTop: 4 }}>This can take up to a minute</div>
               </div>
             ) : !hasScreened || results.length === 0 ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "#8a8a86" }}>Add tickers above and tap Screen</div>
+                <div style={{ fontSize: 13, color: nTextSec }}>Add tickers above and tap Screen</div>
               </div>
             ) : (
               sortedResults.map((row, i) => {
@@ -8935,7 +8949,7 @@ async function loadWatchlistLive() {
                 // was tracking AI-score conviction instead, which could show
                 // an amber dot next to the word "Bullish" (different metric,
                 // same row, no shared color language).
-                const biasColor = row.direction === "BULLISH" ? "#3EE0A3" : row.direction === "BEARISH" ? "#e8756b" : "#8a8a86";
+                const biasColor = row.direction === "BULLISH" ? "#3EE0A3" : row.direction === "BEARISH" ? "#e8756b" : nTextSec;
                 const biasLabel = row.direction === "BULLISH" ? "Bullish" : row.direction === "BEARISH" ? "Bearish" : "Neutral";
                 return (
                   <div
@@ -8943,26 +8957,26 @@ async function loadWatchlistLive() {
                     onClick={() => { if (!row.error) { setSymbol(row.symbol); setTab("dashboard"); runAnalyze(row.symbol); } }}
                     style={{
                       display: "flex", alignItems: "center", gap: 12, padding: "13px 18px",
-                      borderTop: i > 0 ? "0.5px solid #1a1a19" : "none",
+                      borderTop: i > 0 ? `0.5px solid ${nHairline}` : "none",
                       cursor: row.error ? "default" : "pointer",
                     }}
                   >
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: row.error ? "#1a1a19" : biasColor, flexShrink: 0 }} />
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: row.error ? nHairline : biasColor, flexShrink: 0 }} />
                     <div style={{ flex: 1.2, minWidth: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? "#6a6a66" : "#f5f5f4" }}>{row.symbol}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: row.error ? nTextFaint : nText }}>{row.symbol}</div>
                       <div style={{ fontSize: 12, marginTop: 2 }}>
                         {row.error ? (
-                          <span style={{ color: "#8a8a86" }}>Unavailable</span>
+                          <span style={{ color: nTextSec }}>Unavailable</span>
                         ) : (
                           <>
                             <span style={{ color: biasColor, fontWeight: 600 }}>{biasLabel}</span>
-                            <span style={{ color: "#8a8a86" }}> · Momentum {row.momentum ?? "—"}</span>
+                            <span style={{ color: nTextSec }}> · Momentum {row.momentum ?? "—"}</span>
                           </>
                         )}
                       </div>
                     </div>
                     {!row.error && (
-                      <div style={{ fontSize: 15, fontWeight: 700, color: tier ? tierColor(tier) : "#8a8a86", fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: tier ? tierColor(tier) : nTextSec, fontVariantNumeric: "tabular-nums" }}>
                         {row.aiScore ?? "—"}
                       </div>
                     )}
@@ -9400,17 +9414,17 @@ async function loadWatchlistLive() {
 
     if (isNative) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: "#0a0a0a", minHeight: "100%" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f4", letterSpacing: "-0.01em" }}>Trade Journal</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Trade Journal</div>
 
           {total > 0 && (
-            <div style={{ background: "#111110", borderRadius: 16, padding: "16px 18px", display: "flex", flexWrap: "wrap" }}>
+            <div style={{ background: nCard, borderRadius: 16, padding: "16px 18px", display: "flex", flexWrap: "wrap" }}>
               {summaryStats.map(({ label, value, colored }) => (
                 <div key={label} style={{ flex: "1 1 45%", marginBottom: 14 }}>
-                  <div style={{ fontSize: 10, color: "#6a6a66", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: nTextFaint, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
                   <div style={{
                     fontSize: 19, fontWeight: 700, letterSpacing: "-0.01em",
-                    color: colored !== null && colored !== undefined ? (colored >= 0 ? "#3EE0A3" : "#e8756b") : "#f5f5f4",
+                    color: colored !== null && colored !== undefined ? (colored >= 0 ? "#3EE0A3" : "#e8756b") : nText,
                   }}>{value}</div>
                 </div>
               ))}
@@ -9420,9 +9434,9 @@ async function loadWatchlistLive() {
           <button
             onClick={() => journalAddOpen ? closeForm() : setJournalAddOpen(true)}
             style={{
-              padding: "13px 0", borderRadius: 16, border: journalAddOpen ? "1px solid #1a1a19" : "none",
+              padding: "13px 0", borderRadius: 16, border: journalAddOpen ? `1px solid ${nHairline}` : "none",
               background: journalAddOpen ? "none" : "#3EE0A3",
-              color: journalAddOpen ? "#8a8a86" : "#06120c",
+              color: journalAddOpen ? nTextSec : "#06120c",
               fontSize: 15, fontWeight: 700, cursor: "pointer",
             }}
           >
@@ -9430,11 +9444,11 @@ async function loadWatchlistLive() {
           </button>
 
           {journalAddOpen && (
-            <div style={{ background: "#111110", borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ background: nCard, borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ position: "relative" }}>
                 <input
                   ref={symRef}
-                  style={{ width: "100%", background: "none", border: "none", borderBottom: "0.5px solid #1a1a19", color: "#f5f5f4", fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit", paddingRight: fetchingSymbol ? 28 : undefined }}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: `0.5px solid ${nHairline}`, color: nText, fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit", paddingRight: fetchingSymbol ? 28 : undefined }}
                   placeholder="Symbol"
                   onChange={e => { e.target.value = e.target.value.toUpperCase(); saveField("symbol", e.target.value); }}
                   onBlur={e => autoFillFromSymbol(normalizeSymbol(e.target.value))}
@@ -9450,7 +9464,7 @@ async function loadWatchlistLive() {
               ].map(({ ref, placeholder, fkey }, i, arr) => (
                 <input
                   key={fkey} ref={ref}
-                  style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none", color: "#f5f5f4", fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
+                  style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? `0.5px solid ${nHairline}` : "none", color: nText, fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
                   placeholder={placeholder}
                   onChange={e => saveField(fkey, e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
@@ -9461,29 +9475,29 @@ async function loadWatchlistLive() {
             </div>
           )}
 
-          <div style={{ background: "#111110", borderRadius: 16, padding: journalTrades.length ? "0 18px" : 18 }}>
+          <div style={{ background: nCard, borderRadius: 16, padding: journalTrades.length ? "0 18px" : 18 }}>
             {journalTrades.length === 0 ? (
               <div style={{ padding: "20px 0", textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "#8a8a86" }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
+                <div style={{ fontSize: 13, color: nTextSec }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
               </div>
             ) : journalTrades.map((trade, i) => {
               const isClosing = journalCloseId === trade.id;
-              const statusColor = trade.status === "won" ? "#3EE0A3" : trade.status === "lost" ? "#e8756b" : "#8a8a86";
+              const statusColor = trade.status === "won" ? "#3EE0A3" : trade.status === "lost" ? "#e8756b" : nTextSec;
               return (
-                <div key={trade.id} style={{ borderTop: i > 0 ? "0.5px solid #1a1a19" : "none" }}>
+                <div key={trade.id} style={{ borderTop: i > 0 ? `0.5px solid ${nHairline}` : "none" }}>
                   <div
                     onClick={trade.status === "open" ? () => { setJournalCloseId(isClosing ? null : trade.id); setJournalClosePrice(""); setJournalCloseErr(""); } : undefined}
                     style={{ padding: "14px 0", cursor: trade.status === "open" ? "pointer" : "default" }}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-                      <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#f5f5f4" }}>{trade.symbol}</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: nText }}>{trade.symbol}</span>
                       <span style={{ fontSize: 13, fontWeight: 600, color: statusColor, textTransform: "capitalize" }}>{trade.status}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 8 }}>{fmtD(trade.enteredAt)}</div>
+                    <div style={{ fontSize: 12, color: nTextFaint, marginBottom: 8 }}>{fmtD(trade.enteredAt)}</div>
                     <div style={{ display: "flex", gap: 16 }}>
-                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Entry <span style={{ color: "#f5f5f4", fontWeight: 600 }}>{fmtP(trade.entryPrice)}</span></span>
-                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Stop <span style={{ color: "#e8756b", fontWeight: 600 }}>{fmtP(trade.stopPrice)}</span></span>
-                      <span style={{ fontSize: 12, color: "#8a8a86" }}>Target <span style={{ color: "#3EE0A3", fontWeight: 600 }}>{fmtP(trade.targetPrice)}</span></span>
+                      <span style={{ fontSize: 12, color: nTextSec }}>Entry <span style={{ color: nText, fontWeight: 600 }}>{fmtP(trade.entryPrice)}</span></span>
+                      <span style={{ fontSize: 12, color: nTextSec }}>Stop <span style={{ color: "#e8756b", fontWeight: 600 }}>{fmtP(trade.stopPrice)}</span></span>
+                      <span style={{ fontSize: 12, color: nTextSec }}>Target <span style={{ color: "#3EE0A3", fontWeight: 600 }}>{fmtP(trade.targetPrice)}</span></span>
                       {trade.returnPct !== null && (
                         <span style={{ fontSize: 12, fontWeight: 700, color: trade.returnPct >= 0 ? "#3EE0A3" : "#e8756b", marginLeft: "auto" }}>
                           {trade.returnPct >= 0 ? "+" : ""}{trade.returnPct.toFixed(2)}%
@@ -9494,7 +9508,7 @@ async function loadWatchlistLive() {
                   {isClosing && (
                     <div style={{ display: "flex", gap: 8, paddingBottom: 14 }}>
                       <input
-                        style={{ flex: 1, background: "none", border: "1px solid #1a1a19", borderRadius: 12, color: "#f5f5f4", fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
+                        style={{ flex: 1, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
                         placeholder="Exit price"
                         value={journalClosePrice}
                         autoFocus
@@ -9502,7 +9516,7 @@ async function loadWatchlistLive() {
                         onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
                       />
                       <button onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
-                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 12, background: "none", border: "1px solid #1a1a19", color: "#8a8a86", cursor: "pointer" }}>⌫</button>
+                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 12, background: "none", border: `1px solid ${nHairline}`, color: nTextSec, cursor: "pointer" }}>⌫</button>
                     </div>
                   )}
                   {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: "#e8756b", paddingBottom: 10 }}>{journalCloseErr}</div>}
@@ -10376,14 +10390,14 @@ async function loadWatchlistLive() {
     // branching these here cascades the single-surface pattern across all
     // 7 panes without touching each pane's markup individually.
     const dm = darkMode;
-    const bg   = isNative ? "#111110" : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
-    const bdr  = isNative ? "none" : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
-    const txt  = isNative ? "#f5f5f4" : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
-    const txtS = isNative ? "#8a8a86" : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
-    const txtG = isNative ? "#6a6a66" : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
+    const bg   = isNative ? nCard : (dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)");
+    const bdr  = isNative ? (dm ? "none" : `0.5px solid ${nHairline}`) : (dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)");
+    const txt  = isNative ? nText : (dm ? "rgba(255,255,255,0.88)" : "rgba(8,10,22,0.88)");
+    const txtS = isNative ? nTextSec : (dm ? "rgba(255,255,255,0.50)" : "rgba(8,10,22,0.52)");
+    const txtG = isNative ? nTextFaint : (dm ? "rgba(255,255,255,0.28)" : "rgba(8,10,22,0.30)");
 
     const FieldRow = ({ label, value, action }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", gap: 10, borderBottom: isNative ? "0.5px solid #1a1a19" : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0", gap: 10, borderBottom: isNative ? `0.5px solid ${nHairline}` : (dm ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.06)") }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: txt, marginBottom: 1 }}>{label}</div>
           {value && <div style={{ fontSize: 12, color: txtS }}>{value}</div>}
@@ -10424,7 +10438,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? "#0a0a0a" : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -10447,7 +10461,7 @@ async function loadWatchlistLive() {
             className="settingsSidebar__nav"
             style={isNative ? {
               display: "flex", flexDirection: "column", gap: 0,
-              background: "#111110",
+              background: nCard,
               borderRadius: 16,
               overflow: "hidden",
             } : undefined}
@@ -10464,14 +10478,14 @@ async function loadWatchlistLive() {
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "14px 16px",
-                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? "0.5px solid #1a1a19" : "none",
+                    border: "none", borderBottom: i < NAV_ITEMS.length - 1 ? `0.5px solid ${nHairline}` : "none",
                     borderRadius: 0, cursor: "pointer", fontFamily: "inherit",
                     background: "transparent", textAlign: "left",
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? av.text : "#6a6a66", flexShrink: 0 }}>{n.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? "#f5f5f4" : "#8a8a86" }}>{n.label}</span>
+                    <span style={{ fontSize: 15, width: 20, textAlign: "center", color: active ? av.text : nTextFaint, flexShrink: 0 }}>{n.icon}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: active ? nText : nTextSec }}>{n.label}</span>
                   </span>
                   {active ? (
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: av.text, boxShadow: `0 0 8px ${av.text}` }} />
@@ -10616,13 +10630,13 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
               {isNative && (
-                <div style={{ background: "#111110", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 12.5, color: "#8a8a86", lineHeight: 1.5 }}>
+                <div style={{ background: nCard, borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 12.5, color: nTextSec, lineHeight: 1.5 }}>
                     Subscriptions are managed on the web, not in this app.
                   </div>
                   <button
                     onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/app" })}
-                    style={{ background: "none", border: "0.5px solid #1a1a19", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#3EE0A3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+                    style={{ background: "none", border: `0.5px solid ${nHairline}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#3EE0A3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
                   >
                     useaurexis.com ↗
                   </button>
@@ -10826,7 +10840,7 @@ async function loadWatchlistLive() {
               <SectionTitle>Theme</SectionTitle>
               <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
                 {[
-                  { id: true,  label: "Dark",  sub: "Easy on the eyes at night", preview: "#0a0a0a" },
+                  { id: true,  label: "Dark",  sub: "Easy on the eyes at night", preview: nBg },
                   { id: false, label: "Light", sub: "Clean and bright", preview: "#f8fafc" },
                 ].map(({ id, label, sub, preview }) => (
                   <button
@@ -10879,16 +10893,16 @@ async function loadWatchlistLive() {
               <div style={{ marginTop: 28 }}>
                 <SectionTitle>Your Rights</SectionTitle>
                 {isNative ? (
-                  <div style={{ background: "#111110", borderRadius: 16 }}>
+                  <div style={{ background: nCard, borderRadius: 16 }}>
                     {[
                       { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
                       { label: "Delete account & all data", action: "Settings → Account → Delete account" },
                       { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
                       { label: "Full privacy policy", action: <span onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/legal#privacy" })} style={{ color: "#3EE0A3", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>View policy ↗</span> },
                     ].map(({ label, action }, i, arr) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < arr.length - 1 ? "0.5px solid #1a1a19" : "none" }}>
-                        <div style={{ fontSize: 13, color: "#f5f5f4", fontWeight: 500 }}>{label}</div>
-                        <div style={{ fontSize: 12, color: "#8a8a86" }}>{action}</div>
+                      <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < arr.length - 1 ? `0.5px solid ${nHairline}` : "none" }}>
+                        <div style={{ fontSize: 13, color: nText, fontWeight: 500 }}>{label}</div>
+                        <div style={{ fontSize: 12, color: nTextSec }}>{action}</div>
                       </div>
                     ))}
                   </div>
@@ -10910,7 +10924,7 @@ async function loadWatchlistLive() {
               </div>
 
               {isNative ? (
-                <div style={{ fontSize: 12, color: "#6a6a66", lineHeight: 1.65, marginTop: 20, padding: "0 2px" }}>
+                <div style={{ fontSize: 12, color: nTextFaint, lineHeight: 1.65, marginTop: 20, padding: "0 2px" }}>
                   Aurexis does not use advertising cookies, does not track you across other websites, and does not sell personal information to third parties.
                 </div>
               ) : (
@@ -11121,15 +11135,15 @@ async function loadWatchlistLive() {
           <div style={{ fontSize: 13, color: T.textMuted }}>One winning trade covers months of the subscription.</div>
           {isNative && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, color: "#6a6a66", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: nTextFaint, marginBottom: 8 }}>
                 Subscriptions are managed on the web — pick a plan below to continue in Safari.
               </div>
               <button
                 onClick={handleManualPlanRefresh}
                 disabled={refreshingPlan}
                 style={{
-                  background: "none", border: "0.5px solid #1a1a19", borderRadius: 8,
-                  padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#8a8a86",
+                  background: "none", border: `0.5px solid ${nHairline}`, borderRadius: 8,
+                  padding: "6px 14px", fontSize: 12, fontWeight: 600, color: nTextSec,
                   cursor: refreshingPlan ? "default" : "pointer", fontFamily: "inherit",
                 }}
               >
@@ -11935,8 +11949,8 @@ const renderPage = () => {
 
 
   return (
-    <div className="appShell" style={isNative ? { background: "#0a0a0a", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
-      <div className="layout" style={{ display: "flex", background: isNative ? "#0a0a0a" : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
+    <div className="appShell" style={isNative ? { background: nBg, overflowX: "hidden", maxWidth: "100vw" } : undefined}>
+      <div className="layout" style={{ display: "flex", background: isNative ? nBg : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
         <aside
           className="sidebar"
           style={{
@@ -12349,7 +12363,7 @@ const renderPage = () => {
           );
         })()}
 
-        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? "#0a0a0a" : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
+        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? nBg : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
           {tab === "dashboard" && marketDataFailure ? (
             <SystemAlert type="warning" message="Market data degraded — analytics delayed." />
           ) : null}
@@ -12396,11 +12410,11 @@ const renderPage = () => {
               onSubmit={onCmdSubmit}
               style={{
                 display: "flex", alignItems: "center", gap: 10,
-                background: "#111110", borderRadius: 16,
+                background: nCard, borderRadius: 16,
                 padding: "4px 6px 4px 16px",
               }}
             >
-              <span style={{ color: "#6a6a66", flexShrink: 0, display: "flex" }}>
+              <span style={{ color: nTextFaint, flexShrink: 0, display: "flex" }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.35-4.35" />
@@ -12413,7 +12427,7 @@ const renderPage = () => {
                 placeholder="Analyze any stock"
                 style={{
                   flex: 1, minWidth: 0, background: "none", border: "none", outline: "none",
-                  color: "#f5f5f4", fontSize: 16, fontWeight: 500, padding: "11px 0", fontFamily: "inherit",
+                  color: nText, fontSize: 16, fontWeight: 500, padding: "11px 0", fontFamily: "inherit",
                 }}
               />
               <RippleButton
@@ -12443,9 +12457,9 @@ const renderPage = () => {
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px" }}>
               <span style={{
                 width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                background: marketSession === "OPEN" ? "#3EE0A3" : "#6a6a66",
+                background: marketSession === "OPEN" ? "#3EE0A3" : nTextFaint,
               }} />
-              <span style={{ fontSize: 12, color: "#8a8a86" }}>
+              <span style={{ fontSize: 12, color: nTextSec }}>
                 {marketSession === "OPEN"
                   ? `Market open · closes 4:00 PM ET · ${etToLocal(16, 0)} local`
                   : `Market closed · opens 9:30 AM ET · ${etToLocal(9, 30)} local`}
@@ -12516,7 +12530,7 @@ const renderPage = () => {
           )}
 
 
-          <div className="page" style={isNative ? { background: "#0a0a0a", paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
+          <div className="page" style={isNative ? { background: nBg, paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
             {tab === "dashboard" && cmdErr ? (
               <div className="monoBox monoBox--bad" style={{ marginBottom: 12 }}>
                 {cmdErr}
@@ -12657,7 +12671,7 @@ const renderPage = () => {
           // the keyboard instead of underneath it.
           paddingBottom: chatKeyboardHeight,
           transition: "padding-bottom 0.12s ease-out",
-          background: "#0a0a0a",
+          background: nBg,
           display: "flex",
           flexDirection: "column",
           zIndex: 1199,
@@ -12683,12 +12697,12 @@ const renderPage = () => {
           {/* Header */}
           <div style={isNative ? {
             padding: "calc(14px + env(safe-area-inset-top, 0px)) 16px 14px",
-            borderBottom: "0.5px solid #1a1a19",
+            borderBottom: `0.5px solid ${nHairline}`,
             display: "flex",
             alignItems: "center",
             gap: 10,
             flexShrink: 0,
-            background: "#111110",
+            background: nCard,
           } : {
             padding: "12px 14px 11px",
             borderBottom: `1px solid ${T.border}`,
@@ -12717,7 +12731,7 @@ const renderPage = () => {
                 aria-label="Close chat"
                 style={{
                   width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                  background: "#1a1a19", border: "none", color: "#8a8a86",
+                  background: nHairline, border: "none", color: nTextSec,
                   fontSize: 14, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
@@ -12760,9 +12774,9 @@ const renderPage = () => {
                   wordBreak: "break-word",
                   background: m.role === "user"
                     ? "linear-gradient(135deg, #6366f1, #7c3aed)"
-                    : (isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)")),
+                    : (isNative ? nCard : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)")),
                   color: m.role === "user" ? "#f1f5f9" : T.text,
-                  border: m.role === "user" ? "none" : (isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`),
+                  border: m.role === "user" ? "none" : (isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`),
                 }}>
                   {m.content}
                 </div>
@@ -12772,8 +12786,8 @@ const renderPage = () => {
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
                 padding: "9px 13px",
-                background: isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
-                border: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`,
+                background: isNative ? nCard : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+                border: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`,
                 borderRadius: "4px 14px 14px 14px",
                 alignSelf: "flex-start",
               }}>
@@ -12803,7 +12817,7 @@ const renderPage = () => {
                     onClick={() => sendChatText(s.label)}
                     style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      background: "#111110", border: "0.5px solid #1a1a19", borderRadius: 14,
+                      background: nCard, border: `0.5px solid ${nHairline}`, borderRadius: 14,
                       padding: "12px 14px", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
                     }}
                   >
@@ -12836,12 +12850,12 @@ const renderPage = () => {
           {/* Input row */}
           <div style={{
             padding: isNative ? "12px 16px calc(14px + env(safe-area-inset-bottom, 0px))" : "8px 12px 12px",
-            borderTop: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border}`,
+            borderTop: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`,
             display: "flex",
             gap: isNative ? 10 : 7,
             alignItems: "flex-end",
             flexShrink: 0,
-            background: isNative ? "#0a0a0a" : undefined,
+            background: isNative ? nBg : undefined,
           }}>
             <textarea
               ref={chatInputRef}
@@ -12853,8 +12867,8 @@ const renderPage = () => {
               disabled={chatLoading}
               style={{
                 flex: 1, resize: "none",
-                background: isNative ? "#111110" : (darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
-                border: isNative ? "0.5px solid #1a1a19" : `1px solid ${T.border2}`,
+                background: isNative ? nCard : (darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+                border: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border2}`,
                 borderRadius: isNative ? 14 : 10,
                 color: T.text, fontSize: 16, padding: isNative ? "11px 14px" : "8px 11px",
                 fontFamily: "inherit", lineHeight: 1.45, outline: "none",

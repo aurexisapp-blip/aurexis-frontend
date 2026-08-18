@@ -2862,6 +2862,17 @@ a:hover{
     var(--bg0);
 }
 
+[data-theme="light"] .mobileBottomNav {
+  background: #ffffff;
+  border-top: 0.5px solid rgba(0,0,0,0.08);
+}
+[data-theme="light"] .mobileBottomNav__item {
+  color: rgba(10,13,26,0.40);
+}
+[data-theme="light"] .mobileBottomNav__lockDot {
+  border-color: #ffffff;
+}
+
 [data-theme="light"] .main {
   background: #f0f2f6;
 }
