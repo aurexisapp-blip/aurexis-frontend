@@ -4181,6 +4181,15 @@ async function loadWatchlistLive() {
         { onToast: showLiveDataToast, context: "analyze" }
       );
 
+      // A newer runAnalyze() call started (and aborted this one's controller)
+      // while this fetch was in flight. abort() is a no-op if the response had
+      // already landed at the network layer right as the newer call kicked
+      // off, so this response can still resolve successfully here -- without
+      // this check it would overwrite the newer symbol's fresh analyzeData
+      // with this stale one a moment later. Mirrors the same reqId guard the
+      // catch block below already has for the error path.
+      if (reqId !== analyzeReqIdRef.current) return;
+
       const normalizedEnvelope = normalizeAnalysis(raw);
       const analysisPayload =
         (normalizedEnvelope?.analysis && typeof normalizedEnvelope.analysis === "object" ? normalizedEnvelope.analysis : null) ||
@@ -7443,17 +7452,21 @@ async function loadWatchlistLive() {
                   ) : null}
 
                   {(() => {
-                    // Same source HeroCard's Entry/Stop Loss cards use (bestPickData,
-                    // not this card's own live-analyze data) -- so this row can never
-                    // show a different entry price than the one at the top of the page.
-                    const _heroEntryPrice = getBestPickEntryPrice(bestPickData);
-                    const _hasHeroEntry = Number.isFinite(_heroEntryPrice) && _heroEntryPrice > 0;
-                    if (!ep && !_advHasStop && _advTargets.length === 0 && !_hasHeroEntry) return null;
+                    // Entry must come from `a` (this card's own live-analyze data,
+                    // same object _advStop/_advTargets below already read from) --
+                    // NOT from bestPickData, which is the Dashboard's separately
+                    // fetched daily pick and can be a completely different symbol
+                    // than whatever was just analyzed here. Pulling entry from one
+                    // pick and stop/targets from another produced a Frankenstein
+                    // execution plan whenever the analyzed ticker differed from
+                    // today's hero pick (e.g. stop shown above entry).
+                    const _hasAdvEntry = Number.isFinite(_advEntry) && _advEntry > 0;
+                    if (!ep && !_advHasStop && _advTargets.length === 0 && !_hasAdvEntry) return null;
                     return (
                     <div>
                       <div className="mutedSmall" style={{ fontWeight: 800, marginBottom: 10 }}>Execution Plan</div>
                       <div className="kv" style={{ marginTop: 0 }}>
-                        {_hasHeroEntry ? <div className="kvRow"><div className="kvKey">Entry</div><div className="kvVal"><span style={{ color: T.text }}>${_heroEntryPrice.toFixed(2)}</span></div></div> : null}
+                        {_hasAdvEntry ? <div className="kvRow"><div className="kvKey">Entry</div><div className="kvVal"><span style={{ color: T.text }}>${_advEntry.toFixed(2)}</span></div></div> : null}
                         {ep?.date ? <div className="kvRow"><div className="kvKey">Date</div><div className="kvVal">{fmtAnalyzeValue(ep.date)}</div></div> : null}
                         {ep?.window ? <div className="kvRow"><div className="kvKey">Window</div><div className="kvVal">{fmtAnalyzeValue(ep.window)}</div></div> : null}
                         {bzText !== "—" ? <div className="kvRow"><div className="kvKey">Buy Zone</div><div className="kvVal">{bzText}</div></div> : null}
