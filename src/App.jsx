@@ -12378,7 +12378,20 @@ const renderPage = () => {
               </div>
             </div>
           ) : null}
-          {tab !== "dashboard" ? null : isNative ? (
+          {tab !== "dashboard" ? (
+            <div className="headerBar" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{
+                width: isNative ? 28 : 26, height: isNative ? 28 : 26, borderRadius: 8,
+                background: "#3EE0A3", display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: isNative ? 15 : 14, fontWeight: 900, color: "#06120c" }}>A</span>
+              </div>
+              <span style={{ fontSize: isNative ? 14 : 13, fontWeight: 900, letterSpacing: "0.16em", color: isNative ? "rgba(245,245,244,0.85)" : T.text }}>
+                AUREXIS
+              </span>
+            </div>
+          ) : isNative ? (
           <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
             <form
               onSubmit={onCmdSubmit}
