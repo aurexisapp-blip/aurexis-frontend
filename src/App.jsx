@@ -2923,12 +2923,12 @@ function AppInner() {
   // (same colors web light mode uses) for the light branch, and keep the
   // exact same hex native already had for the dark branch, so dark mode is
   // pixel-identical to before this fix -- only light mode is new behavior.
-  const nBg         = darkMode ? nBg : "#f0f2f6";
-  const nCard       = darkMode ? nCard : "#ffffff";
-  const nHairline   = darkMode ? nHairline : "rgba(0,0,0,0.08)";
-  const nText       = darkMode ? nText : "#0a0d1a";
-  const nTextSec    = darkMode ? nTextSec : "rgba(10,13,26,0.55)";
-  const nTextFaint  = darkMode ? nTextFaint : "rgba(10,13,26,0.40)";
+  const nBg         = darkMode ? "#0a0a0a" : "#f0f2f6";
+  const nCard       = darkMode ? "#111110" : "#ffffff";
+  const nHairline   = darkMode ? "#1a1a19" : "rgba(0,0,0,0.08)";
+  const nText       = darkMode ? "#f5f5f4" : "#0a0d1a";
+  const nTextSec    = darkMode ? "#8a8a86" : "rgba(10,13,26,0.55)";
+  const nTextFaint  = darkMode ? "#6a6a66" : "rgba(10,13,26,0.40)";
 
   const [tab, setTab] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
