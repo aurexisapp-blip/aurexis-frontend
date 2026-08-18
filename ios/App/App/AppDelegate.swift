@@ -33,6 +33,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    // Capacitor's push-notifications plugin doesn't intercept these UIKit
+    // callbacks automatically -- it listens on NotificationCenter and relies
+    // on AppDelegate to explicitly forward them here. Without this, iOS can
+    // successfully complete APNs registration and hand back a real device
+    // token, but it never reaches the JS "registration"/"registrationError"
+    // listeners -- it's silently dropped at this layer.
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
     func application(_ application: UIApplication,
                      configurationForConnecting connectingSceneSession: UISceneSession,
                      options: UIScene.ConnectionOptions) -> UISceneConfiguration {
