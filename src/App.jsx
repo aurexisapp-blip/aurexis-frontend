@@ -3233,6 +3233,17 @@ function AppInner() {
     ]);
     showToast?.("Added to Trade Journal");
   };
+  // Same reason as journalAddOpen below: AnalysisCard is defined inside
+  // Dashboard's render body, itself defined inside AppInner's -- both get
+  // redefined (new function identity) on every re-render of their parent,
+  // so React treats them as a different component type each time and
+  // remounts them, wiping any useState declared inside. That reset masqueraded
+  // as "the tab I'm reading randomly switches" -- it wasn't switching, it was
+  // resetting to the initial "why" tab on every unrelated re-render (e.g. the
+  // 30s health-check poll, the 60s movers poll, or any other AppInner state
+  // change). Lifting the state up here, to the one component that's never
+  // redefined, makes it survive those remounts.
+  const [analysisActiveTab, setAnalysisActiveTab] = useState("why");
   // journalAddOpen lives here so it survives TradeJournal remounts caused by App re-renders.
   // Form field values are kept in a ref (no state) so typing never triggers re-renders.
   const [journalAddOpen, setJournalAddOpen] = useState(false);
@@ -7028,7 +7039,8 @@ async function loadWatchlistLive() {
 
     // ---- ANALYSIS (merged: Why This Trade + AI Summary + Advanced Metrics) ----
     const AnalysisCard = () => {
-      const [activeTab, setActiveTab] = React.useState("why");
+      // analysisActiveTab/setAnalysisActiveTab intentionally live outside this
+      // component (lifted to AppInner) -- see the declaration there for why.
       const a = analysisObj;
 
       // Why This Trade data
@@ -7117,12 +7129,12 @@ async function loadWatchlistLive() {
       return (
         <div style={{
           background: darkMode ? "#111110" : "linear-gradient(160deg, rgba(248,250,252,0.98) 0%, rgba(242,246,250,0.98) 100%)",
-          border: `1px solid ${_advIsWarn && activeTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
+          border: `1px solid ${_advIsWarn && analysisActiveTab === "metrics" ? "rgba(251,113,133,0.25)" : T.border}`,
           borderRadius: isNative ? 18 : 16, overflow: "hidden",
           boxShadow: isNative
             ? nativeCardShadow(darkMode)
             : (darkMode
-                ? (_advIsWarn && activeTab === "metrics" ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)" : "0 8px 40px rgba(0,0,0,0.5)")
+                ? (_advIsWarn && analysisActiveTab === "metrics" ? "0 8px 40px rgba(0,0,0,0.5), inset 0 0 0 9999px rgba(251,113,133,0.015)" : "0 8px 40px rgba(0,0,0,0.5)")
                 : "0 2px 12px rgba(0,0,0,0.06)"),
           display: "flex", flexDirection: "column",
           height: "100%",
@@ -7130,7 +7142,7 @@ async function loadWatchlistLive() {
           <div style={{ padding: isNative ? NATIVE_SECONDARY_CARD.headerPad.replace(/ [\d.]+px$/, " 0") : "14px 18px 0" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 2 }}>
               <div style={isNative ? { ...NATIVE_SECONDARY_CARD.title, color: T.text } : { fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>Analysis</div>
-              {activeTab === "summary" && summaryHasContent ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
+              {analysisActiveTab === "summary" && summaryHasContent ? <span className={dirStyle.cls}>{dirStyle.text}</span> : null}
             </div>
             <div style={{ fontSize: 11, color: T.textFaint, marginTop: 1 }}>Setup reasoning, market context, and technical metrics.</div>
           </div>
@@ -7141,13 +7153,13 @@ async function loadWatchlistLive() {
           }>
             {tabs.map(t => {
               const tabLocked = !canAccess(userPlan, "starter") && (t.id === "summary" || t.id === "metrics");
-              const active = activeTab === t.id;
+              const active = analysisActiveTab === t.id;
               if (isNative) {
                 return (
                   <motion.button
                     key={t.id}
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => setActiveTab(t.id)}
+                    onClick={() => setAnalysisActiveTab(t.id)}
                     style={{
                       position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
                       padding: "8px 6px", border: "none", cursor: "pointer", fontFamily: "inherit",
@@ -7169,7 +7181,7 @@ async function loadWatchlistLive() {
               return (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id)}
+                  onClick={() => setAnalysisActiveTab(t.id)}
                   style={{
                     background: "none", border: "none", cursor: "pointer",
                     padding: "8px 14px", fontSize: 12.5,
@@ -7189,7 +7201,7 @@ async function loadWatchlistLive() {
           </div>
 
           <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
-            {activeTab === "why" && (
+            {analysisActiveTab === "why" && (
               !a || !whyHasContent ? (
                 <div className="mutedSmall">{analyzeFallbackText}</div>
               ) : (
@@ -7255,7 +7267,7 @@ async function loadWatchlistLive() {
               )
             )}
 
-            {activeTab === "summary" && !canAccess(userPlan, "starter") && (
+            {analysisActiveTab === "summary" && !canAccess(userPlan, "starter") && (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
                   <div style={{ padding: "8px 0 6px", marginBottom: 8 }}>
@@ -7293,7 +7305,7 @@ async function loadWatchlistLive() {
                 </div>
               </div>
             )}
-            {activeTab === "summary" && canAccess(userPlan, "starter") && (
+            {analysisActiveTab === "summary" && canAccess(userPlan, "starter") && (
               !a || !summaryHasContent ? (
                 <div className="mutedSmall">Sentiment data will appear after analysis.</div>
               ) : (
@@ -7334,7 +7346,7 @@ async function loadWatchlistLive() {
               )
             )}
 
-            {activeTab === "metrics" && !canAccess(userPlan, "starter") && (
+            {analysisActiveTab === "metrics" && !canAccess(userPlan, "starter") && (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
                 <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
                   <div style={{ marginBottom: 14 }}>
@@ -7383,7 +7395,7 @@ async function loadWatchlistLive() {
                 </div>
               </div>
             )}
-            {activeTab === "metrics" && canAccess(userPlan, "starter") && (
+            {analysisActiveTab === "metrics" && canAccess(userPlan, "starter") && (
               !a ? (
                 <div className="mutedSmall">{analyzeFallbackText}</div>
               ) : (
