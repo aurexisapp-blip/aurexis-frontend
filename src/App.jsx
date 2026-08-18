@@ -2730,30 +2730,42 @@ function AppInner() {
     // manually retoggle.
     const registerDeviceToken = (token, retriesLeft = 2) => {
       const authToken = localStorage.getItem("aurexis_token");
-      if (!authToken || !token) return;
+      console.log("[push] registerDeviceToken called", { hasAuthToken: !!authToken, hasDeviceToken: !!token, retriesLeft });
+      if (!authToken || !token) {
+        console.log("[push] aborting -- missing", !authToken ? "authToken" : "deviceToken");
+        return;
+      }
       fetch(`${API}/auth/device-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ device_token: token, platform: "ios" }),
       })
         .then((r) => {
+          console.log("[push] POST /auth/device-token response", r.status, r.ok);
           if (r.ok) {
             try {
               localStorage.setItem("aurexis_push_registered", "1");
               localStorage.setItem("aurexis_push_token", token);
+              console.log("[push] registered successfully, token saved locally");
             } catch {}
           } else if (retriesLeft > 0) {
+            console.log("[push] non-ok response, retrying in 2.5s");
             setTimeout(() => registerDeviceToken(token, retriesLeft - 1), 2500);
+          } else {
+            console.log("[push] non-ok response, out of retries, giving up");
           }
         })
-        .catch(() => {
+        .catch((e) => {
+          console.log("[push] fetch threw", String(e));
           if (retriesLeft > 0) setTimeout(() => registerDeviceToken(token, retriesLeft - 1), 2500);
         });
     };
     const regSub = PushNotifications.addListener("registration", (token) => {
+      console.log("[push] 'registration' event fired", { hasValue: !!token?.value, valuePreview: token?.value ? String(token.value).slice(0, 12) + "..." : null });
       registerDeviceToken(token?.value);
     });
     const errSub = PushNotifications.addListener("registrationError", (err) => {
+      console.log("[push] 'registrationError' event fired", JSON.stringify(err));
       console.warn("push registration error", err);
     });
     // Tap handling: paid-pick pushes deep-link to the dashboard (where
@@ -2773,11 +2785,13 @@ function AppInner() {
     // killed mid-registration last time and never got a second chance.
     PushNotifications.checkPermissions()
       .then((perm) => {
+        console.log("[push] self-heal checkPermissions", perm);
         if (perm?.receive === "granted" && localStorage.getItem("aurexis_push_registered") !== "1") {
-          PushNotifications.register().catch(() => {});
+          console.log("[push] self-heal calling register()");
+          PushNotifications.register().catch((e) => console.log("[push] self-heal register() threw", String(e)));
         }
       })
-      .catch(() => {});
+      .catch((e) => console.log("[push] self-heal checkPermissions threw", String(e)));
     return () => {
       regSub.then((s) => s.remove());
       errSub.then((s) => s.remove());
