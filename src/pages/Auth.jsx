@@ -644,7 +644,7 @@ export default function Auth({ defaultView = "login" }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
             >
-              <div style={N.logoMark}>A</div>
+              <img src="/brand-mark.png" alt="Aurexis" style={N.logoMark} />
               <span style={N.logoText}>AUREXIS</span>
             </motion.a>
 
@@ -811,7 +811,7 @@ export default function Auth({ defaultView = "login" }) {
         {/* Compact top strip */}
         <div style={M.topStrip}>
           <a href="/" style={M.logoRow}>
-            <div style={S.logoMark}>A</div>
+            <img src="/brand-mark.png" alt="Aurexis" style={S.logoMark} />
             <span style={S.logoText}>AUREXIS</span>
           </a>
           <div style={M.tagline}>One AI pick. Every trading day.</div>
@@ -942,7 +942,7 @@ export default function Auth({ defaultView = "login" }) {
       <div style={S.left}>
         <div style={S.leftInner}>
           <a href="/" style={S.leftLogo}>
-            <div style={S.logoMark}>A</div>
+            <img src="/brand-mark.png" alt="Aurexis" style={S.logoMark} />
             <span style={S.logoText}>AUREXIS</span>
           </a>
 
@@ -1110,10 +1110,9 @@ const S = {
     textDecoration: "none", marginBottom: 56,
   },
   logoMark: {
-    width: 36, height: 36, borderRadius: 10,
-    background: "#00b450",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 18, fontWeight: 900, color: "#fff", flexShrink: 0,
+    width: 40, height: 40, borderRadius: 11,
+    objectFit: "cover", display: "block", flexShrink: 0,
+    boxShadow: "0 4px 14px rgba(0,180,80,0.28), 0 0 0 1px rgba(255,255,255,0.06)",
   },
   logoText: {
     fontSize: 17, fontWeight: 900, letterSpacing: "0.18em",
@@ -1302,10 +1301,9 @@ const N = {
     textDecoration: "none", marginBottom: 32,
   },
   logoMark: {
-    width: 34, height: 34, borderRadius: 10,
-    background: "#00b450",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 17, fontWeight: 900, color: "#fff", flexShrink: 0,
+    width: 42, height: 42, borderRadius: 12,
+    objectFit: "cover", display: "block", flexShrink: 0,
+    boxShadow: "0 4px 16px rgba(0,180,80,0.32), 0 0 0 1px rgba(255,255,255,0.08)",
   },
   logoText: {
     fontSize: 15, fontWeight: 900, letterSpacing: "0.18em",
