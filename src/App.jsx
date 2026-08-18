@@ -3053,9 +3053,6 @@ function AppInner() {
 
   const [addingWatchlist, setAddingWatchlist] = useState(false);
 
-  const [showAnalyzeModal, setShowAnalyzeModal] = useState(false);
-  const [analyzeModalSymbol, setAnalyzeModalSymbol] = useState("");
-
   const [showPaperTradeModal, setShowPaperTradeModal] = useState(false);
   const [paperTradeModalData, setPaperTradeModalData] = useState(null);
   const [paperTradeExecuting, setPaperTradeExecuting] = useState(false);
@@ -4247,11 +4244,7 @@ async function loadWatchlistLive() {
 
       if (!canAccess(userPlan, "starter")) incrementAnalyzeUsage();
 
-      const payload = await runAnalyze(s);
-
-      if (payload) {
-        setAnalyzeModalSymbol?.(s);
-      }
+      await runAnalyze(s);
     } catch (e) {
       console.error("Analyze error:", e);
       showToast?.("Analyze failed");
@@ -7755,7 +7748,6 @@ async function loadWatchlistLive() {
     const analyzePosition = async (sym) => {
       const s = normalizeSymbol(sym);
       if (!s) return;
-      setAnalyzeModalSymbol(s);
       await runAnalyze(s);
     };
 
@@ -12888,85 +12880,6 @@ const renderPage = () => {
         </div>
       )}
       {/* ── end floating chat ─────────────────────────────────────────────── */}
-
-      {showAnalyzeModal ? (
-        <div className="modalOverlay" onClick={() => setShowAnalyzeModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            {(() => {
-              const modalSym = normalizeSymbol(analyzeModalSymbol || analyzeData?.symbol || "");
-              const modalAnalysis = (modalSym && analysisBySymbol?.[modalSym]) || analyzeData;
-              const safeModalAnalysis = ensureAnalyzeSchema(modalAnalysis, modalSym || analyzeData?.symbol);
-              const saveSymbol = normalizeSymbol(modalSym || safeModalAnalysis?.symbol || "");
-              return (
-                <>
-            <div className="modalHead">
-              <div className="modalTitle">Analyze: {fmt(saveSymbol || "—")}</div>
-              <button className="btn btn--ghost" onClick={() => setShowAnalyzeModal(false)}>
-                Close
-              </button>
-            </div>
-            <div className="modalBody">
-              <div style={{ marginBottom: 12 }}>
-                <button
-                  className="btn btn--primary"
-                  onClick={() => savePickToPortfolioLive({
-                    symbol: saveSymbol,
-                    source: "analyze",
-                    analysisSnapshot: safeModalAnalysis,
-                  })}
-                  disabled={!saveSymbol}
-                >
-                  Save to Portfolio
-                </button>
-              </div>
-
-              <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Trade Plan</div>
-              <div className="mutedSmall" style={{ marginBottom: 12 }}>
-                {(() => {
-                  const safeA = safeModalAnalysis;
-                  const tp0 = extractTradePlan(safeA);
-                  const entries = tp0.entries.length ? tp0.entries : ["—"];
-                  return entries.map((x, i) => (
-                  <div key={`m_tp_${i}`} style={{ marginBottom: 6 }}>- {fmt(x)}</div>
-                  ));
-                })()}
-              </div>
-
-              <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 8 }}>Headlines</div>
-              <div className="mutedSmall" style={{ maxHeight: 260, overflow: "auto", paddingRight: 4 }}>
-                {(() => {
-                  const items = extractHeadlines(safeModalAnalysis);
-                  const status = String(
-                    safeModalAnalysis?.news_status ?? safeModalAnalysis?.newsStatus ?? safeModalAnalysis?.news?.news_status ?? safeModalAnalysis?.news?.status ?? ""
-                  ).toLowerCase();
-                  if (!items.length && status === "none") return <div>No recent headlines found.</div>;
-                  if (!items.length) return <div>—</div>;
-                  return items.slice(0, 12).map((it, i) => {
-                    const headline = typeof it === "string" ? it : it?.headline ?? it?.title ?? "—";
-                    const source = typeof it === "string" ? "NEWS" : String(it?.source || it?.publisher || it?.type || "NEWS").toUpperCase();
-                    const published = typeof it === "string" ? null : it?.published_at ?? it?.publishedAt ?? it?.time ?? it?.ts ?? it?.timestamp;
-                    return (
-                      <div key={`m_h_${i}`} style={{ padding: "10px 0", borderTop: i ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                          <div className="mutedSmall" style={{ fontWeight: 900 }}>{fmt(headline)}</div>
-                          <div style={{ display: "inline-flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                            <span className="pill pill--neutral" style={{ padding: "6px 10px", fontSize: 12.5, fontWeight: 800 }}>{fmt(source)}</span>
-                            <span className="pill pill--neutral" style={{ padding: "6px 10px", fontSize: 12.5, fontWeight: 800 }}>{fmtTime(published)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      ) : null}
-
 
       {showFeedback ? (
         <div className="modalOverlay" onClick={() => setShowFeedback(false)}>
