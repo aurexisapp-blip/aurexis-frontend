@@ -777,9 +777,17 @@ export default function Auth({ defaultView = "login" }) {
                 />
                 <span style={N.termsText}>
                   By creating an account you agree to our{" "}
-                  <a href="/terms" target="_blank" rel="noopener noreferrer" style={N.termsLink}>Terms of Service</a>
+                  <a
+                    href="/terms"
+                    onClick={e => { e.preventDefault(); Browser.open({ url: "https://useaurexis.com/terms" }); }}
+                    style={N.termsLink}
+                  >Terms of Service</a>
                   {" "}and{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={N.termsLink}>Privacy Policy</a>.
+                  <a
+                    href="/privacy"
+                    onClick={e => { e.preventDefault(); Browser.open({ url: "https://useaurexis.com/privacy" }); }}
+                    style={N.termsLink}
+                  >Privacy Policy</a>.
                 </span>
               </label>
             )}

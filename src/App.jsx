@@ -10749,7 +10749,13 @@ async function loadWatchlistLive() {
                             <div style={{ fontSize: 13, color: txtS }}>{inv.date}</div>
                             <div style={{ fontSize: 13, color: txt, fontWeight: 600 }}>{inv.amount}</div>
                             <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#3EE0A3" : txtG }}>{inv.status}</div>
-                            <div>{inv.url ? <a href={inv.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none" }}>View</a> : null}</div>
+                            <div>{inv.url ? (
+                              isNative ? (
+                                <span onClick={() => CapacitorBrowser.open({ url: inv.url })} style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none", cursor: "pointer" }}>View</span>
+                              ) : (
+                                <a href={inv.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none" }}>View</a>
+                              )
+                            ) : null}</div>
                           </div>
                         ))}
                       </>
@@ -12607,16 +12613,25 @@ const renderPage = () => {
 
       </div>
       <div className="persistentRiskFooter">
-        <a
-          href="/legal"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "inherit", textDecoration: "none", transition: "color 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
-          onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.color = ""; }}
-        >
-          For educational and paper-trading use only. Not investment advice. Verify all trades independently.
-        </a>
+        {isNative ? (
+          <span
+            onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/legal" })}
+            style={{ color: "inherit", textDecoration: "none", cursor: "pointer" }}
+          >
+            For educational and paper-trading use only. Not investment advice. Verify all trades independently.
+          </span>
+        ) : (
+          <a
+            href="/legal"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", textDecoration: "none", transition: "color 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
+            onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.color = ""; }}
+          >
+            For educational and paper-trading use only. Not investment advice. Verify all trades independently.
+          </a>
+        )}
       </div>
 
       {/* ── Floating AI Chat Widget ──────────────────────────────────────── */}
