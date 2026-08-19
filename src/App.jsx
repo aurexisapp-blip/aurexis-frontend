@@ -2055,35 +2055,35 @@ const ONBOARDING_STEPS = [
     icon: null,
     eyebrow: "WELCOME TO AUREXIS",
     title: "The edge serious traders have been waiting for.",
-    body: "Aurexis is an AI-powered stock signal system built to surface one thing: the single highest-conviction trade opportunity of the day. No noise. No overload. Just signal.",
+    body: "One AI-scored trade opportunity a day. No noise, no overload — just signal.",
     stat: null,
   },
   {
     icon: "🎯",
     eyebrow: "DAILY AI PICK",
     title: "One pick. Every morning. Before the open.",
-    body: "At 9:30 AM ET, our AI scans 1,200+ stocks across momentum, relative strength, volume structure, and market regime. It scores every setup — and only surfaces the one that clears every threshold.",
+    body: "1,200+ stocks scanned overnight, scored on momentum and volume — only the setup that clears every threshold makes it through.",
     stat: { label: "Stocks scanned nightly", value: "1,200+" },
   },
   {
     icon: "📐",
     eyebrow: "TRADE LEVELS",
     title: "Entry, stop, and target — calculated for you.",
-    body: "Every pick comes with a precise entry zone, a stop-loss based on structure, and a Fibonacci-derived price target. The system calculates your risk/reward ratio automatically. You just decide if you take it.",
+    body: "A precise entry zone, structure-based stop-loss, and price target, with risk/reward done automatically. You just decide.",
     stat: { label: "Signals per pick", value: "3–7" },
   },
   {
     icon: "📊",
     eyebrow: "PERFORMANCE",
     title: "Every pick is tracked publicly. Wins and losses.",
-    body: "We don't cherry-pick results. Every signal is logged the moment it fires — entry price, outcome, return. You can audit the full track record anytime from the Recent Picks panel.",
+    body: "No cherry-picking — every signal is logged the moment it fires. Audit the full track record anytime.",
     stat: { label: "Avg return on winners", value: "+6.8%" },
   },
   {
     icon: "🛡️",
     eyebrow: "NO_TRADE SIGNAL",
     title: "Some days, doing nothing is the right trade.",
-    body: "When market conditions aren't favorable, Aurexis returns NO_TRADE. That's a signal too — it means the system found no setup worth the risk. Discipline is built into the algorithm.",
+    body: "When conditions aren't favorable, Aurexis says NO_TRADE. Discipline is built into the algorithm.",
     stat: null,
   },
 ];
@@ -2131,6 +2131,9 @@ function OnboardingModal({ onDone, userName = "" }) {
       alignItems: "center", justifyContent: "center",
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       overflow: "hidden",
+      paddingTop: "env(safe-area-inset-top, 0px)",
+      paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      boxSizing: "border-box",
     }}>
       {/* Grid */}
       <div style={{
@@ -2166,9 +2169,11 @@ function OnboardingModal({ onDone, userName = "" }) {
         }} />
       </div>
 
-      {/* Skip */}
+      {/* Skip -- offset by the safe-area inset so it clears the notch/Dynamic
+          Island on native instead of sitting under it (this whole modal had
+          no safe-area handling at all, unlike the rest of the native UI). */}
       <button onClick={onDone} style={{
-        position: "fixed", top: 20, right: 24,
+        position: "fixed", top: "calc(env(safe-area-inset-top, 0px) + 20px)", right: 24,
         background: "none", border: "1px solid rgba(255,255,255,0.09)",
         color: "rgba(255,255,255,0.28)", fontSize: 11, fontWeight: 600,
         cursor: "pointer", fontFamily: "inherit", padding: "5px 13px",
