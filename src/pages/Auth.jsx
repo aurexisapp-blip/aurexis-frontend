@@ -108,7 +108,63 @@ const NATIVE_KEYFRAMES = `
   70%  { box-shadow: 0 0 0 6px rgba(74,222,128,0); opacity: 0.7; }
   100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); opacity: 1; }
 }
+@keyframes aurexisRadarPulse {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+@keyframes aurexisSubmitGlow {
+  0%, 100% { box-shadow: 0 6px 28px rgba(22,163,74,0.35); }
+  50%      { box-shadow: 0 6px 36px rgba(22,163,74,0.55); }
+}
+.aurexisNativeInput { transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
+.aurexisNativeInput:focus {
+  border-color: rgba(74,222,128,0.55) !important;
+  background: rgba(255,255,255,0.08) !important;
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.12);
+}
 `;
+
+// Same proof trades the desktop landing page's ticker tape shows -- reused
+// here so the native signup screen carries the same "real, verified picks"
+// signal instead of being a flat form with no visual proof of the product.
+const NATIVE_TICKERS = [
+  { sym: "MRVL", chg: "+36.4%" },
+  { sym: "PYPL", chg: "+12.1%" },
+  { sym: "EWZ",  chg: "+8.3%"  },
+  { sym: "EBAY", chg: "+6.2%"  },
+  { sym: "KRE",  chg: "+4.8%"  },
+];
+
+function NativeTickerTape() {
+  const items = [...NATIVE_TICKERS, ...NATIVE_TICKERS, ...NATIVE_TICKERS];
+  return (
+    <div style={{
+      overflow: "hidden",
+      borderTop: "1px solid rgba(74,222,128,0.10)",
+      borderBottom: "1px solid rgba(74,222,128,0.10)",
+      background: "rgba(0,0,0,0.35)",
+    }}>
+      <motion.div
+        style={{ display: "flex", width: "max-content" }}
+        animate={{ x: ["0%", "-33.333%"] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+      >
+        {items.map(({ sym, chg }, i) => (
+          <div key={i} style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "9px 18px", borderRight: "1px solid rgba(255,255,255,0.05)",
+            whiteSpace: "nowrap",
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.50)", letterSpacing: "0.08em" }}>{sym}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>{chg}</span>
+            <span style={{ fontSize: 9, color: "rgba(74,222,128,0.55)", fontWeight: 700 }}>✓</span>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
 
 const OAUTH_ERRORS = {
   google_denied: "Google sign-in was cancelled.",
@@ -644,7 +700,11 @@ export default function Auth({ defaultView = "login" }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
             >
-              <img src="/brand-mark.png" alt="Aurexis" style={N.logoMark} />
+              <div style={N.logoMarkWrap}>
+                <span style={{ ...N.radarRing, animationDelay: "0s" }} aria-hidden="true" />
+                <span style={{ ...N.radarRing, animationDelay: "1.4s" }} aria-hidden="true" />
+                <img src="/brand-mark.png" alt="Aurexis" style={N.logoMark} />
+              </div>
               <span style={N.logoText}>AUREXIS</span>
             </motion.a>
 
@@ -694,6 +754,8 @@ export default function Auth({ defaultView = "login" }) {
           </div>
         </div>
 
+        <NativeTickerTape />
+
         <motion.div
           style={N.formWrap}
           initial={{ opacity: 0, y: 12 }}
@@ -726,24 +788,26 @@ export default function Auth({ defaultView = "login" }) {
                 <input
                   type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
                   required autoComplete="given-name" placeholder="First name"
-                  style={{ ...N.input, flex: 1 }}
+                  className="aurexisNativeInput" style={{ ...N.input, flex: 1 }}
                 />
                 <input
                   type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
                   required autoComplete="family-name" placeholder="Last name"
-                  style={{ ...N.input, flex: 1 }}
+                  className="aurexisNativeInput" style={{ ...N.input, flex: 1 }}
                 />
               </div>
             )}
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              required autoComplete="email" placeholder="Email address" style={N.input}
+              required autoComplete="email" placeholder="Email address"
+              className="aurexisNativeInput" style={N.input}
             />
             <div>
               <input
                 type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                 required autoComplete={isLogin ? "current-password" : "new-password"}
-                placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={N.input}
+                placeholder={isLogin ? "Password" : "Password (min 8 characters)"}
+                className="aurexisNativeInput" style={N.input}
               />
               {isLogin && (
                 <div style={{ textAlign: "right", marginTop: 10 }}>
@@ -1308,7 +1372,17 @@ const N = {
     display: "flex", alignItems: "center", gap: 10,
     textDecoration: "none", marginBottom: 32,
   },
+  logoMarkWrap: {
+    position: "relative", width: 42, height: 42, flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  radarRing: {
+    position: "absolute", inset: 0, borderRadius: 12,
+    border: "1.5px solid rgba(74,222,128,0.55)",
+    animation: "aurexisRadarPulse 2.8s ease-out infinite",
+  },
   logoMark: {
+    position: "relative", zIndex: 1,
     width: 42, height: 42, borderRadius: 12,
     objectFit: "cover", display: "block", flexShrink: 0,
     boxShadow: "0 4px 16px rgba(0,180,80,0.32), 0 0 0 1px rgba(255,255,255,0.08)",
@@ -1333,11 +1407,12 @@ const N = {
   statsRow: { display: "flex", gap: 10 },
   statBadge: {
     flex: 1, display: "flex", flexDirection: "column", gap: 4,
-    background: "linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))",
-    border: "1px solid rgba(255,255,255,0.09)",
+    background: "linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02))",
+    backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+    border: "1px solid rgba(255,255,255,0.11)",
     borderRadius: 16,
     padding: "14px 12px",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.30)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 16px rgba(0,0,0,0.30)",
   },
   statVal:   { fontSize: 19, fontWeight: 800, color: "#4ade80", letterSpacing: "-0.02em" },
   statLabel: { fontSize: 11, color: "rgba(255,255,255,0.40)", fontWeight: 600, display: "flex", alignItems: "center" },
@@ -1430,7 +1505,7 @@ const N = {
     color: "#fff", fontSize: 17, fontWeight: 700,
     cursor: "pointer", letterSpacing: "0.01em",
     fontFamily: "inherit", marginTop: 6,
-    boxShadow: "0 6px 28px rgba(22,163,74,0.35)", width: "100%",
+    animation: "aurexisSubmitGlow 2.6s ease-in-out infinite", width: "100%",
     minHeight: 56, boxSizing: "border-box",
   },
 
