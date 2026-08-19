@@ -12,7 +12,44 @@ import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Legal from "./pages/Legal";
 import MobileCheckout from "./pages/MobileCheckout";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import "./index.css";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+// Anonymous traffic/presence heartbeat for the private /admin/analytics
+// dashboard -- fired here (wrapping every route) rather than inside the
+// authenticated App component, since most day-one visitors hit the landing
+// or login page and never reach it. One ping on load, then every 45s while
+// the tab/app is open. session_id is a random UUID persisted in
+// localStorage so reloads within the same browser/app install count as one
+// continuous session rather than a fresh row each time; the backend upserts
+// on it either way.
+function useVisitPing() {
+  useEffect(() => {
+    let sid;
+    try {
+      sid = localStorage.getItem("aurexis_session_id");
+      if (!sid) {
+        sid = (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        localStorage.setItem("aurexis_session_id", sid);
+      }
+    } catch {
+      sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    const ping = () => {
+      const tok = (() => { try { return localStorage.getItem("aurexis_token"); } catch { return null; } })();
+      fetch(`${API_BASE_URL}/track/ping`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+        body: JSON.stringify({ session_id: sid, platform: isNativeApp() ? "ios" : "web" }),
+      }).catch(() => {});
+    };
+    ping();
+    const id = setInterval(ping, 45000);
+    return () => clearInterval(id);
+  }, []);
+}
 
 function MobileBlock() {
   return (
@@ -128,12 +165,9 @@ function AppGate() {
   return <App />;
 }
 
-const rootEl = document.getElementById("root");
-if (!rootEl) throw new Error("Root element #root not found");
-
-createRoot(rootEl).render(
-  <React.StrictMode>
-    <BrowserRouter>
+function RootRoutes() {
+  useVisitPing();
+  return (
       <Routes>
         <Route path="/legal"      element={<Legal />} />
         <Route path="/terms"      element={<Terms />} />
@@ -157,9 +191,22 @@ createRoot(rootEl).render(
             two-column marketing layout, neither of which belongs on the
             other end of an in-app "Get Starter" tap. */}
         <Route path="/mobile-checkout" element={<MobileCheckout />} />
+        {/* Private, secret-gated traffic/presence dashboard. Deliberately
+            not linked from any nav -- reached only by typing the URL. */}
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={isNativeApp() ? <Navigate to="/login" replace /> : <LandingPage />} />
       </Routes>
+  );
+}
+
+const rootEl = document.getElementById("root");
+if (!rootEl) throw new Error("Root element #root not found");
+
+createRoot(rootEl).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <RootRoutes />
     </BrowserRouter>
   </React.StrictMode>
 );
