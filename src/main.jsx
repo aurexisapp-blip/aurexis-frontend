@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { isNativeApp } from "./lib/platform";
+import { setToken, restoreTokenIfMissing } from "./lib/authStorage";
 import App from "./App";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
@@ -152,7 +153,7 @@ function AppGate() {
   const params = new URLSearchParams(window.location.search);
   const urlToken = params.get("token");
   if (urlToken) {
-    localStorage.setItem("aurexis_token", urlToken);
+    setToken(urlToken);
     if (params.get("new_user") === "1") {
       localStorage.setItem("aurexis_force_onboarding", "1");
     }
@@ -203,10 +204,17 @@ function RootRoutes() {
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");
 
-createRoot(rootEl).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <RootRoutes />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+// On native, restore aurexis_token from Capacitor Preferences before the
+// first render if iOS evicted localStorage while the app was backgrounded --
+// otherwise AppGate's synchronous `!localStorage.getItem("aurexis_token")`
+// check below fires first and bounces a genuinely-still-logged-in user to
+// /login. No-op (resolves on the same tick) on web.
+restoreTokenIfMissing().finally(() => {
+  createRoot(rootEl).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <RootRoutes />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+});

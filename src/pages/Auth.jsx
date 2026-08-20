@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isNativeApp } from "../lib/platform";
+import { setToken } from "../lib/authStorage";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 import { Browser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -209,7 +210,7 @@ export default function Auth({ defaultView = "login" }) {
       Browser.close().catch(() => {});
       const token = parsed.searchParams.get("token");
       if (token) {
-        localStorage.setItem("aurexis_token", token);
+        setToken(token);
         if (parsed.searchParams.get("new_user") === "1") {
           localStorage.setItem("aurexis_force_onboarding", "1");
         }
@@ -251,7 +252,7 @@ export default function Auth({ defaultView = "login" }) {
       if (token) {
         const prevUser = localStorage.getItem("aurexis_user_email");
         if (prevUser && prevUser !== email) localStorage.removeItem("aurexis_onboarding_complete");
-        localStorage.setItem("aurexis_token", token);
+        setToken(token);
         localStorage.setItem("aurexis_user_email", email);
       }
       await completeAuth(token);
@@ -288,7 +289,7 @@ export default function Auth({ defaultView = "login" }) {
       if (token) {
         const prevUser = localStorage.getItem("aurexis_user_email");
         if (prevUser && data?.email && prevUser !== data.email) localStorage.removeItem("aurexis_onboarding_complete");
-        localStorage.setItem("aurexis_token", token);
+        setToken(token);
         if (data?.email) localStorage.setItem("aurexis_user_email", data.email);
         if (data?.is_new_user) {
           localStorage.setItem("aurexis_force_onboarding", "1");
@@ -351,7 +352,7 @@ export default function Auth({ defaultView = "login" }) {
       if (token) {
         const prevUser = localStorage.getItem("aurexis_user_email");
         if (prevUser && data?.email && prevUser !== data.email) localStorage.removeItem("aurexis_onboarding_complete");
-        localStorage.setItem("aurexis_token", token);
+        setToken(token);
         if (data?.email) localStorage.setItem("aurexis_user_email", data.email);
         if (data?.is_new_user) {
           localStorage.setItem("aurexis_force_onboarding", "1");
@@ -379,7 +380,7 @@ export default function Auth({ defaultView = "login" }) {
       if (!res.ok) { setError(data?.detail || "Invalid code. Try again."); return; }
       const token = data?.access_token || data?.token;
       if (token) {
-        localStorage.setItem("aurexis_token", token);
+        setToken(token);
         localStorage.setItem("aurexis_user_email", otpEmail);
         if (isNewUser) {
           localStorage.setItem("aurexis_force_onboarding", "1");
@@ -418,7 +419,7 @@ export default function Auth({ defaultView = "login" }) {
       const newToken = signupData?.access_token || signupData?.token;
       if (newToken) {
         localStorage.setItem("aurexis_force_onboarding", "1");
-        localStorage.setItem("aurexis_token", newToken);
+        setToken(newToken);
         localStorage.setItem("aurexis_user_email", email);
         if (signupData?.first_name) localStorage.setItem("aurexis_user_first_name", signupData.first_name);
       }

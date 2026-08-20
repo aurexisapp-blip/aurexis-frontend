@@ -8,6 +8,7 @@ import { AnimatePresence, animate, motion } from "framer-motion";
 import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
+import { setToken, clearToken } from "./lib/authStorage";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -267,7 +268,7 @@ function summarizePayloadShape(data) {
 // still-valid cookie carry the request.
 async function doLogout() {
   const tok = localStorage.getItem("aurexis_token");
-  localStorage.removeItem("aurexis_token");
+  clearToken();
   localStorage.removeItem("aurexis_user_email");
   localStorage.removeItem("aurexis_user_first_name");
   localStorage.removeItem("aurexis_force_onboarding");
@@ -2313,13 +2314,22 @@ function usePlan() {
     // bought in Safari actually shows up back in the app), the
     // "storage"/aurexis:refresh-plan events below, and any manual
     // "Refresh subscription status" button.
-    const refreshFromServer = () => {
+    // A single 401 here used to force an immediate logout, on the theory it
+    // only ever means "session invalidated (logged in on another device)".
+    // But this fires on every app-foreground, including right as a native
+    // cold start races the Preferences->localStorage token restore (see
+    // authStorage.js) -- a 401 in that narrow window reflects a stale token
+    // read mid-restore, not a real invalidated session. One retry a couple
+    // seconds later, once the restore has settled, avoids logging someone
+    // out over that race while still catching a genuinely invalidated
+    // session (which will still 401 on the retry too).
+    const checkAuth = (isRetry) => {
       const tok = localStorage.getItem("aurexis_token");
       if (!tok) return;
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
         .then(r => {
           if (r.status === 401) {
-            // Session invalidated (logged in on another device) — force re-login
+            if (!isRetry) { setTimeout(() => checkAuth(true), 2500); return null; }
             doLogout();
             return null;
           }
@@ -2328,6 +2338,7 @@ function usePlan() {
         .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
         .catch(() => {});
     };
+    const refreshFromServer = () => checkAuth(false);
     window.addEventListener("storage", sync);
     window.addEventListener("aurexis:refresh-plan", refreshFromServer);
     refreshFromServer();
@@ -2832,7 +2843,7 @@ function AppInner() {
     const oauthToken = params.get("token");
     const isNewOAuth = params.get("new_user") === "1";
     if (oauthToken) {
-      localStorage.setItem("aurexis_token", oauthToken);
+      setToken(oauthToken);
       if (isNewOAuth) localStorage.setItem("aurexis_force_onboarding", "1");
       const clean = window.location.pathname;
       window.history.replaceState({}, "", clean);
@@ -2849,7 +2860,7 @@ function AppInner() {
             .then(r => r.ok ? r.json() : null)
             .then(data => {
               if (data?.access_token) {
-                localStorage.setItem("aurexis_token", data.access_token);
+                setToken(data.access_token);
                 window.dispatchEvent(new Event("storage"));
               }
               return fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data?.access_token || tok}` } });
@@ -10224,7 +10235,7 @@ async function loadWatchlistLive() {
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data?.access_token) {
-            localStorage.setItem("aurexis_token", data.access_token);
+            setToken(data.access_token);
             window.dispatchEvent(new Event("storage"));
           }
         })

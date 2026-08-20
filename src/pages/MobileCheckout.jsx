@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PLAN_PRICING, PLAN_LABEL, PLAN_HIGHLIGHTS, planPriceLabel } from "../lib/pricing";
+import { setToken, clearToken } from "../lib/authStorage";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -27,7 +28,7 @@ function captureTokenFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const urlToken = params.get("token");
   if (urlToken) {
-    localStorage.setItem("aurexis_token", urlToken);
+    setToken(urlToken);
     const clean = new URL(window.location.href);
     clean.searchParams.delete("token");
     window.history.replaceState({}, "", clean.pathname + clean.search);
@@ -66,7 +67,7 @@ export default function MobileCheckout() {
       if (res.status === 401) {
         // Stale/expired token sitting in this browser -- clear it and
         // send them through login instead of showing a confusing error.
-        localStorage.removeItem("aurexis_token");
+        clearToken();
         navigate(`/login?plan=${plan}&next=${encodeURIComponent(`/mobile-checkout?plan=${plan}`)}`);
         return;
       }
