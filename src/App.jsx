@@ -8,7 +8,7 @@ import { AnimatePresence, animate, motion } from "framer-motion";
 import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
-import { setToken, clearToken } from "./lib/authStorage";
+import { setToken, clearToken, alog } from "./lib/authStorage";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -267,8 +267,7 @@ function summarizePayloadShape(data) {
 // _extract_token, since it just re-adds no Bearer header and lets the
 // still-valid cookie carry the request.
 async function doLogout(reason) {
-  // eslint-disable-next-line no-console
-  console.log(`[auth] doLogout() called, reason=${reason || "unspecified"}`, new Error().stack);
+  alog(`doLogout() called, reason=${reason || "unspecified"}`);
   const tok = localStorage.getItem("aurexis_token");
   clearToken();
   localStorage.removeItem("aurexis_user_email");
@@ -297,26 +296,26 @@ async function doLogout(reason) {
 let _sessionRecheckPromise = null;
 function _handleUnauthorized(fromPath) {
   if (_sessionRecheckPromise) {
-    console.log(`[auth] 401 from ${fromPath} -- recheck already in flight, joining it`);
+    alog(`401 from ${fromPath} -- recheck already in flight, joining it`);
     return _sessionRecheckPromise;
   }
-  console.log(`[auth] 401 from ${fromPath} -- starting coalesced recheck in 2500ms`);
+  alog(`401 from ${fromPath} -- starting coalesced recheck in 2500ms`);
   _sessionRecheckPromise = (async () => {
     await new Promise(r => setTimeout(r, 2500));
     const tok = localStorage.getItem("aurexis_token");
     if (!tok) {
-      console.log("[auth] recheck: no token in localStorage at all, skipping (already logged out)");
+      alog("recheck: no token in localStorage at all, skipping (already logged out)");
       _sessionRecheckPromise = null;
       return;
     }
     try {
       const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } });
-      console.log(`[auth] recheck: /auth/me returned ${res.status}`);
+      alog(`recheck: /auth/me returned ${res.status}`);
       if (res.status === 401) {
         doLogout(`apiFetch 401 confirmed on recheck (originated from ${fromPath})`);
       }
     } catch (e) {
-      console.log("[auth] recheck: network error, NOT logging out", String(e));
+      alog(`recheck: network error, NOT logging out: ${String(e)}`);
     } finally {
       _sessionRecheckPromise = null;
     }
@@ -2371,11 +2370,11 @@ function usePlan() {
     // instead of racing separate ones.
     const refreshFromServer = () => {
       const tok = localStorage.getItem("aurexis_token");
-      if (!tok) { console.log("[auth] refreshFromServer: no token, skipping"); return; }
-      console.log("[auth] refreshFromServer: checking /auth/me");
+      if (!tok) { alog("refreshFromServer: no token, skipping"); return; }
+      alog("refreshFromServer: checking /auth/me");
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
         .then(r => {
-          console.log(`[auth] refreshFromServer: /auth/me returned ${r.status}`);
+          alog(`refreshFromServer: /auth/me returned ${r.status}`);
           if (r.status === 401) {
             _handleUnauthorized("usePlan refreshFromServer");
             return null;
@@ -2383,7 +2382,7 @@ function usePlan() {
           return r.ok ? r.json() : null;
         })
         .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
-        .catch((e) => console.log("[auth] refreshFromServer: network error", String(e)));
+        .catch((e) => alog(`refreshFromServer: network error: ${String(e)}`));
     };
     window.addEventListener("storage", sync);
     window.addEventListener("aurexis:refresh-plan", refreshFromServer);
@@ -2392,7 +2391,7 @@ function usePlan() {
     let appStateHandle = null;
     if (isNativeApp()) {
       CapacitorApp.addListener("appStateChange", ({ isActive }) => {
-        console.log(`[auth] appStateChange fired: isActive=${isActive}`);
+        alog(`appStateChange fired: isActive=${isActive}`);
         if (isActive) refreshFromServer();
       }).then(h => { appStateHandle = h; });
     }
