@@ -22,27 +22,52 @@ const KEY = "aurexis_token";
 export function setToken(token) {
   try { localStorage.setItem(KEY, token); } catch {}
   if (isNativeApp()) {
-    Preferences.set({ key: KEY, value: token }).catch(() => {});
+    const t0 = Date.now();
+    console.log(`[auth] Preferences.set() starting, token len=${token?.length ?? 0}`);
+    // Fire-and-forget: if the app backgrounds/gets killed before this
+    // resolves, the mirror write could be lost. Logged so a real device
+    // trace can show whether that's actually happening (a "starting" log
+    // with no matching "completed" log right before a bad reproduction
+    // would confirm it) rather than just theorizing about it.
+    Preferences.set({ key: KEY, value: token })
+      .then(() => console.log(`[auth] Preferences.set() completed in ${Date.now() - t0}ms`))
+      .catch((e) => console.log(`[auth] Preferences.set() FAILED after ${Date.now() - t0}ms`, String(e)));
   }
 }
 
 export function clearToken() {
   try { localStorage.removeItem(KEY); } catch {}
   if (isNativeApp()) {
-    Preferences.remove({ key: KEY }).catch(() => {});
+    Preferences.remove({ key: KEY })
+      .then(() => console.log("[auth] Preferences.remove() completed"))
+      .catch((e) => console.log("[auth] Preferences.remove() FAILED", String(e)));
   }
 }
 
 // Call once at boot, before the first render that might redirect to /login
 // based on an empty token. No-op (resolves immediately) on web.
 export async function restoreTokenIfMissing() {
-  if (!isNativeApp()) return;
+  if (!isNativeApp()) {
+    console.log("[auth] restoreTokenIfMissing: not native, skipping");
+    return;
+  }
+  const t0 = Date.now();
   try {
     const existing = localStorage.getItem(KEY);
-    if (existing) return;
+    if (existing) {
+      console.log(`[auth] restoreTokenIfMissing: localStorage already has a token (len=${existing.length}), no restore needed`);
+      return;
+    }
+    console.log("[auth] restoreTokenIfMissing: localStorage is EMPTY, checking Preferences...");
     const { value } = await Preferences.get({ key: KEY });
-    if (value) localStorage.setItem(KEY, value);
-  } catch {
+    if (value) {
+      localStorage.setItem(KEY, value);
+      console.log(`[auth] restoreTokenIfMissing: RESTORED token from Preferences (len=${value.length}) in ${Date.now() - t0}ms -- localStorage had been wiped`);
+    } else {
+      console.log(`[auth] restoreTokenIfMissing: Preferences also has nothing (checked in ${Date.now() - t0}ms) -- genuinely logged out, or never logged in on this install`);
+    }
+  } catch (e) {
+    console.log(`[auth] restoreTokenIfMissing: threw an error after ${Date.now() - t0}ms`, String(e));
     // Preferences unavailable or errored -- fall through with whatever
     // localStorage already had (possibly nothing), same as before this fix.
   }

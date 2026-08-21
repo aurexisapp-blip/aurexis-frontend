@@ -266,7 +266,9 @@ function summarizePayloadShape(data) {
 // still authenticate via the cookie fallback in the backend's
 // _extract_token, since it just re-adds no Bearer header and lets the
 // still-valid cookie carry the request.
-async function doLogout() {
+async function doLogout(reason) {
+  // eslint-disable-next-line no-console
+  console.log(`[auth] doLogout() called, reason=${reason || "unspecified"}`, new Error().stack);
   const tok = localStorage.getItem("aurexis_token");
   clearToken();
   localStorage.removeItem("aurexis_user_email");
@@ -276,6 +278,50 @@ async function doLogout() {
     fetch(`${API_BASE}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${tok}` } }).catch(() => {});
   }
   window.location.href = "/";
+}
+
+// apiFetch has ~16 call sites across the app (portfolio, watchlist, journal,
+// chat, learning status, etc.), several of which fire on app foreground.
+// Each independently treating a 401 as "log out now" meant that on resume,
+// whichever of those many concurrent calls happened to race ahead of the
+// Preferences->localStorage boot restore (see authStorage.js) would force a
+// logout even though the session was actually fine -- and with 16+
+// independent trigger points, at least one losing that race on any given
+// resume was close to guaranteed, which matches "logs out every time"
+// far better than any single call site would on its own. This coalesces
+// every 401 from every apiFetch call into ONE shared recheck: the first 401
+// to land waits, then re-verifies with /auth/me; any other 401 that arrives
+// while that's in flight just awaits the same result instead of starting
+// its own independent doLogout(). A genuinely invalid session still 401s on
+// the recheck and still logs out -- this only removes the false positives.
+let _sessionRecheckPromise = null;
+function _handleUnauthorized(fromPath) {
+  if (_sessionRecheckPromise) {
+    console.log(`[auth] 401 from ${fromPath} -- recheck already in flight, joining it`);
+    return _sessionRecheckPromise;
+  }
+  console.log(`[auth] 401 from ${fromPath} -- starting coalesced recheck in 2500ms`);
+  _sessionRecheckPromise = (async () => {
+    await new Promise(r => setTimeout(r, 2500));
+    const tok = localStorage.getItem("aurexis_token");
+    if (!tok) {
+      console.log("[auth] recheck: no token in localStorage at all, skipping (already logged out)");
+      _sessionRecheckPromise = null;
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } });
+      console.log(`[auth] recheck: /auth/me returned ${res.status}`);
+      if (res.status === 401) {
+        doLogout(`apiFetch 401 confirmed on recheck (originated from ${fromPath})`);
+      }
+    } catch (e) {
+      console.log("[auth] recheck: network error, NOT logging out", String(e));
+    } finally {
+      _sessionRecheckPromise = null;
+    }
+  })();
+  return _sessionRecheckPromise;
 }
 
 async function apiFetch(path, options) {
@@ -339,13 +385,17 @@ async function apiFetch(path, options) {
   }
 
   if (!res.ok) {
-    // A 401 while we believed we had a valid token means the backend's
-    // single-session enforcement invalidated it (most commonly: logged in
-    // on another device) -- treat it as a forced logout everywhere apiFetch
-    // is used, not just the one mount-time /auth/me probe that used to be
-    // the only place this was caught.
+    // A 401 while we believed we had a valid token USUALLY means the
+    // backend's single-session enforcement invalidated it (logged in on
+    // another device) -- but this fires from ~16 call sites across the app,
+    // several on app foreground, and used to log out immediately on the
+    // very first 401 any of them saw with zero retry. See
+    // _handleUnauthorized's comment for why that produced false-positive
+    // logouts on resume. Fire-and-forget here (not awaited) so this
+    // specific apiFetch call still rejects/throws normally for its own
+    // caller's error handling either way.
     if (res.status === 401 && _tok) {
-      doLogout();
+      _handleUnauthorized(url);
     }
     const msg =
       (data && data.detail) ||
@@ -2314,31 +2364,27 @@ function usePlan() {
     // bought in Safari actually shows up back in the app), the
     // "storage"/aurexis:refresh-plan events below, and any manual
     // "Refresh subscription status" button.
-    // A single 401 here used to force an immediate logout, on the theory it
-    // only ever means "session invalidated (logged in on another device)".
-    // But this fires on every app-foreground, including right as a native
-    // cold start races the Preferences->localStorage token restore (see
-    // authStorage.js) -- a 401 in that narrow window reflects a stale token
-    // read mid-restore, not a real invalidated session. One retry a couple
-    // seconds later, once the restore has settled, avoids logging someone
-    // out over that race while still catching a genuinely invalidated
-    // session (which will still 401 on the retry too).
-    const checkAuth = (isRetry) => {
+    // Routes through the same coalesced _handleUnauthorized() apiFetch uses
+    // (see its comment above doLogout) rather than its own independent
+    // retry-then-logout, so a 401 here and a 401 from any of apiFetch's ~16
+    // call sites firing around the same foreground moment share ONE recheck
+    // instead of racing separate ones.
+    const refreshFromServer = () => {
       const tok = localStorage.getItem("aurexis_token");
-      if (!tok) return;
+      if (!tok) { console.log("[auth] refreshFromServer: no token, skipping"); return; }
+      console.log("[auth] refreshFromServer: checking /auth/me");
       fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${tok}` } })
         .then(r => {
+          console.log(`[auth] refreshFromServer: /auth/me returned ${r.status}`);
           if (r.status === 401) {
-            if (!isRetry) { setTimeout(() => checkAuth(true), 2500); return null; }
-            doLogout();
+            _handleUnauthorized("usePlan refreshFromServer");
             return null;
           }
           return r.ok ? r.json() : null;
         })
         .then(data => { if (data?.plan && PLAN_RANK[data.plan] !== undefined) setPlan(data.plan); })
-        .catch(() => {});
+        .catch((e) => console.log("[auth] refreshFromServer: network error", String(e)));
     };
-    const refreshFromServer = () => checkAuth(false);
     window.addEventListener("storage", sync);
     window.addEventListener("aurexis:refresh-plan", refreshFromServer);
     refreshFromServer();
@@ -2346,6 +2392,7 @@ function usePlan() {
     let appStateHandle = null;
     if (isNativeApp()) {
       CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+        console.log(`[auth] appStateChange fired: isActive=${isActive}`);
         if (isActive) refreshFromServer();
       }).then(h => { appStateHandle = h; });
     }
