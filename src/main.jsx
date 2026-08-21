@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { isNativeApp } from "./lib/platform";
-import { setToken, restoreTokenIfMissing } from "./lib/authStorage";
+import { setToken, restoreTokenIfMissing, alog } from "./lib/authStorage";
 import App from "./App";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
@@ -166,6 +166,24 @@ function AppGate() {
   return <App />;
 }
 
+// On a native cold boot (force-quit -> relaunch), the router resets to the
+// bare root path and hits the catch-all below -- it never touches /app/*,
+// so AppGate's own token check and restoreTokenIfMissing() (which DID
+// already run and complete by this point, gating the very first render in
+// index below) never come into play at all. The catch-all used to send
+// native straight to /login unconditionally, with no check of whether a
+// valid token existed -- so even a perfectly intact, successfully-restored
+// token still landed the user back on the login screen on every force-quit,
+// which looked identical to "got logged out" from the user's side. This is
+// almost certainly THE bug: it's deterministic (not a storage/timing race
+// at all) and only triggers on a full router reset, matching force-quit
+// specifically and not backgrounding, exactly as reported.
+function NativeRoot() {
+  const tok = localStorage.getItem("aurexis_token");
+  alog(`NativeRoot catch-all: token ${tok ? "present" : "absent"} in localStorage -- routing to ${tok ? "/app" : "/login"}`);
+  return <Navigate to={tok ? "/app" : "/login"} replace />;
+}
+
 function RootRoutes() {
   useVisitPing();
   return (
@@ -196,10 +214,12 @@ function RootRoutes() {
             not linked from any nav -- reached only by typing the URL. */}
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/app/*" element={<AppGate />} />
-        <Route path="/*" element={isNativeApp() ? <Navigate to="/login" replace /> : <LandingPage />} />
+        <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingPage />} />
       </Routes>
   );
 }
+
+alog(`app init: boot start, url=${window.location.pathname}, localStorage token ${localStorage.getItem("aurexis_token") ? "present" : "absent"} pre-restore`);
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");
@@ -210,6 +230,7 @@ if (!rootEl) throw new Error("Root element #root not found");
 // check below fires first and bounces a genuinely-still-logged-in user to
 // /login. No-op (resolves on the same tick) on web.
 restoreTokenIfMissing().finally(() => {
+  alog(`app init: restore settled, localStorage token ${localStorage.getItem("aurexis_token") ? "present" : "absent"} post-restore -- rendering now`);
   createRoot(rootEl).render(
     <React.StrictMode>
       <BrowserRouter>
