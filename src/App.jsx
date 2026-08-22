@@ -9,8 +9,7 @@ import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
 import { setToken, clearToken, alog } from "./lib/authStorage";
-import { onJournalTradeWon, checkActiveWeekReview, checkSentimentGate } from "./lib/appReview";
-import { AppReview } from "@capawesome/capacitor-app-review";
+import { onJournalTradeWon, checkActiveWeekReview } from "./lib/appReview";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -3022,10 +3021,6 @@ function AppInner() {
     if (!hasNavigatedRef.current) { hasNavigatedRef.current = true; return; }
     checkActiveWeekReview(userProfile?.created_at);
   }, [tab]);
-  // Custom "Enjoying Aurexis?" sentiment gate -- independent of the native
-  // star-review prompt above (see checkSentimentGate in lib/appReview.js).
-  const [sentimentGateOpen, setSentimentGateOpen] = useState(false);
-  const [sentimentGateStage, setSentimentGateStage] = useState("ask"); // "ask" | "thanks"
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -9513,10 +9508,7 @@ async function loadWatchlistLive() {
       }));
       setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr("");
       alog(`[review] submitClose: isWin=${isWin}, priorWonCount=${won.length}, isNative=${isNativeApp()}`);
-      if (isWin) {
-        onJournalTradeWon(won.length + 1);
-        checkSentimentGate(won.length + 1, () => { setSentimentGateStage("ask"); setSentimentGateOpen(true); });
-      }
+      if (isWin) onJournalTradeWon(won.length + 1);
     };
 
     const updateNote = (id, val) =>
@@ -13078,61 +13070,6 @@ const renderPage = () => {
         </div>
       )}
       {/* ── end floating chat ─────────────────────────────────────────────── */}
-
-      {sentimentGateOpen ? (
-        <div className="modalOverlay" onClick={() => setSentimentGateOpen(false)}>
-          <div className="modal" style={{ maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
-            {sentimentGateStage === "ask" ? (
-              <>
-                <div className="modalHead">
-                  <div className="modalTitle">Enjoying Aurexis?</div>
-                </div>
-                <div className="modalBody">
-                  <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
-                    You've had a few winning picks — we'd love to know how it's going.
-                  </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button
-                      className="btn btn--ghost"
-                      style={{ flex: 1 }}
-                      onClick={() => setSentimentGateStage("thanks")}
-                    >
-                      Not really
-                    </button>
-                    <button
-                      className="btn btn--primary"
-                      style={{ flex: 1 }}
-                      onClick={() => { AppReview.openAppStore().catch(() => {}); setSentimentGateOpen(false); }}
-                    >
-                      Yes!
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="modalHead">
-                  <div className="modalTitle">Thanks for the feedback</div>
-                  <button className="btn btn--ghost" onClick={() => setSentimentGateOpen(false)}>Close</button>
-                </div>
-                <div className="modalBody">
-                  <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
-                    We'd love to hear more about what's not working so we can fix it.
-                  </div>
-                  <a
-                    href="mailto:aurexis.app@gmail.com"
-                    className="btn btn--primary"
-                    style={{ display: "block", textAlign: "center", textDecoration: "none" }}
-                    onClick={() => setSentimentGateOpen(false)}
-                  >
-                    Email us
-                  </a>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
 
       {showFeedback ? (
         <div className="modalOverlay" onClick={() => setShowFeedback(false)}>

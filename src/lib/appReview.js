@@ -3,32 +3,26 @@ import { Preferences } from "@capacitor/preferences";
 import { isNativeApp } from "./platform";
 import { alog } from "./authStorage";
 
-// Two independent, non-naggy prompts around App Store reviews:
-//  - the "star" gate: the real StoreKit SKStoreReviewController prompt.
-//  - the "sentiment" gate: a custom-built "Enjoying Aurexis?" screen that
-//    routes happy users to the App Store listing (for a *written* review,
-//    which SKStoreReviewController can't collect) and unhappy users to
-//    support instead of the public store page.
-// Apple's review API never reports what rating (if any) a user gave, so
-// the sentiment gate is NOT sequenced after the star gate -- there's
-// nothing to condition on. They're kept independent on purpose.
-//
-// Both share one gating mechanism: each named moment ("milestone") fires
-// at most once ever, and a single shared session flag keeps the two gates
-// from ever stacking in one session. (An earlier version also enforced a
-// 60-day cooldown shared across every milestone within a gate -- removed
-// after real-device testing showed it silently blocking first_win/second_win
-// for 60 days any time active_week happened to fire first, since they all
-// shared one `lastRequestedAt` timestamp. Once-ever-per-milestone plus the
-// session flag already fully cover "don't feel repetitive.") State lives in
-// Capacitor Preferences (not localStorage) because iOS can evict a
-// WKWebView's localStorage under memory pressure -- see the same
-// reasoning in authStorage.js.
+// Wraps SKStoreReviewController via @capawesome/capacitor-app-review.
+// iOS caps this to ~3 prompts/year on its own, but that's not a license to
+// call it freely -- a call that does nothing still means the code *tried*
+// to interrupt the user at a bad moment. So this module keeps its own,
+// stricter gate on top: each named moment ("milestone") fires at most once
+// ever, and a shared session flag keeps two milestones from ever firing in
+// the same sitting. (An earlier version also enforced a 60-day cooldown
+// shared across every milestone -- removed after real-device testing showed
+// it silently blocking first_win/second_win for 60 days any time
+// active_week happened to fire first, since they all shared one
+// `lastRequestedAt` timestamp. Once-ever-per-milestone plus the session flag
+// already fully cover "don't feel repetitive.") State lives in Capacitor
+// Preferences (not localStorage) because iOS can evict a WKWebView's
+// localStorage under memory pressure -- see the same reasoning in
+// authStorage.js.
 
 const MIN_DAYS_SINCE_SIGNUP = 7;
 const DAY_MS = 86400000;
 
-let requestedThisSession = false; // shared across both gates
+let requestedThisSession = false;
 
 function createPromptGate(stateKey) {
   let cachedState = null;
@@ -70,7 +64,6 @@ function createPromptGate(stateKey) {
 }
 
 const starGate = createPromptGate("aurexis_review_prompt_v1");
-const sentimentGate = createPromptGate("aurexis_sentiment_gate_v1");
 
 // Call after a trade in the Trade Journal is closed as a win. Fires on the
 // user's 1st and 2nd ever winning close; each fires once ever, and in
@@ -92,15 +85,4 @@ export function checkActiveWeekReview(createdAtIso) {
   const daysSinceSignup = (Date.now() - new Date(createdAtIso).getTime()) / DAY_MS;
   if (daysSinceSignup < MIN_DAYS_SINCE_SIGNUP) return;
   starGate.fire("active_week", () => AppReview.requestReview().catch(() => {}));
-}
-
-// Call after a trade in the Trade Journal is closed as a win. Fires once,
-// on the user's 3rd ever winning close -- deliberately later than the star
-// gate's 1st/2nd so the two don't feel like the same ask repeated.
-// `onShouldShow` opens the custom sentiment-gate modal; the actual
-// AppReview.openAppStore() call happens later, only if the user taps "Yes!".
-export function checkSentimentGate(totalWinsIncludingThisOne, onShouldShow) {
-  alog(`[review] checkSentimentGate called with totalWins=${totalWinsIncludingThisOne}`);
-  if (totalWinsIncludingThisOne !== 3) { alog(`[review] checkSentimentGate: not the 3rd win -- no-op by design`); return; }
-  sentimentGate.fire("third_win", () => { onShouldShow(); });
 }
