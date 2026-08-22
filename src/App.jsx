@@ -10102,6 +10102,33 @@ async function loadWatchlistLive() {
           </div>
         </div>
 
+        {/* Full support page */}
+        <div style={{
+          ...settingsSection,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 14, flexWrap: "wrap",
+        }}>
+          <div>
+            <div style={settingsSectionTitle}>Full Support Center</div>
+            <div style={{ ...settingsSectionSub, fontSize: 12 }}>FAQs, billing help, and account questions</div>
+          </div>
+          <div
+            onClick={() => {
+              const url = "https://useaurexis.com/support";
+              if (isNative) CapacitorBrowser.open({ url });
+              else window.open(url, "_blank", "noopener,noreferrer");
+            }}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "9px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+              background: "rgba(62,224,163,0.1)", border: "1px solid rgba(62,224,163,0.22)",
+              color: "#3EE0A3", cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            Open Support Center ↗
+          </div>
+        </div>
+
         {/* What's coming */}
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 10 }}>What's Coming</div>

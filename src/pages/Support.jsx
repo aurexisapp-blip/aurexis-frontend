@@ -100,11 +100,7 @@ export default function Support() {
           Back to Aurexis
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6, background: green,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 900, color: "#06120c",
-          }}>A</div>
+          <img src="/icon-512.png" alt="" style={{ width: 22, height: 22, display: "block" }} />
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.18em", color: "#6a6a66" }}>
             AUREXIS
           </div>
