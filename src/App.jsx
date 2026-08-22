@@ -2418,7 +2418,13 @@ function canAccess(userPlan, minPlan) {
   return (PLAN_RANK[userPlan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
 }
 
-const ANALYZE_FREE_LIMIT = 3;
+// Must match _ANALYZE_DAILY_LIMITS["free"] in app.py -- this is only a
+// client-side pre-check to avoid a wasted round-trip; the server is the
+// real, authoritative enforcement (keyed per-account in the pick_usage
+// table, so it can't drift from device/browser switching the way this
+// localStorage count can). Was 3 here vs 10 server-side, so free users
+// hit this client-side wall two-thirds of the way before their real limit.
+const ANALYZE_FREE_LIMIT = 10;
 function _analyzeUsageKey() { const d = new Date(); return `aurexis_analyze_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getAnalyzeUsedToday() { return parseInt(localStorage.getItem(_analyzeUsageKey()) || "0", 10); }
 function incrementAnalyzeUsage() { localStorage.setItem(_analyzeUsageKey(), String(getAnalyzeUsedToday() + 1)); }
@@ -4355,9 +4361,13 @@ async function loadWatchlistLive() {
         return;
       }
 
-      if (!canAccess(userPlan, "starter")) incrementAnalyzeUsage();
-
-      await runAnalyze(s);
+      const result = await runAnalyze(s);
+      // Only charge the daily quota on an actual successful analysis --
+      // runAnalyze() catches its own errors and returns null on failure, so
+      // this previously incremented unconditionally beforehand, meaning a
+      // timeout or backend error still burned one of a free user's 10 daily
+      // analyzes for nothing.
+      if (result && !canAccess(userPlan, "starter")) incrementAnalyzeUsage();
     } catch (e) {
       console.error("Analyze error:", e);
       showToast?.("Analyze failed");
