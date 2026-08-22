@@ -8,7 +8,7 @@ import { AnimatePresence, animate, motion } from "framer-motion";
 import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
-import { setToken, clearToken, alog } from "./lib/authStorage";
+import { setToken, clearToken, registerDevice, getOrCreateDeviceId, alog } from "./lib/authStorage";
 import { onJournalTradeWon, checkActiveWeekReview } from "./lib/appReview";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
@@ -2899,6 +2899,17 @@ function AppInner() {
       if (isNewOAuth) localStorage.setItem("aurexis_force_onboarding", "1");
       const clean = window.location.pathname;
       window.history.replaceState({}, "", clean);
+      // This is the web Google OAuth landing point -- a real new-login
+      // moment, same as Auth.jsx's completeAuth, so it needs the same
+      // device-cap check (Auth.jsx's check doesn't cover this path since
+      // the backend redirects straight here with ?token=, not through the
+      // login form).
+      registerDevice(oauthToken).then((dev) => {
+        if (dev.blocked) {
+          clearToken();
+          window.location.replace("/login?error=device_limit");
+        }
+      });
     }
 
     // After Stripe checkout success — refresh JWT so plan updates immediately
@@ -10257,6 +10268,49 @@ async function loadWatchlistLive() {
           </div>
         </div>
 
+        {/* Devices */}
+        <div style={{ ...settingsSection }}>
+          <div style={{ ...settingsSectionTitle, marginBottom: 4 }}>Devices</div>
+          <div style={{ ...settingsSectionSub, fontSize: 12, marginBottom: 12 }}>
+            Aurexis accounts can be signed in on up to 2 devices at a time. Remove one below to sign in somewhere new.
+          </div>
+          {devicesLoading ? (
+            <div style={{ fontSize: 12, color: T.textFaint }}>Loading…</div>
+          ) : devices.length === 0 ? (
+            <div style={{ fontSize: 12, color: T.textFaint }}>No devices on record yet.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {devices.map(d => (
+                <div key={d.device_id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "9px 12px", borderRadius: 8,
+                  background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+                  border: `1px solid ${T.border}`,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                      {d.label || "Unknown device"}
+                      {d.device_id === myDeviceId && (
+                        <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#3EE0A3", letterSpacing: "0.05em" }}>THIS DEVICE</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.textFaint, marginTop: 2 }}>
+                      Last active {d.last_seen_at ? new Date(d.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                    </div>
+                  </div>
+                  <RippleButton
+                    className="btn btn--ghost"
+                    style={{ fontSize: 11, padding: "6px 12px" }}
+                    onClick={() => removeDevice(d.device_id)}
+                  >
+                    Remove
+                  </RippleButton>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Full support page */}
         <div style={{
           ...settingsSection,
@@ -10476,6 +10530,33 @@ async function loadWatchlistLive() {
         })
         .catch(() => {});
     }, []);
+
+    const [devices, setDevices] = useState([]);
+    const [devicesLoading, setDevicesLoading] = useState(true);
+    const [myDeviceId, setMyDeviceId] = useState(null);
+    const loadDevices = React.useCallback(() => {
+      const token = localStorage.getItem("aurexis_token");
+      if (!token) { setDevicesLoading(false); return; }
+      setDevicesLoading(true);
+      fetch(`${API}/auth/devices`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.devices) setDevices(data.devices); })
+        .catch(() => {})
+        .finally(() => setDevicesLoading(false));
+    }, []);
+    React.useEffect(() => {
+      loadDevices();
+      getOrCreateDeviceId().then(setMyDeviceId).catch(() => {});
+    }, [loadDevices]);
+    const removeDevice = (deviceId) => {
+      const token = localStorage.getItem("aurexis_token");
+      if (!token) return;
+      setDevices(prev => prev.filter(d => d.device_id !== deviceId));
+      fetch(`${API}/auth/devices/${encodeURIComponent(deviceId)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {}).finally(loadDevices);
+    };
 
     const firstName = userProfile?.first_name || "";
     const lastName  = userProfile?.last_name  || "";

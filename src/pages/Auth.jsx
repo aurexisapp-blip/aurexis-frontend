@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isNativeApp } from "../lib/platform";
-import { setToken } from "../lib/authStorage";
+import { setToken, clearToken, registerDevice, getOrCreateDeviceId } from "../lib/authStorage";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 import { Browser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -114,7 +114,14 @@ const NATIVE_KEYFRAMES = `
 const OAUTH_ERRORS = {
   google_denied: "Google sign-in was cancelled.",
   google_failed: "Google sign-in failed. Please try email instead.",
+  device_limit: "This account has reached its device limit. Remove a device in Settings from another session, then try again.",
 };
+
+function friendlyAuthError(detail, fallback) {
+  const cap = /DEVICE_LIMIT_REACHED:(\d+)/.exec(detail || "")?.[1];
+  if (cap) return `This account is already signed in on its device limit (${cap}). Remove a device in Settings from another session, then try again.`;
+  return detail || fallback;
+}
 
 export default function Auth({ defaultView = "login" }) {
   const navigate = useNavigate();
@@ -158,6 +165,17 @@ export default function Auth({ defaultView = "login" }) {
   // they arrived from the checkout page, since "log in then continue to
   // checkout" is exactly what that page needs.
   async function completeAuth(token, { isNewUser: isNewSignup = false } = {}) {
+    if (token) {
+      const dev = await registerDevice(token);
+      if (dev.blocked) {
+        clearToken();
+        setError(
+          `This account is already signed in on its device limit (${dev.cap ?? 2}). ` +
+          `Remove a device in Settings on another session, or sign in there and remove one, then try again here.`
+        );
+        return;
+      }
+    }
     const params = new URLSearchParams(window.location.search);
     const nextRaw = params.get("next") || "";
     const nextTarget = nextRaw.startsWith("/") ? nextRaw : "/app";
@@ -223,11 +241,18 @@ export default function Auth({ defaultView = "login" }) {
     return () => { handle?.remove(); };
   }, [isNative, navigate]);
 
-  function handleGoogleNativeSignIn() {
+  async function handleGoogleNativeSignIn() {
     setError("");
+    const deviceId = await getOrCreateDeviceId();
     Browser.open({
-      url: `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(NATIVE_OAUTH_ORIGIN)}`,
+      url: `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(NATIVE_OAUTH_ORIGIN)}&device_id=${encodeURIComponent(deviceId)}`,
     });
+  }
+
+  async function handleGoogleWebSignIn() {
+    setError("");
+    const deviceId = await getOrCreateDeviceId();
+    window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}&device_id=${encodeURIComponent(deviceId)}`;
   }
 
   async function handleLogin(e) {
@@ -274,6 +299,7 @@ export default function Auth({ defaultView = "login" }) {
         scopes: "email name",
       });
       const { identityToken, givenName, familyName } = result.response;
+      const deviceId = await getOrCreateDeviceId();
       const res = await fetch(`${API}/auth/apple/native`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -281,10 +307,11 @@ export default function Auth({ defaultView = "login" }) {
           identity_token: identityToken,
           first_name: givenName || undefined,
           last_name: familyName || undefined,
+          device_id: deviceId,
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data?.detail || "Apple sign-in failed. Please try again."); return; }
+      if (!res.ok) { setError(friendlyAuthError(data?.detail, "Apple sign-in failed. Please try again.")); return; }
       const token = data?.access_token;
       if (token) {
         const prevUser = localStorage.getItem("aurexis_user_email");
@@ -337,6 +364,7 @@ export default function Auth({ defaultView = "login" }) {
       if (!idToken) throw new Error("Apple sign-in did not return a token.");
       const givenName = result?.user?.name?.firstName;
       const familyName = result?.user?.name?.lastName;
+      const deviceId = await getOrCreateDeviceId();
       const res = await fetch(`${API}/auth/apple/native`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -344,10 +372,11 @@ export default function Auth({ defaultView = "login" }) {
           identity_token: idToken,
           first_name: givenName || undefined,
           last_name: familyName || undefined,
+          device_id: deviceId,
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data?.detail || "Apple sign-in failed. Please try again."); return; }
+      if (!res.ok) { setError(friendlyAuthError(data?.detail, "Apple sign-in failed. Please try again.")); return; }
       const token = data?.access_token;
       if (token) {
         const prevUser = localStorage.getItem("aurexis_user_email");
@@ -371,13 +400,14 @@ export default function Auth({ defaultView = "login" }) {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
+      const deviceId = await getOrCreateDeviceId();
       const res = await fetch(`${API}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: otpEmail, code: otpCode, is_new_user: isNewUser }),
+        body: JSON.stringify({ email: otpEmail, code: otpCode, is_new_user: isNewUser, device_id: deviceId }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data?.detail || "Invalid code. Try again."); return; }
+      if (!res.ok) { setError(friendlyAuthError(data?.detail, "Invalid code. Try again.")); return; }
       const token = data?.access_token || data?.token;
       if (token) {
         setToken(token);
@@ -848,7 +878,7 @@ export default function Auth({ defaultView = "login" }) {
               <AppleIcon />
               <span>Continue with Apple</span>
             </button>
-            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}`; }}>
+            <button type="button" style={S.socialBtn} onClick={handleGoogleWebSignIn}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
@@ -989,7 +1019,7 @@ export default function Auth({ defaultView = "login" }) {
               <AppleIcon />
               <span>Continue with Apple</span>
             </button>
-            <button type="button" style={S.socialBtn} onClick={() => { window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}`; }}>
+            <button type="button" style={S.socialBtn} onClick={handleGoogleWebSignIn}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { isNativeApp } from "./lib/platform";
-import { setToken, restoreTokenIfMissing, alog } from "./lib/authStorage";
+import { setToken, clearToken, registerDevice, restoreTokenIfMissing, alog } from "./lib/authStorage";
 import App from "./App";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
@@ -159,6 +159,15 @@ function AppGate() {
       localStorage.setItem("aurexis_force_onboarding", "1");
     }
     window.history.replaceState({}, "", window.location.pathname);
+    // Mobile-web OAuth landing -- a real new-login moment (see the comment
+    // above this block), needs the same device-cap check as every other
+    // login path.
+    registerDevice(urlToken).then((dev) => {
+      if (dev.blocked) {
+        clearToken();
+        window.location.replace("/login?error=device_limit");
+      }
+    });
   }
 
   if (isMobile && !isMobilePreview() && !isNativeApp()) return <MobileBlock />;

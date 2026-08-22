@@ -58,6 +58,80 @@ export function setToken(token) {
   }
 }
 
+// Stable per-install identifier for the account-sharing device cap
+// (see /auth/register-device). Generated once and persisted the same way
+// as the token itself -- localStorage primary, Preferences mirror on
+// native -- so it survives app restarts, not just page reloads. This is
+// NOT a security/auth token, just a label for "which install is this."
+const DEVICE_KEY = "aurexis_device_id";
+
+function _newDeviceId() {
+  try {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  } catch {}
+  return `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export async function getOrCreateDeviceId() {
+  try {
+    const existing = localStorage.getItem(DEVICE_KEY);
+    if (existing) return existing;
+  } catch {}
+  if (isNativeApp()) {
+    try {
+      const { value } = await Preferences.get({ key: DEVICE_KEY });
+      if (value) {
+        try { localStorage.setItem(DEVICE_KEY, value); } catch {}
+        return value;
+      }
+    } catch {}
+  }
+  const id = _newDeviceId();
+  try { localStorage.setItem(DEVICE_KEY, id); } catch {}
+  if (isNativeApp()) {
+    Preferences.set({ key: DEVICE_KEY, value: id }).catch(() => {});
+  }
+  return id;
+}
+
+function _deviceLabel() {
+  try {
+    const ua = navigator.userAgent || "";
+    if (isNativeApp()) return "iOS App";
+    if (/iPhone|iPad/.test(ua)) return "iPhone/iPad (web)";
+    if (/Android/.test(ua)) return "Android (web)";
+    if (/Macintosh/.test(ua)) return "Mac (web)";
+    if (/Windows/.test(ua)) return "Windows (web)";
+    return "Web browser";
+  } catch { return ""; }
+}
+
+// Called right after a token is obtained via ANY login path (password+OTP,
+// Google, Apple web, Apple native). Returns {ok, blocked, cap} -- the
+// caller decides what to do with a blocked result (this function never
+// throws for a normal DEVICE_LIMIT_REACHED response, only for genuine
+// network failure, which callers should treat as non-blocking since we'd
+// rather let a login through on a flaky connection than lock someone out).
+export async function registerDevice(token) {
+  try {
+    const device_id = await getOrCreateDeviceId();
+    const res = await fetch(`${API_BASE_URL}/auth/register-device`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ device_id, label: _deviceLabel() }),
+    });
+    if (res.status === 403) {
+      const data = await res.json().catch(() => ({}));
+      const cap = /DEVICE_LIMIT_REACHED:(\d+)/.exec(data?.detail || "")?.[1];
+      return { ok: false, blocked: true, cap: cap ? Number(cap) : null };
+    }
+    return { ok: res.ok, blocked: false };
+  } catch {
+    // Network error -- fail open, don't block a login over connectivity.
+    return { ok: false, blocked: false };
+  }
+}
+
 export function clearToken() {
   try { localStorage.removeItem(KEY); } catch {}
   if (isNativeApp()) {
