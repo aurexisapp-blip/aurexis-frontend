@@ -3352,6 +3352,9 @@ function AppInner() {
   const [journalCloseId, setJournalCloseId] = useState(null);
   const [journalClosePrice, setJournalClosePrice] = useState("");
   const [journalCloseErr, setJournalCloseErr] = useState("");
+  const [journalEditId, setJournalEditId] = useState(null);
+  const [journalEditVals, setJournalEditVals] = useState({ entry: "", stop: "", target: "" });
+  const [journalEditErr, setJournalEditErr] = useState("");
 
   // ---- trade type + sizing state (no hardcoded position sizes) ----
   const [tradeType, setTradeType] = useState("shares"); // UI default only
@@ -9517,6 +9520,37 @@ async function loadWatchlistLive() {
     const deleteTrade = (id) =>
       saveJournalTrades(journalTrades.filter(t => t.id !== id));
 
+    const openEdit = (trade) => {
+      setJournalEditId(trade.id);
+      setJournalEditVals({
+        entry: Number.isFinite(trade.entryPrice) ? String(trade.entryPrice) : "",
+        stop: Number.isFinite(trade.stopPrice) ? String(trade.stopPrice) : "",
+        target: Number.isFinite(trade.targetPrice) ? String(trade.targetPrice) : "",
+      });
+      setJournalEditErr("");
+    };
+    const closeEdit = () => { setJournalEditId(null); setJournalEditErr(""); };
+
+    const submitEdit = (id) => {
+      const entry = parseFloat(journalEditVals.entry);
+      if (!Number.isFinite(entry) || entry <= 0) { setJournalEditErr("Enter a valid entry price."); return; }
+      const stop = journalEditVals.stop.trim() !== "" ? parseFloat(journalEditVals.stop) : null;
+      const target = journalEditVals.target.trim() !== "" ? parseFloat(journalEditVals.target) : null;
+      saveJournalTrades(journalTrades.map(t => {
+        if (t.id !== id) return t;
+        const next = { ...t, entryPrice: entry, stopPrice: stop, targetPrice: target };
+        // Closed trades' win/loss + return were computed against the old entry
+        // price -- recompute so an edit doesn't leave a stale result on screen.
+        if (t.status !== "open" && Number.isFinite(t.exitPrice)) {
+          const ret = ((t.exitPrice - entry) / entry) * 100;
+          next.status = t.exitPrice >= entry ? "won" : "lost";
+          next.returnPct = parseFloat(ret.toFixed(2));
+        }
+        return next;
+      }));
+      closeEdit();
+    };
+
     const fmtD = (iso) => {
       if (!iso) return "—";
       try { return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric", year: "2-digit" }); }
@@ -9632,7 +9666,30 @@ async function loadWatchlistLive() {
                       )}
                     </div>
                   </div>
-                  {isClosing && (
+                  {journalEditId === trade.id ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 14 }}>
+                      <input placeholder="Entry $" inputMode="decimal" autoFocus
+                        value={journalEditVals.entry} onChange={e => setJournalEditVals(v => ({ ...v, entry: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }}
+                        style={{ flex: 1, minWidth: 70, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }} />
+                      <input placeholder="Stop $" inputMode="decimal"
+                        value={journalEditVals.stop} onChange={e => setJournalEditVals(v => ({ ...v, stop: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }}
+                        style={{ flex: 1, minWidth: 70, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }} />
+                      <input placeholder="Target $" inputMode="decimal"
+                        value={journalEditVals.target} onChange={e => setJournalEditVals(v => ({ ...v, target: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }}
+                        style={{ flex: 1, minWidth: 70, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }} />
+                      <button onClick={() => submitEdit(trade.id)} style={{ padding: "0 16px", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
+                      <button onClick={closeEdit} style={{ padding: "0 12px", borderRadius: 12, background: "none", border: `1px solid ${nHairline}`, color: nTextSec, cursor: "pointer" }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 18, paddingBottom: 10 }}>
+                      <button title="Edit" onClick={() => openEdit(trade)} style={{ background: "none", border: "none", color: nTextSec, fontSize: 15, cursor: "pointer" }}>✎</button>
+                      <button title="Delete" onClick={() => deleteTrade(trade.id)} style={{ background: "none", border: "none", color: nTextSec, fontSize: 15, cursor: "pointer" }}>⌫</button>
+                    </div>
+                  )}
+                  {isClosing && journalEditId !== trade.id && (
                     <div
                       ref={el => { if (el) setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
                       style={{ display: "flex", gap: 8, paddingBottom: 14 }}
@@ -9647,10 +9704,10 @@ async function loadWatchlistLive() {
                         onKeyDown={e => { if (e.key === "Enter") submitClose(trade.id); if (e.key === "Escape") setJournalCloseId(null); }}
                       />
                       <button onClick={() => submitClose(trade.id)} style={{ padding: "0 16px", borderRadius: 12, background: "#3EE0A3", border: "none", color: "#06120c", fontWeight: 700, cursor: "pointer" }}>✓</button>
-                      <button onClick={() => deleteTrade(trade.id)} style={{ padding: "0 12px", borderRadius: 12, background: "none", border: `1px solid ${nHairline}`, color: nTextSec, cursor: "pointer" }}>⌫</button>
                     </div>
                   )}
                   {journalCloseErr && isClosing && <div style={{ fontSize: 12, color: "#e8756b", paddingBottom: 10 }}>{journalCloseErr}</div>}
+                  {journalEditErr && journalEditId === trade.id && <div style={{ fontSize: 12, color: "#e8756b", paddingBottom: 10 }}>{journalEditErr}</div>}
                 </div>
               );
             })}
@@ -9813,51 +9870,76 @@ async function loadWatchlistLive() {
                             />
                           </td>
                           <td style={{ whiteSpace: "nowrap", verticalAlign: "middle" }}>
-                            {trade.status === "open" ? (
-                              isClosing ? (
-                                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                                  <input
-                                    style={{ ...inp, width: 76, fontSize: 11, padding: "4px 7px" }}
-                                    placeholder="Exit $"
-                                    inputMode="decimal"
-                                    value={journalClosePrice}
-                                    autoFocus
-                                    onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
-                                    onKeyDown={e => {
-                                      if (e.key === "Enter") submitClose(trade.id);
-                                      if (e.key === "Escape") { setJournalCloseId(null); setJournalClosePrice(""); }
-                                    }}
-                                  />
-                                  <button
-                                    title="Confirm close"
-                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 14, lineHeight: 1 }}
-                                    onClick={() => submitClose(trade.id)}
-                                  >✓</button>
-                                  <button
-                                    title="Cancel"
-                                    style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: T.textFaint, fontSize: 14, lineHeight: 1 }}
-                                    onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
-                                  >✕</button>
-                                </div>
-                              ) : (
-                                <RippleButton
-                                  className="btn btn--ghost"
-                                  style={{ fontSize: 11, padding: "4px 10px" }}
-                                  onClick={() => { setJournalCloseId(trade.id); setJournalClosePrice(""); setJournalCloseErr(""); }}
-                                >
-                                  Close Trade
-                                </RippleButton>
-                              )
+                            {journalEditId === trade.id ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <input style={{ ...inp, width: 56, fontSize: 11, padding: "4px 6px" }} placeholder="Entry" inputMode="decimal" autoFocus
+                                  value={journalEditVals.entry} onChange={e => setJournalEditVals(v => ({ ...v, entry: e.target.value }))}
+                                  onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                                <input style={{ ...inp, width: 56, fontSize: 11, padding: "4px 6px" }} placeholder="Stop" inputMode="decimal"
+                                  value={journalEditVals.stop} onChange={e => setJournalEditVals(v => ({ ...v, stop: e.target.value }))}
+                                  onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                                <input style={{ ...inp, width: 56, fontSize: 11, padding: "4px 6px" }} placeholder="Target" inputMode="decimal"
+                                  value={journalEditVals.target} onChange={e => setJournalEditVals(v => ({ ...v, target: e.target.value }))}
+                                  onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                                <button title="Save" style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 14, lineHeight: 1 }}
+                                  onClick={() => submitEdit(trade.id)}>✓</button>
+                                <button title="Cancel" style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: T.textFaint, fontSize: 14, lineHeight: 1 }}
+                                  onClick={closeEdit}>✕</button>
+                              </div>
                             ) : (
-                              <span style={{ fontSize: 11, color: T.textGhost, whiteSpace: "nowrap" }}>
-                                Closed {fmtD(trade.exitedAt)}
-                              </span>
+                              <>
+                                {trade.status === "open" ? (
+                                  isClosing ? (
+                                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                                      <input
+                                        style={{ ...inp, width: 76, fontSize: 11, padding: "4px 7px" }}
+                                        placeholder="Exit $"
+                                        inputMode="decimal"
+                                        value={journalClosePrice}
+                                        autoFocus
+                                        onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                                        onKeyDown={e => {
+                                          if (e.key === "Enter") submitClose(trade.id);
+                                          if (e.key === "Escape") { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }
+                                        }}
+                                      />
+                                      <button
+                                        title="Confirm close"
+                                        style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 14, lineHeight: 1 }}
+                                        onClick={() => submitClose(trade.id)}
+                                      >✓</button>
+                                      <button
+                                        title="Cancel"
+                                        style={{ ...inp, cursor: "pointer", padding: "4px 8px", color: T.textFaint, fontSize: 14, lineHeight: 1 }}
+                                        onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                                      >✕</button>
+                                    </div>
+                                  ) : (
+                                    <RippleButton
+                                      className="btn btn--ghost"
+                                      style={{ fontSize: 11, padding: "4px 10px" }}
+                                      onClick={() => { setJournalCloseId(trade.id); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                                    >
+                                      Close Trade
+                                    </RippleButton>
+                                  )
+                                ) : (
+                                  <span style={{ fontSize: 11, color: T.textGhost, whiteSpace: "nowrap" }}>
+                                    Closed {fmtD(trade.exitedAt)}
+                                  </span>
+                                )}
+                                <button
+                                  title="Edit trade"
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 13, padding: "2px 5px", marginLeft: 4, verticalAlign: "middle" }}
+                                  onClick={() => openEdit(trade)}
+                                >✎</button>
+                                <button
+                                  title="Delete trade"
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 13, padding: "2px 5px", marginLeft: 2, verticalAlign: "middle" }}
+                                  onClick={() => deleteTrade(trade.id)}
+                                >⌫</button>
+                              </>
                             )}
-                            <button
-                              title="Delete trade"
-                              style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 13, padding: "2px 5px", marginLeft: 4, verticalAlign: "middle" }}
-                              onClick={() => deleteTrade(trade.id)}
-                            >⌫</button>
                           </td>
                         </tr>
                       );
@@ -9909,51 +9991,76 @@ async function loadWatchlistLive() {
                         placeholder="Add note…"
                       />
                       <div className="journalCard__actions">
-                        {trade.status === "open" ? (
-                          isClosing ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
-                              <input
-                                style={{ ...inp, flex: 1, minWidth: 0, padding: "12px 9px" }}
-                                placeholder="Exit $"
-                                inputMode="decimal"
-                                value={journalClosePrice}
-                                autoFocus
-                                onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter") submitClose(trade.id);
-                                  if (e.key === "Escape") { setJournalCloseId(null); setJournalClosePrice(""); }
-                                }}
-                              />
-                              <button
-                                title="Confirm close"
-                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 16, lineHeight: 1 }}
-                                onClick={() => submitClose(trade.id)}
-                              >✓</button>
-                              <button
-                                title="Cancel"
-                                style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: T.textFaint, fontSize: 16, lineHeight: 1 }}
-                                onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
-                              >✕</button>
-                            </div>
-                          ) : (
-                            <RippleButton
-                              className="btn btn--ghost"
-                              style={{ fontSize: 13, padding: "13px 14px", flex: 1 }}
-                              onClick={() => { setJournalCloseId(trade.id); setJournalClosePrice(""); setJournalCloseErr(""); }}
-                            >
-                              Close Trade
-                            </RippleButton>
-                          )
+                        {journalEditId === trade.id ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, flex: 1 }}>
+                            <input style={{ ...inp, flex: 1, minWidth: 60, padding: "12px 9px" }} placeholder="Entry" inputMode="decimal" autoFocus
+                              value={journalEditVals.entry} onChange={e => setJournalEditVals(v => ({ ...v, entry: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                            <input style={{ ...inp, flex: 1, minWidth: 60, padding: "12px 9px" }} placeholder="Stop" inputMode="decimal"
+                              value={journalEditVals.stop} onChange={e => setJournalEditVals(v => ({ ...v, stop: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                            <input style={{ ...inp, flex: 1, minWidth: 60, padding: "12px 9px" }} placeholder="Target" inputMode="decimal"
+                              value={journalEditVals.target} onChange={e => setJournalEditVals(v => ({ ...v, target: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter") submitEdit(trade.id); if (e.key === "Escape") closeEdit(); }} />
+                            <button title="Save" style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 16, lineHeight: 1 }}
+                              onClick={() => submitEdit(trade.id)}>✓</button>
+                            <button title="Cancel" style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: T.textFaint, fontSize: 16, lineHeight: 1 }}
+                              onClick={closeEdit}>✕</button>
+                          </div>
                         ) : (
-                          <span style={{ fontSize: 11, color: T.textGhost }}>
-                            Closed {fmtD(trade.exitedAt)}
-                          </span>
+                          <>
+                            {trade.status === "open" ? (
+                              isClosing ? (
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                                  <input
+                                    style={{ ...inp, flex: 1, minWidth: 0, padding: "12px 9px" }}
+                                    placeholder="Exit $"
+                                    inputMode="decimal"
+                                    value={journalClosePrice}
+                                    autoFocus
+                                    onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
+                                    onKeyDown={e => {
+                                      if (e.key === "Enter") submitClose(trade.id);
+                                      if (e.key === "Escape") { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }
+                                    }}
+                                  />
+                                  <button
+                                    title="Confirm close"
+                                    style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: "#3EE0A3", borderColor: "rgba(62,224,163,0.28)", fontSize: 16, lineHeight: 1 }}
+                                    onClick={() => submitClose(trade.id)}
+                                  >✓</button>
+                                  <button
+                                    title="Cancel"
+                                    style={{ ...inp, cursor: "pointer", padding: "12px 14px", color: T.textFaint, fontSize: 16, lineHeight: 1 }}
+                                    onClick={() => { setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                                  >✕</button>
+                                </div>
+                              ) : (
+                                <RippleButton
+                                  className="btn btn--ghost"
+                                  style={{ fontSize: 13, padding: "13px 14px", flex: 1 }}
+                                  onClick={() => { setJournalCloseId(trade.id); setJournalClosePrice(""); setJournalCloseErr(""); }}
+                                >
+                                  Close Trade
+                                </RippleButton>
+                              )
+                            ) : (
+                              <span style={{ fontSize: 11, color: T.textGhost }}>
+                                Closed {fmtD(trade.exitedAt)}
+                              </span>
+                            )}
+                            <button
+                              title="Edit trade"
+                              style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 16, padding: "12px 10px" }}
+                              onClick={() => openEdit(trade)}
+                            >✎</button>
+                            <button
+                              title="Delete trade"
+                              style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 16, padding: "12px 14px" }}
+                              onClick={() => deleteTrade(trade.id)}
+                            >⌫</button>
+                          </>
                         )}
-                        <button
-                          title="Delete trade"
-                          style={{ background: "none", border: "none", cursor: "pointer", color: T.textGhost, fontSize: 16, padding: "12px 14px" }}
-                          onClick={() => deleteTrade(trade.id)}
-                        >⌫</button>
                       </div>
                     </div>
                   );
@@ -9963,6 +10070,9 @@ async function loadWatchlistLive() {
             )}
             {journalCloseErr && (
               <div style={{ padding: "8px 20px", fontSize: 12, color: "#f87171", borderTop: `1px solid ${T.border}` }}>{journalCloseErr}</div>
+            )}
+            {journalEditErr && (
+              <div style={{ padding: "8px 20px", fontSize: 12, color: "#f87171", borderTop: `1px solid ${T.border}` }}>{journalEditErr}</div>
             )}
           </div>
         </div>
