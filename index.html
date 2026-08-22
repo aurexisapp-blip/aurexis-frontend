@@ -2,7 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- maximum-scale/user-scalable=no: without this, a touch that leaks
+         through from a native overlay (e.g. Apple's own SKStoreReviewController
+         star-rating card) into the underlying WKWebView can register as a
+         pinch/zoom gesture and leave the whole app zoomed in with no way to
+         reset it from inside the page. Standard for an app-shell SPA. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <!-- Security headers via meta tags -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <!-- X-Frame-Options removed: browsers ignore it entirely when set via

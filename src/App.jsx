@@ -9,6 +9,8 @@ import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
 import { setToken, clearToken, alog } from "./lib/authStorage";
+import { onJournalTradeWon, checkActiveWeekReview, checkSentimentGate } from "./lib/appReview";
+import { AppReview } from "@capawesome/capacitor-app-review";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -3007,6 +3009,18 @@ function AppInner() {
   const nTextFaint  = darkMode ? "#6a6a66" : "rgba(10,13,26,0.40)";
 
   const [tab, setTab] = useState("dashboard");
+  // Review-prompt "still engaging" check: gated on tab *changes*, not the
+  // initial mount, so it never fires as part of a cold app launch -- only
+  // once the user has actually navigated somewhere during this session.
+  const hasNavigatedRef = useRef(false);
+  useEffect(() => {
+    if (!hasNavigatedRef.current) { hasNavigatedRef.current = true; return; }
+    checkActiveWeekReview(userProfile?.created_at);
+  }, [tab]);
+  // Custom "Enjoying Aurexis?" sentiment gate -- independent of the native
+  // star-review prompt above (see checkSentimentGate in lib/appReview.js).
+  const [sentimentGateOpen, setSentimentGateOpen] = useState(false);
+  const [sentimentGateStage, setSentimentGateStage] = useState("ask"); // "ask" | "thanks"
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -9464,6 +9478,7 @@ async function loadWatchlistLive() {
     const submitClose = (id) => {
       const exit = parseFloat(journalClosePrice);
       if (!Number.isFinite(exit) || exit <= 0) { setJournalCloseErr("Enter a valid exit price."); return; }
+      const isWin = exit >= journalTrades.find(t => t.id === id)?.entryPrice;
       saveJournalTrades(journalTrades.map(t => {
         if (t.id !== id) return t;
         const ret = ((exit - t.entryPrice) / t.entryPrice) * 100;
@@ -9472,6 +9487,10 @@ async function loadWatchlistLive() {
           returnPct: parseFloat(ret.toFixed(2)) };
       }));
       setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr("");
+      if (isWin) {
+        onJournalTradeWon(won.length + 1);
+        checkSentimentGate(won.length + 1, () => { setSentimentGateStage("ask"); setSentimentGateOpen(true); });
+      }
     };
 
     const updateNote = (id, val) =>
@@ -13025,6 +13044,61 @@ const renderPage = () => {
         </div>
       )}
       {/* ── end floating chat ─────────────────────────────────────────────── */}
+
+      {sentimentGateOpen ? (
+        <div className="modalOverlay" onClick={() => setSentimentGateOpen(false)}>
+          <div className="modal" style={{ maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
+            {sentimentGateStage === "ask" ? (
+              <>
+                <div className="modalHead">
+                  <div className="modalTitle">Enjoying Aurexis?</div>
+                </div>
+                <div className="modalBody">
+                  <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+                    You've had a few winning picks — we'd love to know how it's going.
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      className="btn btn--ghost"
+                      style={{ flex: 1 }}
+                      onClick={() => setSentimentGateStage("thanks")}
+                    >
+                      Not really
+                    </button>
+                    <button
+                      className="btn btn--primary"
+                      style={{ flex: 1 }}
+                      onClick={() => { AppReview.openAppStore().catch(() => {}); setSentimentGateOpen(false); }}
+                    >
+                      Yes!
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="modalHead">
+                  <div className="modalTitle">Thanks for the feedback</div>
+                  <button className="btn btn--ghost" onClick={() => setSentimentGateOpen(false)}>Close</button>
+                </div>
+                <div className="modalBody">
+                  <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+                    We'd love to hear more about what's not working so we can fix it.
+                  </div>
+                  <a
+                    href="mailto:aurexis.app@gmail.com"
+                    className="btn btn--primary"
+                    style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+                    onClick={() => setSentimentGateOpen(false)}
+                  >
+                    Email us
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {showFeedback ? (
         <div className="modalOverlay" onClick={() => setShowFeedback(false)}>
