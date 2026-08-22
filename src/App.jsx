@@ -9487,6 +9487,7 @@ async function loadWatchlistLive() {
           returnPct: parseFloat(ret.toFixed(2)) };
       }));
       setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr("");
+      alog(`[review] submitClose: isWin=${isWin}, priorWonCount=${won.length}, isNative=${isNativeApp()}`);
       if (isWin) {
         onJournalTradeWon(won.length + 1);
         checkSentimentGate(won.length + 1, () => { setSentimentGateStage("ask"); setSentimentGateOpen(true); });
@@ -9574,6 +9575,7 @@ async function loadWatchlistLive() {
                   key={fkey} ref={ref}
                   style={{ width: "100%", background: "none", border: "none", borderBottom: i < arr.length - 1 ? `0.5px solid ${nHairline}` : "none", color: nText, fontSize: 16, padding: "8px 0", outline: "none", fontFamily: "inherit" }}
                   placeholder={placeholder}
+                  inputMode={fkey === "notes" ? "text" : "decimal"}
                   onChange={e => saveField(fkey, e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
                 />
@@ -9614,10 +9616,14 @@ async function loadWatchlistLive() {
                     </div>
                   </div>
                   {isClosing && (
-                    <div style={{ display: "flex", gap: 8, paddingBottom: 14 }}>
+                    <div
+                      ref={el => { if (el) setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
+                      style={{ display: "flex", gap: 8, paddingBottom: 14 }}
+                    >
                       <input
-                        style={{ flex: 1, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
+                        style={{ flex: 1, minWidth: 0, background: "none", border: `1px solid ${nHairline}`, borderRadius: 12, color: nText, fontSize: 16, padding: "8px 12px", outline: "none", fontFamily: "inherit" }}
                         placeholder="Exit price"
+                        inputMode="decimal"
                         value={journalClosePrice}
                         autoFocus
                         onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
@@ -9718,6 +9724,7 @@ async function loadWatchlistLive() {
                     ref={ref}
                     style={{ ...inp, width: "100%" }}
                     placeholder={placeholder}
+                    inputMode={fkey === "notes" ? "text" : "decimal"}
                     onChange={e => saveField(fkey, e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") closeForm(); }}
                   />
@@ -9795,6 +9802,7 @@ async function loadWatchlistLive() {
                                   <input
                                     style={{ ...inp, width: 76, fontSize: 11, padding: "4px 7px" }}
                                     placeholder="Exit $"
+                                    inputMode="decimal"
                                     value={journalClosePrice}
                                     autoFocus
                                     onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
@@ -9888,8 +9896,9 @@ async function loadWatchlistLive() {
                           isClosing ? (
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
                               <input
-                                style={{ ...inp, flex: 1, padding: "12px 9px" }}
+                                style={{ ...inp, flex: 1, minWidth: 0, padding: "12px 9px" }}
                                 placeholder="Exit $"
+                                inputMode="decimal"
                                 value={journalClosePrice}
                                 autoFocus
                                 onChange={e => { setJournalClosePrice(e.target.value); setJournalCloseErr(""); }}
