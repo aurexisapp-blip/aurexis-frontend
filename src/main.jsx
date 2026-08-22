@@ -12,6 +12,7 @@ import Disclaimer from "./pages/Disclaimer";
 import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Legal from "./pages/Legal";
+import Support from "./pages/Support";
 import MobileCheckout from "./pages/MobileCheckout";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import "./index.css";
@@ -194,6 +195,7 @@ function RootRoutes() {
         <Route path="/disclaimer" element={<Disclaimer />} />
         <Route path="/refund"     element={<Refund />} />
         <Route path="/cookies"    element={<Cookies />} />
+        <Route path="/support"    element={<Support />} />
         <Route path="/waitlist"   element={<Navigate to="/signup" replace />} />
         {/* Login/signup are reachable on mobile web unconditionally -- they
             were previously gated behind the same desktop-only MobileBlock

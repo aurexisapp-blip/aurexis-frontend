@@ -1592,17 +1592,18 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   Support
                 </div>
                 {[
+                  { label: "Support Center",        to: "/support" },
                   { label: "aurexis.app@gmail.com", href: "mailto:aurexis.app@gmail.com" },
-                  { label: "Documentation",        href: "#" },
-                  { label: "Status",               href: "#" },
-                ].map(({ label, href }) => (
-                  <a key={label} href={href} style={{
+                  { label: "Status",                href: "#" },
+                ].map(({ label, to, href }) => {
+                  const style = {
                     display: "block", fontSize: 13, color: "rgba(255,255,255,0.35)",
                     textDecoration: "none", padding: "5px 0", letterSpacing: "0.01em",
-                  }}>
-                    {label}
-                  </a>
-                ))}
+                  };
+                  return to
+                    ? <Link key={label} to={to} style={style}>{label}</Link>
+                    : <a key={label} href={href} style={style}>{label}</a>;
+                })}
               </div>
 
             </div>
