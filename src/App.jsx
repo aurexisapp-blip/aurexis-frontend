@@ -2418,13 +2418,12 @@ function canAccess(userPlan, minPlan) {
   return (PLAN_RANK[userPlan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
 }
 
-// Must match _ANALYZE_DAILY_LIMITS["free"] in app.py -- this is only a
-// client-side pre-check to avoid a wasted round-trip; the server is the
-// real, authoritative enforcement (keyed per-account in the pick_usage
-// table, so it can't drift from device/browser switching the way this
-// localStorage count can). Was 3 here vs 10 server-side, so free users
-// hit this client-side wall two-thirds of the way before their real limit.
-const ANALYZE_FREE_LIMIT = 10;
+// The real, intended free-tier cap. Must match _ANALYZE_DAILY_LIMITS["free"]
+// in app.py -- this is only a client-side pre-check to avoid a wasted
+// round-trip; the server is the actual, authoritative enforcement (keyed
+// per-account in the pick_usage table, so it can't drift from device/browser
+// switching the way this localStorage count can).
+const ANALYZE_FREE_LIMIT = 3;
 function _analyzeUsageKey() { const d = new Date(); return `aurexis_analyze_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getAnalyzeUsedToday() { return parseInt(localStorage.getItem(_analyzeUsageKey()) || "0", 10); }
 function incrementAnalyzeUsage() { localStorage.setItem(_analyzeUsageKey(), String(getAnalyzeUsedToday() + 1)); }
@@ -3451,6 +3450,8 @@ function AppInner() {
   // backend (/api/chat, GPT-4o-mini with live account context), not a local
   // keyword matcher. On any failure (network, rate limit, LLM down) it shows
   // an honest "unavailable" message rather than a canned/fake answer.
+  const CHAT_UPGRADE_REPLY = "AURO is a Starter+ feature — upgrade to chat with your AI analyst.";
+
   const sendChatText = React.useCallback(async (text) => {
     const msg = String(text || "").trim();
     if (!msg || chatLoading) return;
@@ -3458,6 +3459,18 @@ function AppInner() {
     setChatHistory(newHistory);
     setChatLoading(true);
     setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+
+    // Backend correctly 403s free users (chat is Starter+, /api/chat requires
+    // _dep_starter) -- but that used to fall into the same generic "AI
+    // assistant is temporarily unavailable" bucket as an actual outage below,
+    // so a working paywall looked identical to a broken feature. Check first
+    // to skip the wasted round-trip and say the real reason up front.
+    if (!canAccess(userPlan, "starter")) {
+      setChatHistory(h => [...h, { role: "assistant", content: CHAT_UPGRADE_REPLY }]);
+      setChatLoading(false);
+      setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
+      return;
+    }
 
     let reply = CHAT_UNAVAILABLE_REPLY;
     try {
@@ -3476,13 +3489,15 @@ function AppInner() {
     } catch (e) {
       reply = e?.status === 429
         ? "You're sending messages a bit fast — give it a few seconds and try again."
+        : e?.status === 403 && String(e?.message || "").startsWith("PLAN_UPGRADE_REQUIRED")
+        ? CHAT_UPGRADE_REPLY
         : CHAT_UNAVAILABLE_REPLY;
     }
 
     setChatHistory(h => [...h, { role: "assistant", content: reply }]);
     setChatLoading(false);
     setTimeout(() => { if (chatMessagesRef.current) chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight; }, 30);
-  }, [chatHistory, chatLoading, buildChatPageContext]);
+  }, [chatHistory, chatLoading, buildChatPageContext, userPlan]);
 
   const sendChatMessage = React.useCallback(async () => {
     const msg = chatInput.trim();
