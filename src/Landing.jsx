@@ -37,7 +37,6 @@ const GLOBAL_CSS = `
     .dash-sidebar, .demo-sidebar { display: none; }
     .landing-nav { padding: 16px 18px !important; flex-wrap: wrap !important; row-gap: 10px !important; }
     .landing-nav-btns { gap: 8px !important; flex-wrap: wrap !important; row-gap: 8px !important; }
-    .landing-nav-support { font-size: 12px !important; margin-right: 12px !important; }
     .landing-nav-login { padding: 8px 14px !important; font-size: 12px !important; }
     .landing-nav-cta { padding: 8px 14px !important; font-size: 12px !important; letter-spacing: 0 !important; }
   }
@@ -1058,17 +1057,6 @@ export default function Landing({ onGetStarted }) {
           >
             <div style={S.navLogo}>AUREXIS</div>
             <div className="landing-nav-btns" style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <Link
-                to="/support"
-                className="landing-nav-support"
-                style={{
-                  fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.45)",
-                  textDecoration: "none", letterSpacing: "0.02em",
-                  marginRight: 14,
-                }}
-              >
-                Support
-              </Link>
               <motion.button
                 className="landing-nav-login"
                 style={{ padding: "9px 20px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em" }}
