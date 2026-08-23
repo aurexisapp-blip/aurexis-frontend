@@ -10268,49 +10268,6 @@ async function loadWatchlistLive() {
           </div>
         </div>
 
-        {/* Devices */}
-        <div style={{ ...settingsSection }}>
-          <div style={{ ...settingsSectionTitle, marginBottom: 4 }}>Devices</div>
-          <div style={{ ...settingsSectionSub, fontSize: 12, marginBottom: 12 }}>
-            Aurexis accounts can be signed in on up to 2 devices at a time. Remove one below to sign in somewhere new.
-          </div>
-          {devicesLoading ? (
-            <div style={{ fontSize: 12, color: T.textFaint }}>Loading…</div>
-          ) : devices.length === 0 ? (
-            <div style={{ fontSize: 12, color: T.textFaint }}>No devices on record yet.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {devices.map(d => (
-                <div key={d.device_id} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "9px 12px", borderRadius: 8,
-                  background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
-                  border: `1px solid ${T.border}`,
-                }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-                      {d.label || "Unknown device"}
-                      {d.device_id === myDeviceId && (
-                        <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#3EE0A3", letterSpacing: "0.05em" }}>THIS DEVICE</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: T.textFaint, marginTop: 2 }}>
-                      Last active {d.last_seen_at ? new Date(d.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-                    </div>
-                  </div>
-                  <RippleButton
-                    className="btn btn--ghost"
-                    style={{ fontSize: 11, padding: "6px 12px" }}
-                    onClick={() => removeDevice(d.device_id)}
-                  >
-                    Remove
-                  </RippleButton>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Full support page */}
         <div style={{
           ...settingsSection,
@@ -10951,6 +10908,47 @@ async function loadWatchlistLive() {
                   Sign out
                 </button>
               } />
+
+              <div style={{ marginTop: 28 }}>
+                <SectionTitle>Devices</SectionTitle>
+                <div style={{ fontSize: 12, color: txtS, marginBottom: 12, lineHeight: 1.5 }}>
+                  Aurexis accounts can be signed in on up to 2 devices at a time. Remove one below to sign in somewhere new.
+                </div>
+                {devicesLoading ? (
+                  <div style={{ fontSize: 12, color: txtS }}>Loading…</div>
+                ) : devices.length === 0 ? (
+                  <div style={{ fontSize: 12, color: txtS }}>No devices on record yet.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {devices.map(d => (
+                      <div key={d.device_id} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "9px 12px", borderRadius: 8,
+                        background: dm ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+                        border: bdr,
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: txt }}>
+                            {d.label || "Unknown device"}
+                            {d.device_id === myDeviceId && (
+                              <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#3EE0A3", letterSpacing: "0.05em" }}>THIS DEVICE</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 11, color: txtS, marginTop: 2 }}>
+                            Last active {d.last_seen_at ? new Date(d.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeDevice(d.device_id)}
+                          style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: bdr, background: "transparent", color: txtS, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div style={{ marginTop: 28 }}>
                 <SectionTitle>Danger Zone</SectionTitle>
