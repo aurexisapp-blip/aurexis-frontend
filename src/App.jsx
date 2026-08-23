@@ -11097,6 +11097,7 @@ async function loadWatchlistLive() {
                 { label: "Entry, stop & targets", free: "—", starter: "✓", pro: "✓", elite: "✓" },
                 { label: "AI analysis", free: "3/day", starter: "Unlimited", pro: "Unlimited", elite: "Unlimited" },
                 { label: "Trade Journal & Watchlist", free: "—", starter: "✓", pro: "✓", elite: "✓" },
+                { label: "AI \"What This Means\" explainer", free: "—", starter: "✓", pro: "✓", elite: "✓" },
                 { label: "Multi-ticker screener", free: "—", starter: "—", pro: "✓", elite: "✓" },
                 { label: "Options flow & Insider data", free: "—", starter: "—", pro: "—", elite: "✓" },
               ].map(row => (
