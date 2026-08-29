@@ -13070,23 +13070,23 @@ const renderPage = () => {
             flexShrink: 0,
             background: nCard,
           } : {
-            padding: "12px 14px 11px",
-            borderBottom: `1px solid ${T.border}`,
+            padding: "14px 16px 13px",
+            borderBottom: `0.5px solid ${nHairline}`,
             display: "flex",
             alignItems: "center",
             gap: 10,
             flexShrink: 0,
-            background: darkMode ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)",
+            background: nCard,
           }}>
             <div style={{
-              width: isNative ? 36 : 32, height: isNative ? 36 : 32, borderRadius: isNative ? 11 : 10, flexShrink: 0,
+              width: isNative ? 36 : 34, height: isNative ? 36 : 34, borderRadius: isNative ? 11 : 11, flexShrink: 0,
               background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: isNative ? 17 : 15, color: "white", fontWeight: 700,
+              fontSize: isNative ? 17 : 16, color: "white", fontWeight: 700,
             }}>✦</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: isNative ? 15 : 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>AURO</div>
-              <div style={{ fontSize: isNative ? 11 : 10, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+              <div style={{ fontSize: isNative ? 15 : 14, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>AURO</div>
+              <div style={{ fontSize: isNative ? 11 : 10.5, color: T.textFaint, display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3EE0A3", display: "inline-block", boxShadow: "0 0 4px #3EE0A3" }} />
                 Live market context
               </div>
@@ -13119,10 +13119,10 @@ const renderPage = () => {
               // that default so it actually shrinks and scrolls instead.
               minHeight: 0,
               overflowY: "auto",
-              padding: isNative ? "20px 16px 10px" : "14px 12px 8px",
+              padding: isNative ? "20px 16px 10px" : "16px 14px 10px",
               display: "flex",
               flexDirection: "column",
-              gap: isNative ? 12 : 8,
+              gap: isNative ? 12 : 10,
             }}
           >
             {chatHistory.map((m, i) => (
@@ -13132,17 +13132,17 @@ const renderPage = () => {
                 alignItems: m.role === "user" ? "flex-end" : "flex-start",
               }}>
                 <div style={{
-                  padding: isNative ? "10px 14px" : "8px 12px",
+                  padding: isNative ? "10px 14px" : "9px 13px",
                   borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
-                  fontSize: isNative ? 14 : 12.5,
+                  fontSize: isNative ? 14 : 13,
                   lineHeight: 1.6,
-                  maxWidth: isNative ? "86%" : "84%",
+                  maxWidth: isNative ? "86%" : "85%",
                   wordBreak: "break-word",
                   background: m.role === "user"
                     ? "linear-gradient(135deg, #6366f1, #7c3aed)"
-                    : (isNative ? nCard : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)")),
+                    : nCard,
                   color: m.role === "user" ? "#f1f5f9" : T.text,
-                  border: m.role === "user" ? "none" : (isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`),
+                  border: m.role === "user" ? "none" : `0.5px solid ${nHairline}`,
                 }}>
                   {m.content}
                 </div>
@@ -13152,8 +13152,8 @@ const renderPage = () => {
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
                 padding: "9px 13px",
-                background: isNative ? nCard : (darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
-                border: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`,
+                background: nCard,
+                border: `0.5px solid ${nHairline}`,
                 borderRadius: "4px 14px 14px 14px",
                 alignSelf: "flex-start",
               }}>
@@ -13193,21 +13193,25 @@ const renderPage = () => {
                 ))}
               </div>
             ) : (
-              <div style={{ padding: "0 12px 8px", display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {["Top pick?", "Win rate?", "Best signal?", "Market regime?"].map(s => (
+              <div style={{ padding: "0 14px 10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                {[
+                  { label: "Top pick?", icon: "🎯" },
+                  { label: "Win rate?", icon: "📊" },
+                  { label: "Best signal?", icon: "⚡" },
+                  { label: "Market regime?", icon: "🌊" },
+                ].map(s => (
                   <button
-                    key={s}
-                    onClick={() => sendChatText(s)}
+                    key={s.label}
+                    onClick={() => sendChatText(s.label)}
                     style={{
-                      background: darkMode ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.08)",
-                      color: "#818cf8",
-                      border: "1px solid rgba(99,102,241,0.22)",
-                      borderRadius: 20,
-                      padding: "4px 10px", fontSize: 11.5, cursor: "pointer",
-                      transition: "background 0.15s",
-                      fontFamily: "inherit",
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: nCard, border: `0.5px solid ${nHairline}`, borderRadius: 12,
+                      padding: "9px 10px", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
                     }}
-                  >{s}</button>
+                  >
+                    <span style={{ fontSize: 13, flexShrink: 0 }}>{s.icon}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text }}>{s.label}</span>
+                  </button>
                 ))}
               </div>
             )
@@ -13215,10 +13219,10 @@ const renderPage = () => {
 
           {/* Input row */}
           <div style={{
-            padding: isNative ? "12px 16px calc(14px + env(safe-area-inset-bottom, 0px))" : "8px 12px 12px",
-            borderTop: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border}`,
+            padding: isNative ? "12px 16px calc(14px + env(safe-area-inset-bottom, 0px))" : "10px 14px 12px",
+            borderTop: `0.5px solid ${nHairline}`,
             display: "flex",
-            gap: isNative ? 10 : 7,
+            gap: isNative ? 10 : 9,
             alignItems: "flex-end",
             flexShrink: 0,
             background: isNative ? nBg : undefined,
@@ -13233,10 +13237,10 @@ const renderPage = () => {
               disabled={chatLoading}
               style={{
                 flex: 1, resize: "none",
-                background: isNative ? nCard : (darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
-                border: isNative ? `0.5px solid ${nHairline}` : `1px solid ${T.border2}`,
-                borderRadius: isNative ? 14 : 10,
-                color: T.text, fontSize: 16, padding: isNative ? "11px 14px" : "8px 11px",
+                background: nCard,
+                border: `0.5px solid ${nHairline}`,
+                borderRadius: isNative ? 14 : 12,
+                color: T.text, fontSize: 16, padding: isNative ? "11px 14px" : "9px 13px",
                 fontFamily: "inherit", lineHeight: 1.45, outline: "none",
                 maxHeight: 80, overflow: "auto",
                 transition: "border-color 0.15s",
@@ -13246,14 +13250,14 @@ const renderPage = () => {
               onClick={sendChatMessage}
               disabled={chatLoading || !chatInput.trim()}
               style={{
-                width: isNative ? 42 : 36, height: isNative ? 42 : 36,
+                width: isNative ? 42 : 38, height: isNative ? 42 : 38,
                 background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                border: "none", borderRadius: isNative ? 14 : 10, cursor: "pointer",
+                border: "none", borderRadius: isNative ? 14 : 12, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
                 opacity: (chatLoading || !chatInput.trim()) ? 0.35 : 1,
                 transition: "opacity 0.15s",
-                fontSize: isNative ? 15 : 13, color: "white",
+                fontSize: isNative ? 15 : 14, color: "white",
               }}
             >➤</button>
           </div>
