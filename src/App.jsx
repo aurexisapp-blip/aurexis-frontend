@@ -10833,7 +10833,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: isNative ? 0 : "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -10937,9 +10937,18 @@ async function loadWatchlistLive() {
                 </div>
               </div>
 
-              {/* ── Avatar picker ── */}
+              {/* ── Avatar picker ──
+                  Native: a proper grid (6 cols x 2 rows fills all 12 presets
+                  exactly, no orphaned partial row) instead of flex-wrap, which
+                  left the circles bunched at the left edge with a big unused
+                  gap on the right and uneven row/column spacing (16 vs 10). */}
               <SectionTitle>Avatar Style</SectionTitle>
-              <div style={{ display: "flex", flexWrap: "wrap", columnGap: 10, rowGap: isNative ? 16 : 10, marginBottom: 24 }}>
+              <div style={isNative ? {
+                display: "grid", gridTemplateColumns: "repeat(6, 1fr)",
+                justifyItems: "center", rowGap: 18, columnGap: 8, marginBottom: 28,
+              } : {
+                display: "flex", flexWrap: "wrap", columnGap: 10, rowGap: 10, marginBottom: 24,
+              }}>
                 {AVATAR_PRESETS.map(preset => {
                   const selected = avatarId === preset.id;
                   return (
