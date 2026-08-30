@@ -124,7 +124,7 @@ function getAuthHeaders(): Record<string, string> {
   }
 }
 
-async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: string, body?: unknown, options?: RequestInit & { timeoutMs?: number }): Promise<ApiResult<T>> {
+async function apiRequest<T = unknown>(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown, options?: RequestInit & { timeoutMs?: number }): Promise<ApiResult<T>> {
   const url = buildUrl(path);
   const opt = options && typeof options === "object" ? options : {};
   const timeoutMs = Number.isFinite(Number((opt as any).timeoutMs)) ? Number((opt as any).timeoutMs) : DEFAULT_TIMEOUT_MS;
@@ -159,7 +159,7 @@ async function apiRequest<T = unknown>(method: "GET" | "POST" | "DELETE", path: 
       },
     };
 
-    if (method === "POST") {
+    if (method === "POST" || method === "PATCH") {
       init.headers = {
         "Content-Type": "application/json",
         ...authHeaders,
@@ -211,6 +211,10 @@ export async function apiGet<T = unknown>(path: string, options?: RequestInit & 
 
 export async function apiPost<T = unknown>(path: string, body: unknown, options?: RequestInit & { timeoutMs?: number }) {
   return apiRequest<T>("POST", path, body, options);
+}
+
+export async function apiPatch<T = unknown>(path: string, body: unknown, options?: RequestInit & { timeoutMs?: number }) {
+  return apiRequest<T>("PATCH", path, body, options);
 }
 
 export async function apiDelete<T = unknown>(path: string, options?: RequestInit & { timeoutMs?: number }) {
@@ -340,6 +344,51 @@ export async function removeWatchlist(symbol: string) {
   const s = encodeURIComponent(String(symbol || "").trim().toUpperCase());
   const path = CONTRACTS.watchlist.remove.path.replace("{symbol}", s);
   const res = await apiDelete<WatchlistResponse>(path);
+  return unwrapOrThrow(res, path);
+}
+
+export type JournalEntry = {
+  id: string;
+  symbol: string;
+  entryPrice: number;
+  stopPrice: number | null;
+  targetPrice: number | null;
+  enteredAt: string;
+  exitPrice: number | null;
+  exitedAt: string | null;
+  status: string;
+  returnPct: number | null;
+  notes: string;
+  source?: string | null;
+};
+
+export async function getJournal() {
+  const path = CONTRACTS.journal.get.path;
+  const res = await apiGet<{ entries: JournalEntry[] }>(path);
+  return unwrapOrThrow(res, path);
+}
+
+export async function createJournalEntry(entry: Partial<JournalEntry> & { symbol: string; entryPrice: number }) {
+  const path = CONTRACTS.journal.create.path;
+  const res = await apiPost<JournalEntry>(path, entry);
+  return unwrapOrThrow(res, path);
+}
+
+export async function updateJournalEntry(id: string, patch: Partial<JournalEntry>) {
+  const path = CONTRACTS.journal.update.path.replace("{id}", encodeURIComponent(String(id || "")));
+  const res = await apiPatch<JournalEntry>(path, patch);
+  return unwrapOrThrow(res, path);
+}
+
+export async function deleteJournalEntry(id: string) {
+  const path = CONTRACTS.journal.remove.path.replace("{id}", encodeURIComponent(String(id || "")));
+  const res = await apiDelete<{ ok: boolean; id: string }>(path);
+  return unwrapOrThrow(res, path);
+}
+
+export async function syncJournalEntries(entries: JournalEntry[]) {
+  const path = CONTRACTS.journal.sync.path;
+  const res = await apiPost<{ entries: JournalEntry[] }>(path, { entries });
   return unwrapOrThrow(res, path);
 }
 

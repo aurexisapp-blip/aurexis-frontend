@@ -1,4 +1,4 @@
-export type HttpMethod = "GET" | "POST" | "DELETE";
+export type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export const CONTRACTS = {
   health: {
@@ -29,6 +29,13 @@ export const CONTRACTS = {
     get: { method: "GET" as HttpMethod, path: "/watchlist" },
     add: { method: "POST" as HttpMethod, path: "/watchlist/add" },
     remove: { method: "DELETE" as HttpMethod, path: "/watchlist/remove/{symbol}" },
+  },
+  journal: {
+    get: { method: "GET" as HttpMethod, path: "/journal" },
+    create: { method: "POST" as HttpMethod, path: "/journal" },
+    update: { method: "PATCH" as HttpMethod, path: "/journal/{id}" },
+    remove: { method: "DELETE" as HttpMethod, path: "/journal/{id}" },
+    sync: { method: "POST" as HttpMethod, path: "/journal/sync" },
   },
   account: {
     method: "GET" as HttpMethod,

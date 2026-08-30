@@ -29,6 +29,11 @@ import {
   removeWatchlist as apiRemoveWatchlist,
   removePortfolio as apiRemovePortfolio,
   savePick as apiSavePick,
+  getJournal as apiGetJournal,
+  createJournalEntry as apiCreateJournalEntry,
+  updateJournalEntry as apiUpdateJournalEntry,
+  deleteJournalEntry as apiDeleteJournalEntry,
+  syncJournalEntries as apiSyncJournalEntries,
 } from "./api/client";
 
 import { normalizeAnalysis } from "./api/normalize";
@@ -3313,19 +3318,55 @@ function AppInner() {
   const screenerRunningRef = useRef(false);
 
   // ---- trade journal state (lifted to survive TradeJournal remounts) ----
-  const [journalTrades, setJournalTradesRaw] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("aurexis_journal_v1") || "[]"); } catch { return []; }
-  });
-  const saveJournalTrades = (updated) => {
-    try { localStorage.setItem("aurexis_journal_v1", JSON.stringify(updated)); } catch {}
-    setJournalTradesRaw(updated);
+  // Server-synced as of 2026-08-31 (was localStorage-only, device-local).
+  // journalTrades is now populated by loadJournalLive() (see boot effect)
+  // rather than read synchronously from localStorage on init.
+  const [journalTrades, setJournalTradesRaw] = useState([]);
+  const journalMutationErr = (e) => {
+    showToast?.(friendlyError(e, "journal") || "Journal update failed — try again");
+  };
+  // One-time migration: the first time this device fetches an empty journal
+  // from the server, upload whatever's sitting in this device's localStorage
+  // (its pre-sync history) so it isn't lost, then stop reading localStorage
+  // -- the server is the source of truth from here on. Safe to call more
+  // than once: the server dedupes by entry id, and clearing the local key
+  // after a successful sync prevents re-uploading (or resurrecting entries
+  // the user later deleted) on a subsequent empty-journal load.
+  const loadJournalLive = async () => {
+    try {
+      const data = await apiGetJournal();
+      let entries = Array.isArray(data?.entries) ? data.entries : [];
+      if (entries.length === 0) {
+        let legacy = [];
+        try { legacy = JSON.parse(localStorage.getItem("aurexis_journal_v1") || "[]"); } catch {}
+        if (Array.isArray(legacy) && legacy.length > 0) {
+          try {
+            const synced = await apiSyncJournalEntries(legacy);
+            entries = Array.isArray(synced?.entries) ? synced.entries : legacy;
+            try { localStorage.removeItem("aurexis_journal_v1"); } catch {}
+          } catch {
+            entries = legacy; // sync failed -- keep showing local data, retry next load
+          }
+        }
+      }
+      setJournalTradesRaw(entries);
+    } catch (e) {
+      // Server unreachable -- fall back to any not-yet-migrated local data
+      // so the feature still works offline, matching prior behavior.
+      try {
+        const legacy = JSON.parse(localStorage.getItem("aurexis_journal_v1") || "[]");
+        setJournalTradesRaw(Array.isArray(legacy) ? legacy : []);
+      } catch {
+        setJournalTradesRaw([]);
+      }
+    }
   };
   // Used by the Best Pick card's "Add to Journal" button. `source` + matching
   // entry price is how isPickInJournal() below detects "already added" --
   // journal entries otherwise have no link back to the pick that created them.
   const isPickInJournal = (sym, entry) =>
     journalTrades.some(t => t.symbol === sym && t.source === "best_pick" && t.entryPrice === entry);
-  const addPickToJournal = ({ symbol, entry, stop, target }) => {
+  const addPickToJournal = async ({ symbol, entry, stop, target }) => {
     const sym = normalizeSymbol(symbol);
     if (!sym || !Number.isFinite(entry) || entry <= 0) {
       showToast?.("Trade plan unavailable — cannot add to journal.");
@@ -3333,17 +3374,20 @@ function AppInner() {
     }
     if (isPickInJournal(sym, entry)) return;
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    saveJournalTrades([
-      {
-        id, symbol: sym, entryPrice: entry,
-        stopPrice: Number.isFinite(stop) ? stop : null,
-        targetPrice: Number.isFinite(target) ? target : null,
-        enteredAt: new Date().toISOString(), exitPrice: null, exitedAt: null,
-        status: "open", returnPct: null, notes: "", source: "best_pick",
-      },
-      ...journalTrades,
-    ]);
-    showToast?.("Added to Trade Journal");
+    const draft = {
+      id, symbol: sym, entryPrice: entry,
+      stopPrice: Number.isFinite(stop) ? stop : null,
+      targetPrice: Number.isFinite(target) ? target : null,
+      enteredAt: new Date().toISOString(), exitPrice: null, exitedAt: null,
+      status: "open", returnPct: null, notes: "", source: "best_pick",
+    };
+    try {
+      const created = await apiCreateJournalEntry(draft);
+      setJournalTradesRaw(prev => [created, ...prev]);
+      showToast?.("Added to Trade Journal");
+    } catch (e) {
+      journalMutationErr(e);
+    }
   };
   // Same reason as journalAddOpen below: AnalysisCard is defined inside
   // Dashboard's render body, itself defined inside AppInner's -- both get
@@ -3366,6 +3410,11 @@ function AppInner() {
   const [journalEditId, setJournalEditId] = useState(null);
   const [journalEditVals, setJournalEditVals] = useState({ entry: "", stop: "", target: "" });
   const [journalEditErr, setJournalEditErr] = useState("");
+  // Notes save on every keystroke (onChange) -- fine for localStorage, not
+  // for a network call. Local state still updates immediately so typing
+  // stays responsive; the actual PATCH is debounced per-entry so it only
+  // fires ~800ms after the user stops typing.
+  const journalNoteDebounceRef = useRef({});
 
   // ---- trade type + sizing state (no hardcoded position sizes) ----
   const [tradeType, setTradeType] = useState("shares"); // UI default only
@@ -4410,6 +4459,7 @@ async function loadWatchlistLive() {
     safeLoad(loadPerformance);
     safeLoad(loadRecentPicks);
     safeLoad(loadBestPick);
+    safeLoad(loadJournalLive);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -9492,7 +9542,7 @@ async function loadWatchlistLive() {
     const bestRet = rets.length > 0 ? Math.max(...rets) : null;
     const bestTrade = bestRet !== null ? closed.find(t => t.returnPct === bestRet) : null;
 
-    const submitAdd = () => {
+    const submitAdd = async () => {
       const sym = normalizeSymbol(symRef.current?.value || "");
       if (!sym || !/^[A-Z]{1,10}$/.test(sym)) { setJournalAddErr("Enter a valid symbol."); return; }
       const entry = parseFloat(entryRef.current?.value || "");
@@ -9500,36 +9550,68 @@ async function loadWatchlistLive() {
       const stop   = stopRef.current?.value   ? parseFloat(stopRef.current.value)   : null;
       const target = targetRef.current?.value ? parseFloat(targetRef.current.value) : null;
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      saveJournalTrades([
-        { id, symbol: sym, entryPrice: entry, stopPrice: stop, targetPrice: target,
-          enteredAt: new Date().toISOString(), exitPrice: null, exitedAt: null,
-          status: "open", returnPct: null, notes: (notesRef.current?.value || "").trim() },
-        ...journalTrades,
-      ]);
-      closeForm();
+      const draft = {
+        id, symbol: sym, entryPrice: entry, stopPrice: stop, targetPrice: target,
+        enteredAt: new Date().toISOString(), exitPrice: null, exitedAt: null,
+        status: "open", returnPct: null, notes: (notesRef.current?.value || "").trim(),
+      };
+      try {
+        const created = await apiCreateJournalEntry(draft);
+        setJournalTradesRaw(prev => [created, ...prev]);
+        closeForm();
+      } catch (e) {
+        setJournalAddErr(friendlyError(e, "journal") || "Could not save — try again.");
+      }
     };
 
-    const submitClose = (id) => {
+    const submitClose = async (id) => {
       const exit = parseFloat(journalClosePrice);
       if (!Number.isFinite(exit) || exit <= 0) { setJournalCloseErr("Enter a valid exit price."); return; }
-      const isWin = exit >= journalTrades.find(t => t.id === id)?.entryPrice;
-      saveJournalTrades(journalTrades.map(t => {
-        if (t.id !== id) return t;
-        const ret = ((exit - t.entryPrice) / t.entryPrice) * 100;
-        return { ...t, exitPrice: exit, exitedAt: new Date().toISOString(),
-          status: exit >= t.entryPrice ? "won" : "lost",
-          returnPct: parseFloat(ret.toFixed(2)) };
-      }));
-      setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr("");
-      alog(`[review] submitClose: isWin=${isWin}, priorWonCount=${won.length}, isNative=${isNativeApp()}`);
-      if (isWin) onJournalTradeWon(won.length + 1);
+      const trade = journalTrades.find(t => t.id === id);
+      if (!trade) return;
+      const isWin = exit >= trade.entryPrice;
+      const ret = ((exit - trade.entryPrice) / trade.entryPrice) * 100;
+      const patch = {
+        exitPrice: exit, exitedAt: new Date().toISOString(),
+        status: isWin ? "won" : "lost",
+        returnPct: parseFloat(ret.toFixed(2)),
+      };
+      try {
+        const updated = await apiUpdateJournalEntry(id, patch);
+        setJournalTradesRaw(prev => prev.map(t => t.id === id ? updated : t));
+        setJournalCloseId(null); setJournalClosePrice(""); setJournalCloseErr("");
+        alog(`[review] submitClose: isWin=${isWin}, priorWonCount=${won.length}, isNative=${isNativeApp()}`);
+        if (isWin) onJournalTradeWon(won.length + 1);
+      } catch (e) {
+        setJournalCloseErr(friendlyError(e, "journal") || "Could not save — try again.");
+      }
     };
 
-    const updateNote = (id, val) =>
-      saveJournalTrades(journalTrades.map(t => t.id === id ? { ...t, notes: val } : t));
+    const updateNote = (id, val) => {
+      // Instant local feedback so typing isn't gated on the network.
+      setJournalTradesRaw(prev => prev.map(t => t.id === id ? { ...t, notes: val } : t));
+      const timers = journalNoteDebounceRef.current;
+      if (timers[id]) window.clearTimeout(timers[id]);
+      timers[id] = window.setTimeout(async () => {
+        delete timers[id];
+        try {
+          await apiUpdateJournalEntry(id, { notes: val });
+        } catch (e) {
+          journalMutationErr(e);
+        }
+      }, 800);
+    };
 
-    const deleteTrade = (id) =>
-      saveJournalTrades(journalTrades.filter(t => t.id !== id));
+    const deleteTrade = async (id) => {
+      const prevTrades = journalTrades;
+      setJournalTradesRaw(prev => prev.filter(t => t.id !== id));
+      try {
+        await apiDeleteJournalEntry(id);
+      } catch (e) {
+        setJournalTradesRaw(prevTrades); // restore on failure -- don't silently lose it
+        journalMutationErr(e);
+      }
+    };
 
     const openEdit = (trade) => {
       setJournalEditId(trade.id);
@@ -9542,24 +9624,28 @@ async function loadWatchlistLive() {
     };
     const closeEdit = () => { setJournalEditId(null); setJournalEditErr(""); };
 
-    const submitEdit = (id) => {
+    const submitEdit = async (id) => {
       const entry = parseFloat(journalEditVals.entry);
       if (!Number.isFinite(entry) || entry <= 0) { setJournalEditErr("Enter a valid entry price."); return; }
       const stop = journalEditVals.stop.trim() !== "" ? parseFloat(journalEditVals.stop) : null;
       const target = journalEditVals.target.trim() !== "" ? parseFloat(journalEditVals.target) : null;
-      saveJournalTrades(journalTrades.map(t => {
-        if (t.id !== id) return t;
-        const next = { ...t, entryPrice: entry, stopPrice: stop, targetPrice: target };
-        // Closed trades' win/loss + return were computed against the old entry
-        // price -- recompute so an edit doesn't leave a stale result on screen.
-        if (t.status !== "open" && Number.isFinite(t.exitPrice)) {
-          const ret = ((t.exitPrice - entry) / entry) * 100;
-          next.status = t.exitPrice >= entry ? "won" : "lost";
-          next.returnPct = parseFloat(ret.toFixed(2));
-        }
-        return next;
-      }));
-      closeEdit();
+      const trade = journalTrades.find(t => t.id === id);
+      if (!trade) return;
+      const patch = { entryPrice: entry, stopPrice: stop, targetPrice: target };
+      // Closed trades' win/loss + return were computed against the old entry
+      // price -- recompute so an edit doesn't leave a stale result on screen.
+      if (trade.status !== "open" && Number.isFinite(trade.exitPrice)) {
+        const ret = ((trade.exitPrice - entry) / entry) * 100;
+        patch.status = trade.exitPrice >= entry ? "won" : "lost";
+        patch.returnPct = parseFloat(ret.toFixed(2));
+      }
+      try {
+        const updated = await apiUpdateJournalEntry(id, patch);
+        setJournalTradesRaw(prev => prev.map(t => t.id === id ? updated : t));
+        closeEdit();
+      } catch (e) {
+        setJournalEditErr(friendlyError(e, "journal") || "Could not save — try again.");
+      }
     };
 
     const fmtD = (iso) => {
