@@ -399,20 +399,19 @@ export default function Legal() {
 
           {/* ── PRIVACY ─────────────────────────────────────────────── */}
           <SectionBlock id="privacy" title="Privacy Policy" label="Legal">
-            <div style={{ fontSize: 12, color: T.textGhost, marginBottom: 24 }}>Last updated: April 29, 2026</div>
+            <div style={{ fontSize: 12, color: T.textGhost, marginBottom: 24 }}>Last updated: August 30, 2026</div>
             <H2>1. Information We Collect</H2>
             <UL items={[
               "Account info: email, name, password (hashed)",
               "Payment info: handled entirely by Stripe — we never see your card numbers",
               "Usage data: which features you use, when you log in",
-              "Optional: phone number for SMS alerts",
             ]} />
             <H2>2. How We Use Information</H2>
             <UL items={["Provide the Service", "Process payments", "Send pick alerts (if opted in)", "Improve the system", "Respond to support requests"]} />
             <H2>3. We Do NOT Sell Your Data</H2>
             <Callout variant="info">We do not sell your personal information to third parties. Period.</Callout>
             <H2>4. Third-Party Services</H2>
-            <UL items={["Stripe — payments", "SendGrid — email delivery", "Twilio — SMS alerts (optional)", "Cloudflare — security and DDoS protection", "Vercel — frontend hosting", "Railway — backend hosting"]} />
+            <UL items={["Stripe — payments", "SendGrid — email delivery", "Cloudflare — security and DDoS protection", "Vercel — frontend hosting", "Railway — backend hosting"]} />
             <H2>5. Data Security</H2>
             <P>We use industry-standard encryption for data in transit and at rest. We will notify you promptly in the event of a data breach that affects your information.</P>
             <H2>6. Your Rights</H2>
