@@ -37,7 +37,6 @@ export const PLAN_HIGHLIGHTS = {
     "Advanced filtering & custom signals",
   ],
   elite: [
-    "Real-time unusual options flow",
     "Insider buying & institutional activity",
     "Elite signals & dark pool data",
   ],

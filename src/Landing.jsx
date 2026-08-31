@@ -1010,7 +1010,6 @@ export default function Landing({ onGetStarted }) {
         ["✓","Position sizing recommendations"],
         ["✓","Multi-ticker screener"],
         ["✓","Portfolio tracking"],
-        ["—","Options flow feed"],
         ["—","Strategy backtesting"],
       ],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Pro", featuredColor: null,
@@ -1021,7 +1020,6 @@ export default function Landing({ onGetStarted }) {
       features: [
         ["✓","Everything in Pro"],
         ["✓","Email alerts — new picks & outcomes"],
-        ["✓","Options flow feed"],
         ["✓","Insider buying signals"],
         ["✓","Strategy backtesting"],
         ["✓","Priority support"],

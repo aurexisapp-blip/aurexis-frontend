@@ -288,7 +288,7 @@ export default function Legal() {
               "Free — daily ticker + conviction level, 3 AI analyses per day, limited top movers",
               "Starter ($9/mo) — full pick (entry, stop, targets, R/R ratio, edge signals), unlimited analysis, trade journal, watchlist, performance tracking",
               "Pro ($29/mo) — everything in Starter, plus multi-ticker screener and portfolio tracker",
-              "Elite ($49/mo) — everything in Pro, plus options flow, insider activity, backtesting, and priority support",
+              "Elite ($99/mo) — everything in Pro, plus insider activity, backtesting, and priority support",
             ]} />
             <H2>How do I upgrade?</H2>
             <P>
