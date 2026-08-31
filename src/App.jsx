@@ -10217,7 +10217,7 @@ async function loadWatchlistLive() {
       },
       {
         q: "Can I log my own trades or monitor stocks?",
-        a: "Yes, with a Starter plan. The Trade Journal lets you manually log any trade with entry, stop, and target — it calculates your P&L automatically. The Watchlist lets you monitor AI-screened candidates and track setups before they trigger. Both are unlocked on Starter ($9/mo).",
+        a: "Yes, with a Starter plan. The Trade Journal lets you manually log any trade with entry, stop, and target — it calculates your P&L automatically and syncs across your devices. The Watchlist lets you monitor AI-screened candidates and track setups before they trigger. Both are unlocked on Starter ($9/mo).",
       },
       {
         q: "How do I report a bug or wrong data?",
@@ -10385,7 +10385,7 @@ async function loadWatchlistLive() {
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 10 }}>What's Coming</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
-            {["Price alerts", "Mobile app", "Portfolio sync", "Options flow feed", "Strategy backtesting", "Multi-account support"].map(item => (
+            {["Price alerts", "Options flow feed", "Strategy backtesting", "Multi-account support"].map(item => (
               <div key={item} style={{
                 padding: "8px 12px", borderRadius: 8, fontSize: 12,
                 background: T.bg2, border: `1px solid ${T.border}`,
