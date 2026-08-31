@@ -347,8 +347,11 @@ export default function Legal() {
             </P>
             <H2>On mobile it says "open on your computer"</H2>
             <P>
-              Aurexis is a desktop trading dashboard — the full experience requires a laptop or desktop.
-              The mobile app is coming soon. Visit useaurexis.com on your desktop to get started.
+              The full trading dashboard — screener, AI picks, portfolio tracking — is built for a larger
+              screen and isn't available in mobile browsers yet, so visiting useaurexis.com on your phone
+              will show that message. You can still sign up, log in, and manage your subscription from your
+              phone's browser. A dedicated Aurexis iOS app is built and on its way to the App Store; until
+              it's live, use useaurexis.com on a laptop or desktop for the full trading experience.
             </P>
             <H2>Something else is broken</H2>
             <P>
