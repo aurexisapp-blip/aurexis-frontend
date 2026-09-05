@@ -30,12 +30,11 @@ const PLANS = [
   { id: "free",    label: "Free",    price: "$0"  },
   { id: "starter", label: "Starter", price: "$9"  },
   { id: "pro",     label: "Pro",     price: "$29" },
-  { id: "elite",   label: "Elite",   price: "$99" },
 ];
 
 function getInitialPlan() {
   const param = new URLSearchParams(window.location.search).get("plan") || "";
-  const valid = ["free", "starter", "pro", "elite"];
+  const valid = ["free", "starter", "pro"];
   return valid.includes(param.toLowerCase()) ? param.toLowerCase() : "starter";
 }
 

@@ -2352,7 +2352,7 @@ function OnboardingModal({ onDone, userName = "" }) {
 function _parseJwt(token) {
   try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); } catch { return {}; }
 }
-const PLAN_RANK = { free: 0, starter: 1, pro: 2, elite: 3 };
+const PLAN_RANK = { free: 0, starter: 1, pro: 2 };
 function usePlan() {
   const read = () => {
     const tok = localStorage.getItem("aurexis_token");
@@ -2497,34 +2497,6 @@ function ProFakePreview() {
   );
 }
 
-function EliteFakePreview() {
-  return (
-    <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "#111110", borderRadius: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 12, letterSpacing: "0.06em" }}>OPTIONS FLOW · UNUSUAL ACTIVITY</div>
-      {[
-        { sym: "NVDA", type: "CALL", strike: "$900C", exp: "Jun 21", size: "$2.4M", sentiment: "Bullish" },
-        { sym: "SPY",  type: "PUT",  strike: "$520P", exp: "Jun 14", size: "$1.8M", sentiment: "Bearish" },
-        { sym: "TSLA", type: "CALL", strike: "$260C", exp: "Jun 28", size: "$890K", sentiment: "Bullish" },
-        { sym: "AAPL", type: "CALL", strike: "$200C", exp: "Jul 18", size: "$1.2M", sentiment: "Bullish" },
-      ].map(({ sym, type, strike, exp, size, sentiment }) => (
-        <div key={sym+strike} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "rgba(255,255,255,0.04)", borderRadius: 9, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ padding: "3px 8px", borderRadius: 6, background: type === "CALL" ? "rgba(34,200,142,0.15)" : "rgba(248,113,113,0.15)", fontSize: 10, fontWeight: 800, color: type === "CALL" ? "#3EE0A3" : "#f87171" }}>{type}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{sym} <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{strike}</span></div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Exp {exp}</div>
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{size}</div>
-            <div style={{ fontSize: 10, color: type === "CALL" ? "#3EE0A3" : "#f87171" }}>{sentiment}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function PlanGate({ requires, userPlan, children, setTab, feature }) {
   if (canAccess(userPlan, requires)) return children;
 
@@ -2568,27 +2540,16 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
         "Advanced filtering & custom signals",
       ],
     },
-    elite: {
-      label: "Elite", price: planPriceLabel("elite"),
-      accentRgb: "167,139,250", accent: "#a78bfa",
-      headline: "Institutional-grade intelligence",
-      features: [
-        "Real-time unusual options flow",
-        "Insider buying & institutional activity",
-        "Elite signals & dark pool data",
-      ],
-    },
   };
 
   const base = tierCfg[requires];
   const override = featureOverrides[feature] || {};
   const cfg = { ...base, ...override };
 
-  const fakePreview = requires === "pro" ? <ProFakePreview /> : requires === "elite" ? <EliteFakePreview /> : <StarterFakePreview />;
+  const fakePreview = requires === "pro" ? <ProFakePreview /> : <StarterFakePreview />;
   const btnGrad = {
     starter: "linear-gradient(135deg,#3EE0A3,#22C88E)",
     pro:     "linear-gradient(135deg,#3b82f6,#1d4ed8)",
-    elite:   "linear-gradient(135deg,#8b5cf6,#6d28d9)",
   }[requires];
 
   return (
@@ -10830,7 +10791,7 @@ async function loadWatchlistLive() {
       { id: "support",     icon: "◌", label: "Support" },
     ];
 
-    const planBadgeColor = plan === "elite" ? "#f59e0b" : plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
+    const planBadgeColor = plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
       <div className="settingsShell" style={{ display: "flex", minHeight: isNative ? 0 : "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
@@ -10979,7 +10940,7 @@ async function loadWatchlistLive() {
               <FieldRow label="Full name" value={displayName} />
               <FieldRow label="Email address" value={email} />
               <FieldRow label="Plan" value={`${planLabel} plan`} action={
-                plan !== "elite" && (
+                plan !== "pro" && (
                   <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#22C88E", color: "#fff" }}>
                     Upgrade
                   </button>
@@ -11186,26 +11147,25 @@ async function loadWatchlistLive() {
               <div style={{ overflowX: "auto" }}>
               <div style={{ minWidth: 480 }}>
               {[
-                { label: "Daily AI pick", free: "Ticker only", starter: "Full plan", pro: "Full plan", elite: "Full plan" },
-                { label: "Entry, stop & targets", free: "—", starter: "✓", pro: "✓", elite: "✓" },
-                { label: "AI analysis", free: "3/day", starter: "Unlimited", pro: "Unlimited", elite: "Unlimited" },
-                { label: "Trade Journal & Watchlist", free: "—", starter: "✓", pro: "✓", elite: "✓" },
-                { label: "AI \"What This Means\" explainer", free: "—", starter: "✓", pro: "✓", elite: "✓" },
-                { label: "Multi-ticker screener", free: "—", starter: "—", pro: "✓", elite: "✓" },
-                { label: "Insider data", free: "—", starter: "—", pro: "—", elite: "✓" },
+                { label: "Daily AI pick", free: "Ticker only", starter: "Full plan", pro: "Full plan" },
+                { label: "Entry, stop & targets", free: "—", starter: "✓", pro: "✓" },
+                { label: "AI analysis", free: "3/day", starter: "Unlimited", pro: "Unlimited" },
+                { label: "Trade Journal & Watchlist", free: "—", starter: "✓", pro: "✓" },
+                { label: "AI \"What This Means\" explainer", free: "—", starter: "✓", pro: "✓" },
+                { label: "Multi-ticker screener", free: "—", starter: "—", pro: "✓" },
               ].map(row => (
-                <div key={row.label} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "9px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)", alignItems: "center" }}>
+                <div key={row.label} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, padding: "9px 0", borderBottom: dm ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(0,0,0,0.05)", alignItems: "center" }}>
                   <div style={{ fontSize: 13, color: txtS }}>{row.label}</div>
-                  {["free","starter","pro","elite"].map(p => (
+                  {["free","starter","pro"].map(p => (
                     <div key={p} style={{ fontSize: 12, color: plan === p ? "#3EE0A3" : txtG, fontWeight: plan === p ? 700 : 400, textAlign: "center" }}>
                       {row[p]}
                     </div>
                   ))}
                 </div>
               ))}
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "6px 0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, padding: "6px 0" }}>
                 <div />
-                {["Free","Starter","Pro","Elite"].map(p => (
+                {["Free","Starter","Pro"].map(p => (
                   <div key={p} style={{ fontSize: 10, fontWeight: 700, color: plan === p.toLowerCase() ? "#3EE0A3" : txtG, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p}</div>
                 ))}
               </div>
@@ -11451,20 +11411,12 @@ async function loadWatchlistLive() {
           { key: "portfolio",      label: "Portfolio tracking" },
         ],
       },
-      {
-        label: "Elite",
-        features: [
-          { key: "insider",        label: "Insider buying signals" },
-          { key: "priority_sup",   label: "Priority support" },
-        ],
-      },
     ];
 
     const PLAN_FEATURES = {
       free:    new Set(["pick_month", "analyze_limit", "market_regime", "top_movers_5"]),
       starter: new Set(["picks_week", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts"]),
       pro:     new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio"]),
-      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio", "insider", "priority_sup"]),
     };
 
     const plans = [
@@ -11497,16 +11449,6 @@ async function loadWatchlistLive() {
         badgeColor: null,
         accent: "rgba(99,102,241,0.55)",
         btnLabel: "Get Pro",
-      },
-      {
-        id: "elite",
-        name: "ELITE",
-        price: planPriceLabel("elite"),
-        period: "per month",
-        badge: "FOR SERIOUS TRADERS",
-        badgeColor: "#f59e0b",
-        accent: "rgba(245,158,11,0.55)",
-        btnLabel: "Join Elite",
       },
     ];
 

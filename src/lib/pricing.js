@@ -7,7 +7,6 @@ export const PLAN_PRICING = {
   free: 0,
   starter: 9,
   pro: 29,
-  elite: 99,
 };
 
 export function planPriceLabel(planId) {
@@ -19,7 +18,6 @@ export const PLAN_LABEL = {
   free: "Free",
   starter: "Starter",
   pro: "Pro",
-  elite: "Elite",
 };
 
 // Short highlight bullets for the standalone mobile checkout page --
@@ -35,9 +33,5 @@ export const PLAN_HIGHLIGHTS = {
     "Live screener across 1,200+ stocks",
     "Portfolio tracker with P&L analytics",
     "Advanced filtering & custom signals",
-  ],
-  elite: [
-    "Insider buying & institutional activity",
-    "Elite signals & dark pool data",
   ],
 };

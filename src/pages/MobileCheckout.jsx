@@ -14,7 +14,7 @@ const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 // they aren't already, and hand off to Stripe Checkout.
 function getPlanFromUrl() {
   const p = (new URLSearchParams(window.location.search).get("plan") || "").toLowerCase();
-  return p === "starter" || p === "pro" || p === "elite" ? p : "starter";
+  return p === "starter" || p === "pro" ? p : "starter";
 }
 
 // This page opens in the system browser (Safari), a separate storage context

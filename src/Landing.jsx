@@ -16,14 +16,6 @@ const GLOBAL_CSS = `
       box-shadow: 0 0 80px rgba(34,197,94,0.26), 0 0 160px rgba(34,197,94,0.08), 0 0 0 1px rgba(34,197,94,0.68);
     }
   }
-  @keyframes eliteGlow {
-    0%, 100% {
-      box-shadow: 0 0 24px rgba(245,158,11,0.07), 0 0 0 1px rgba(245,158,11,0.22);
-    }
-    50% {
-      box-shadow: 0 0 80px rgba(245,158,11,0.24), 0 0 160px rgba(245,158,11,0.07), 0 0 0 1px rgba(245,158,11,0.65);
-    }
-  }
   @keyframes demoSpin {
     to { transform: rotate(360deg); }
   }
@@ -382,12 +374,6 @@ const S = {
     animation: "starterGlow 3.5s ease-in-out infinite",
     display: "flex", flexDirection: "column",
   },
-  pricingCardElite: {
-    padding: "32px 28px", borderRadius: 14,
-    background: "#0d0a04",
-    animation: "eliteGlow 3.5s ease-in-out infinite",
-    display: "flex", flexDirection: "column",
-  },
   pricingBadge: {
     display: "inline-block", padding: "3px 10px", borderRadius: 999,
     background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.28)",
@@ -423,19 +409,6 @@ const S = {
     color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
     letterSpacing: "0.02em",
     boxShadow: "0 4px 20px rgba(22,163,74,0.3)",
-  },
-  pricingBtnElite: {
-    width: "100%", padding: "12px 0", borderRadius: 8, border: "none",
-    background: "linear-gradient(135deg, #92400e 0%, #78350f 100%)",
-    color: "rgba(253,230,138,0.95)", fontSize: 13, fontWeight: 700,
-    cursor: "pointer", letterSpacing: "0.02em",
-    boxShadow: "0 4px 20px rgba(245,158,11,0.2)",
-  },
-  pricingBadgeElite: {
-    display: "inline-block", padding: "3px 10px", borderRadius: 999,
-    background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.28)",
-    fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
-    color: "rgba(253,230,138,0.85)", textTransform: "uppercase", marginBottom: 18,
   },
   cancelAnytime: {
     textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.2)",
@@ -1012,21 +985,6 @@ export default function Landing({ onGetStarted }) {
         ["✓","Portfolio tracking"],
       ],
       btnStyle: S.pricingBtn, btnHover: { background: "rgba(255,255,255,0.08)" }, btnLabel: "Get Pro", featuredColor: null,
-    },
-    {
-      cardStyle: S.pricingCardElite, badge: "For serious traders", badgeStyle: S.pricingBadgeElite,
-      tier: "Elite", price: "$99", period: "per month",
-      features: [
-        ["✓","Everything in Pro"],
-        ["✓","Email alerts — new picks & outcomes"],
-        ["✓","Insider buying signals"],
-        ["✓","Priority support"],
-      ],
-      btnStyle: S.pricingBtnElite,
-      btnHover: { scale: 1.02, boxShadow: "0 8px 28px rgba(245,158,11,0.32)" },
-      btnLabel: "Join Elite",
-      featuredColor: "rgba(253,230,138,0.75)",
-      checkColor: "#f59e0b",
     },
   ];
 
