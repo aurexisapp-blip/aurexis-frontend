@@ -11455,7 +11455,6 @@ async function loadWatchlistLive() {
         label: "Elite",
         features: [
           { key: "insider",        label: "Insider buying signals" },
-          { key: "backtesting",    label: "Strategy backtesting" },
           { key: "priority_sup",   label: "Priority support" },
         ],
       },
@@ -11465,7 +11464,7 @@ async function loadWatchlistLive() {
       free:    new Set(["pick_month", "analyze_limit", "market_regime", "top_movers_5"]),
       starter: new Set(["picks_week", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts"]),
       pro:     new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio"]),
-      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio", "insider", "backtesting", "priority_sup"]),
+      elite:   new Set(["picks_unltd", "entry_targets", "rr_ratio", "edge_signals", "analyze_unltd", "why_this_trade", "ai_summary", "adv_metrics", "market_regime", "top_movers_5", "top_movers_all", "perf_tracking", "recent_picks", "watchlist", "trade_journal", "email_alerts", "screener", "portfolio", "insider", "priority_sup"]),
     };
 
     const plans = [
