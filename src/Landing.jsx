@@ -359,7 +359,7 @@ const S = {
   },
   // Pricing
   pricingRow: {
-    display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+    display: "grid",
     gap: 14, alignItems: "stretch",
   },
   pricingCard: {
@@ -1463,13 +1463,13 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
         <div style={S.divider} />
 
         {/* ── Pricing ── */}
-        <section id="pricing" style={S.section}>
+        <section id="pricing" style={{ ...S.section, paddingBottom: 40 }}>
           <Reveal delay={0}>
             <div style={S.sectionLabel}>Pricing</div>
             <h2 style={S.sectionTitle}>Simple, transparent pricing.</h2>
             <p style={S.sectionSub}>One winning trade covers months of the subscription.</p>
           </Reveal>
-          <div style={S.pricingRow} className="pricing-row">
+          <div style={{ ...S.pricingRow, gridTemplateColumns: `repeat(${PRICING_PLANS.length}, 1fr)` }} className="pricing-row">
             {PRICING_PLANS.map((plan, i) => (
               <PricingCard key={plan.tier} plan={plan} index={i} onGetStarted={onGetStarted} />
             ))}
