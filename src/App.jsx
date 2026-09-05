@@ -11551,11 +11551,12 @@ async function loadWatchlistLive() {
           </div>
         )}
 
-        {/* Plan grid — 4 columns on desktop; native has no room for 4 equal
-            columns (each card's full feature matrix squeezed into ~1/4 of a
-            phone's width was overlapping and getting clipped past the right
-            edge), so it stacks to one full-width card per plan instead. */}
-        <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : "repeat(4, 1fr)", gap: isNative ? 16 : 14 }}>
+        {/* Plan grid — one column per plan on desktop; native has no room for
+            equal columns (each card's full feature matrix squeezed into a
+            fraction of a phone's width was overlapping and getting clipped
+            past the right edge), so it stacks to one full-width card per
+            plan instead. */}
+        <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : `repeat(${plans.length}, 1fr)`, gap: isNative ? 16 : 14 }}>
           {plans.map((plan) => {
             const isCurrent = plan.id === userPlan;
             const isLoading = upgradeLoading === plan.id;

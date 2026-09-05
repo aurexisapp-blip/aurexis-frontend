@@ -541,7 +541,7 @@ function PricingCard({ plan, index, onGetStarted }) {
       animate={inView ? { opacity: 1, scale: 1, y: 0 } : {}}
       transition={{ type: "spring", stiffness: 220, damping: 22, delay: index * 0.1 }}
     >
-      {badge ? <div style={badgeStyle || S.pricingBadge}>{badge}</div> : null}
+      <div style={{ ...(badgeStyle || S.pricingBadge), visibility: badge ? "visible" : "hidden" }}>{badge || " "}</div>
       <div style={S.pricingTier}>{tier}</div>
       <div style={S.pricingPrice}>{price}</div>
       <div style={S.pricingPeriod}>{period}</div>
