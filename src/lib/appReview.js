@@ -3,13 +3,18 @@ import { Preferences } from "@capacitor/preferences";
 import { isNativeApp } from "./platform";
 import { alog } from "./authStorage";
 
-// Wraps SKStoreReviewController via @capawesome/capacitor-app-review.
+// Wraps the system review prompt (AppStore.requestReview on iOS 18+,
+// SKStoreReviewController.requestReview(in:) below that) via
+// @capawesome/capacitor-app-review.
 // iOS caps this to ~3 prompts/year on its own, but that's not a license to
 // call it freely -- a call that does nothing still means the code *tried*
 // to interrupt the user at a bad moment. So this module keeps its own,
 // stricter gate on top: each named moment ("milestone") fires at most once
-// ever, and a shared session flag keeps two milestones from ever firing in
-// the same sitting. (An earlier version also enforced a 60-day cooldown
+// ever, a shared session flag keeps two milestones from ever firing in
+// the same sitting, and the time-based "active_week" milestone additionally
+// requires the app to have been opened on >= MIN_ACTIVE_DAYS distinct days
+// (recordAppActiveDay) so it can't fire on an old-but-unused account's very
+// first session. (An earlier version also enforced a 60-day cooldown
 // shared across every milestone -- removed after real-device testing showed
 // it silently blocking first_win/second_win for 60 days any time
 // active_week happened to fire first, since they all shared one
@@ -20,9 +25,49 @@ import { alog } from "./authStorage";
 // authStorage.js.
 
 const MIN_DAYS_SINCE_SIGNUP = 7;
+// active_week also needs proof the account is actually *used*, not just old.
+// "Account is 7 days old" alone fired the prompt on the 2nd tab-tap of the
+// first session for any established user (e.g. someone who signed up on web
+// months ago and only now installs the app) -- exactly the zero-context
+// moment we're trying to avoid. So require the app to have been opened on at
+// least this many distinct calendar days too.
+const MIN_ACTIVE_DAYS = 3;
 const DAY_MS = 86400000;
 
+// Bounded list of distinct "YYYY-MM-DD" (UTC) strings -- one per day the app
+// was opened. Capacitor Preferences, same eviction reasoning as the gate state.
+const ACTIVE_DAYS_KEY = "aurexis_active_days_v1";
+
 let requestedThisSession = false;
+
+// Call once per app session (on the authenticated App mount). Cheap no-op on
+// web and after the first call each day. Kept separate from the visit-ping in
+// main.jsx: that one counts anonymous web traffic; this one is only about
+// "has this native user come back on different days" for the review gate.
+export async function recordAppActiveDay() {
+  if (!isNativeApp()) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { value } = await Preferences.get({ key: ACTIVE_DAYS_KEY });
+    const days = value ? JSON.parse(value) : [];
+    if (!Array.isArray(days)) { await Preferences.set({ key: ACTIVE_DAYS_KEY, value: JSON.stringify([today]) }); return; }
+    if (days.includes(today)) return;
+    // keep the last 14 distinct days -- far more than the >=3 check needs
+    const next = [...days, today].slice(-14);
+    await Preferences.set({ key: ACTIVE_DAYS_KEY, value: JSON.stringify(next) });
+    alog(`[review] recordAppActiveDay: ${today} recorded, ${next.length} distinct day(s) total`);
+  } catch {}
+}
+
+async function getActiveDayCount() {
+  try {
+    const { value } = await Preferences.get({ key: ACTIVE_DAYS_KEY });
+    const days = value ? JSON.parse(value) : [];
+    return Array.isArray(days) ? days.length : 0;
+  } catch {
+    return 0;
+  }
+}
 
 function createPromptGate(stateKey) {
   let cachedState = null;
@@ -79,10 +124,22 @@ export function onJournalTradeWon(totalWinsIncludingThisOne) {
 }
 
 // Call opportunistically during active use (not on cold launch) once the
-// signed-in user's account is at least a week old.
+// signed-in user's account is at least a week old AND the app has actually
+// been opened on several distinct days -- see MIN_ACTIVE_DAYS.
 export function checkActiveWeekReview(createdAtIso) {
   if (!createdAtIso) { alog(`[review] checkActiveWeekReview: no createdAtIso, skipping`); return; }
   const daysSinceSignup = (Date.now() - new Date(createdAtIso).getTime()) / DAY_MS;
-  if (daysSinceSignup < MIN_DAYS_SINCE_SIGNUP) return;
-  starGate.fire("active_week", () => AppReview.requestReview().catch(() => {}));
+  // NaN-safe: an unparseable createdAt must fall through as "not yet", never
+  // as ">= 7". (`NaN < 7` is false, so the old `< ` check let it through.)
+  if (!(daysSinceSignup >= MIN_DAYS_SINCE_SIGNUP)) {
+    alog(`[review] checkActiveWeekReview: account age ${daysSinceSignup} < ${MIN_DAYS_SINCE_SIGNUP}d, skipping`);
+    return;
+  }
+  getActiveDayCount().then((activeDays) => {
+    if (activeDays < MIN_ACTIVE_DAYS) {
+      alog(`[review] checkActiveWeekReview: only ${activeDays} distinct active day(s), need ${MIN_ACTIVE_DAYS} -- skipping`);
+      return;
+    }
+    starGate.fire("active_week", () => AppReview.requestReview().catch(() => {}));
+  });
 }

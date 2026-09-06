@@ -9,7 +9,7 @@ import AIScoreRing from "./AIScoreRing";
 import Landing from "./Landing";
 import { isNativeApp } from "./lib/platform";
 import { setToken, clearToken, registerDevice, getOrCreateDeviceId, alog } from "./lib/authStorage";
-import { onJournalTradeWon, checkActiveWeekReview } from "./lib/appReview";
+import { onJournalTradeWon, checkActiveWeekReview, recordAppActiveDay } from "./lib/appReview";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -2998,6 +2998,9 @@ function AppInner() {
     if (!hasNavigatedRef.current) { hasNavigatedRef.current = true; return; }
     checkActiveWeekReview(userProfile?.created_at);
   }, [tab]);
+  // Record today as a day this native user opened the app -- feeds the
+  // "actually used, not just old" gate inside checkActiveWeekReview.
+  useEffect(() => { recordAppActiveDay(); }, []);
   const [settingsTab, setSettingsTab] = useState("profile");
   const [avatarId, setAvatarId] = useState(() => localStorage.getItem("aurexis_avatar") || "green");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
