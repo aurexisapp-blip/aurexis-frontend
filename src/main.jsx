@@ -15,6 +15,8 @@ import Legal from "./pages/Legal";
 import Support from "./pages/Support";
 import MobileCheckout from "./pages/MobileCheckout";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminGrowth from "./pages/AdminGrowth";
+import { BlogList, BlogPost } from "./pages/Blog";
 import "./index.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -224,6 +226,14 @@ function RootRoutes() {
         {/* Private, secret-gated traffic/presence dashboard. Deliberately
             not linked from any nav -- reached only by typing the URL. */}
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        {/* Private, secret-gated growth-agent approval queue (generate/review/
+            approve content -- see growth_agent.py backend). Same pattern as
+            /admin/analytics: not linked from any nav, URL-only. */}
+        <Route path="/admin/growth" element={<AdminGrowth />} />
+        {/* Public, unauthenticated -- the actual SEO content the growth agent's
+            approval queue produces once approved + published. Meant to be crawled. */}
+        <Route path="/blog" element={<BlogList />} />
+        <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/app/*" element={<AppGate />} />
         <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingPage />} />
       </Routes>
