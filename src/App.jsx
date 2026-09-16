@@ -8526,7 +8526,19 @@ async function loadWatchlistLive() {
           headers: _tok ? { Authorization: `Bearer ${_tok}` } : {},
         });
         window.clearTimeout(t);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          // Keep the response body on the error -- the catch block below
+          // needs it to tell a Starter weekly-quota 429 apart from a real
+          // failure, instead of showing the same generic "could not load"
+          // message (which used to read as a broken feature, not "you're
+          // out of picks until Monday").
+          let body = null;
+          try { body = await res.json(); } catch { /* not JSON */ }
+          const err = new Error(`HTTP ${res.status}`);
+          err.status = res.status;
+          err.body = body;
+          throw err;
+        }
         const raw = await res.json();
 
         const payload = raw && typeof raw === "object" ? raw : null;
@@ -8586,7 +8598,17 @@ async function loadWatchlistLive() {
         setSystemCandidates(processed);
       } catch (e) {
         console.error("System watchlist candidates load failed:", e);
-        setCandidatesError("Could not load system candidates — click refresh to retry");
+        const quotaDetail = e?.body?.detail;
+        const isStarterWeeklyQuota =
+          e?.status === 429 &&
+          quotaDetail && typeof quotaDetail === "object" &&
+          quotaDetail.detail === "daily_limit_reached" &&
+          quotaDetail.plan === "starter";
+        setCandidatesError(
+          isStarterWeeklyQuota
+            ? "You've seen your 3 picks for this week on Starter — resets Monday, or upgrade to Pro for unlimited picks."
+            : "Could not load system candidates — click refresh to retry"
+        );
       } finally {
         setLoadingCandidates(false);
       }
