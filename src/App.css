@@ -49,6 +49,27 @@ body {
   color: rgba(255,255,255,0.96);
 }
 
+/* ---------- Long-press text-selection guard ----------
+   iOS's native text-selection/copy popover shouldn't appear anywhere in
+   the app on long-press -- it reads as "web page in a wrapper", not a
+   native app. True blanket disable, everywhere, with one necessary
+   carve-out: form fields (input/textarea/contenteditable) keep normal
+   text-selection behavior, since that's what lets you select-to-edit
+   what you've typed (Trade Journal notes, settings fields, login/OTP
+   fields, etc.) -- disabling it there would break editing, not copying. */
+#root {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#root input,
+#root textarea,
+#root [contenteditable="true"] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 :root{
   --bg0: #0a0a0a;
 

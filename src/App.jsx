@@ -8644,7 +8644,7 @@ async function loadWatchlistLive() {
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: T.text, lineHeight: 1 }}>
               {sym}
             </div>
-            <div style={{
+            <div className="noSelectChrome" style={{
               display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
               padding: "4px 9px", borderRadius: 999,
               background: "rgba(147,197,253,0.07)", border: "1px solid rgba(147,197,253,0.16)",
@@ -8655,13 +8655,13 @@ async function loadWatchlistLive() {
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: T.textFaint, marginBottom: 14, lineHeight: 1.5 }}>
+          <div className="noSelectChrome" style={{ fontSize: 12, color: T.textFaint, marginBottom: 14, lineHeight: 1.5 }}>
             <span style={{ color: T.textGhost, fontSize: 11 }}>Edge signals: </span>
             <span style={{ color: "rgba(147,210,255,0.62)" }}>{signalText}</span>
           </div>
 
           {score !== null ? (
-            <div style={{ marginBottom: 14 }}>
+            <div className="noSelectChrome" style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: T.textGhost, letterSpacing: "0.02em" }}>Conviction progress</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: T.textSec, letterSpacing: "-0.01em" }}>
@@ -8740,7 +8740,7 @@ async function loadWatchlistLive() {
               </div>
             ) : (
               <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
+                <div className="noSelectChrome" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: nTextFaint }}>Building momentum</span>
                   <button onClick={loadSystemCandidates} disabled={loadingCandidates} style={{ background: "none", border: "none", color: nTextFaint, fontSize: 12, cursor: "pointer", padding: 0 }}>
                     {loadingCandidates ? "Scanning…" : "Refresh"}
@@ -8755,7 +8755,7 @@ async function loadWatchlistLive() {
                     <div key={sym} style={{ padding: "14px 18px", borderTop: `0.5px solid ${nHairline}` }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
                         <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", color: nText }}>{sym}</span>
-                        <span style={{
+                        <span className="noSelectChrome" style={{
                           display: "inline-flex", alignItems: "center", gap: 5,
                           padding: "3px 9px", borderRadius: 999,
                           background: "none", border: "1px solid rgba(233,180,89,0.30)",
@@ -8765,10 +8765,10 @@ async function loadWatchlistLive() {
                           WATCHING
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: nTextSec, marginBottom: 10, lineHeight: 1.5 }}>{signalText}</div>
+                      <div className="noSelectChrome" style={{ fontSize: 12, color: nTextSec, marginBottom: 10, lineHeight: 1.5 }}>{signalText}</div>
 
                       {score !== null ? (
-                        <div style={{ marginBottom: 12 }}>
+                        <div className="noSelectChrome" style={{ marginBottom: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
                             <span style={{ fontSize: 10, color: nTextFaint, letterSpacing: "0.04em", textTransform: "uppercase" }}>Conviction</span>
                             <span style={{ fontSize: 12, fontWeight: 600, color: nTextSec }}>{score.toFixed(1)}/{AI_SCORE_THRESHOLD.toFixed(1)}</span>
@@ -10175,11 +10175,21 @@ async function loadWatchlistLive() {
     color: darkMode ? "rgba(255,255,255,0.75)" : "rgba(8,10,22,0.80)",
     marginBottom: 4,
     letterSpacing: "-0.01em",
+    // Section headers ("Full Support Center", "What's Coming", etc.) are
+    // chrome, not content -- long-pressing one shouldn't pop the native
+    // iOS copy/select menu. See src/App.css's own no-select block for the
+    // className-based version of this same fix used elsewhere in the app.
+    WebkitTouchCallout: "none",
+    WebkitUserSelect: "none",
+    userSelect: "none",
   };
   const settingsSectionSub = {
     fontSize: 13,
     color: darkMode ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.44)",
     lineHeight: 1.55,
+    WebkitTouchCallout: "none",
+    WebkitUserSelect: "none",
+    userSelect: "none",
   };
 
   const Support = () => {
