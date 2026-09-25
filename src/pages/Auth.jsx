@@ -254,6 +254,13 @@ export default function Auth({ defaultView = "login" }) {
     window.location.href = `${API}/auth/google/redirect?plan=${plan}&origin=${encodeURIComponent(window.location.origin)}&device_id=${encodeURIComponent(deviceId)}`;
   }
 
+  // The mobile-web and desktop layouts also render inside the native app
+  // when the screen is wide (iPad), so their social buttons must pick the
+  // native flows there -- the web ones send Google back to useaurexis.com
+  // and never load Apple's JS SDK inside the app.
+  const onGoogleSignIn = isNative ? handleGoogleNativeSignIn : handleGoogleWebSignIn;
+  const onAppleSignIn  = isNative ? handleAppleSignIn : handleAppleSignInWeb;
+
   async function handleLogin(e) {
     e.preventDefault();
     setError(""); setLoading(true);
@@ -873,11 +880,11 @@ export default function Auth({ defaultView = "login" }) {
           <div style={M.formSub}>{isLogin ? "Sign in to your account." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.appleBtn} onClick={handleAppleSignInWeb} disabled={loading}>
+            <button type="button" style={S.appleBtn} onClick={onAppleSignIn} disabled={loading}>
               <AppleIcon />
               <span>Continue with Apple</span>
             </button>
-            <button type="button" style={S.socialBtn} onClick={handleGoogleWebSignIn}>
+            <button type="button" style={S.socialBtn} onClick={onGoogleSignIn}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>
@@ -1014,11 +1021,11 @@ export default function Auth({ defaultView = "login" }) {
           <div style={S.formSub}>{isLogin ? "Sign in to access your AI picks." : "Start free, upgrade anytime."}</div>
 
           <div style={S.socials}>
-            <button type="button" style={S.appleBtn} onClick={handleAppleSignInWeb} disabled={loading}>
+            <button type="button" style={S.appleBtn} onClick={onAppleSignIn} disabled={loading}>
               <AppleIcon />
               <span>Continue with Apple</span>
             </button>
-            <button type="button" style={S.socialBtn} onClick={handleGoogleWebSignIn}>
+            <button type="button" style={S.socialBtn} onClick={onGoogleSignIn}>
               <GoogleIcon />
               <span>Continue with Google</span>
             </button>

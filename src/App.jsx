@@ -12389,7 +12389,9 @@ const renderPage = () => {
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            padding: 0,
+            // Clears the status bar on iPad, where the native app renders this
+            // desktop layout full-bleed; 0 in desktop browsers.
+            padding: "env(safe-area-inset-top, 0px) 0 0",
             gap: 0,
             flexShrink: 0,
           }}
