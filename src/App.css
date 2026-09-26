@@ -476,14 +476,21 @@ a:hover{
   grid-template-areas:
     "banner banner"
     "hero   hero"
-    "perf   picks"
-    "why    summary";
+    "left   right";
   gap: 12px;
   align-items: stretch;
   min-width: 0;
 }
 
 .dashCell{ min-width: 0; }
+/* Each secondary column stacks on its own height. Pairing the cards in
+   shared grid rows left a gap under whichever card was shorter (e.g. the
+   Pick Log beside the taller Market Pulse). Below 980px the columns are
+   display: contents, so the cells fall back to the single-column areas. */
+.dashCol{ display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.dashCol--left{ grid-area: left; }
+.dashCol--right{ grid-area: right; }
+.dashCol > .dashCell{ align-self: stretch; }
 .dashCell--banner{ grid-area: banner; }
 .dashCell--hero{ grid-area: hero; }
 .dashCell--why{ grid-area: why; }
@@ -866,6 +873,7 @@ a:hover{
   .dashGrid{ grid-template-columns: 1fr; }
   .dashSplit{ grid-template-columns: 1fr; }
   .dashRow{ grid-template-columns: 1fr; }
+  .dashCol{ display: contents; }
   .dashBoardGrid{
     grid-template-columns: 1fr;
     grid-template-areas:

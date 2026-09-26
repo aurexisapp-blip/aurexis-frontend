@@ -7753,40 +7753,44 @@ async function loadWatchlistLive() {
           <HeroCard />
         </motion.div>
 
-        <motion.div className="dashCell dashCell--performance"
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
-          <MarketPulseCard />
-        </motion.div>
-        <motion.div className="dashCell dashCell--picks"
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
-          <AnalyzeHistoryCard />
-        </motion.div>
-        <div className="dashCell dashCell--why" id="analysisCardAnchor">
-          {analyzeIsLowConviction ? (
-            <div className="card lowConvictionCard">
-              <div className="cardHead">
-                <div>
-                  <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
-                  <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
+        <div className="dashCol dashCol--left">
+          <motion.div className="dashCell dashCell--performance"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}>
+            <MarketPulseCard />
+          </motion.div>
+          <div className="dashCell dashCell--why" id="analysisCardAnchor">
+            {analyzeIsLowConviction ? (
+              <div className="card lowConvictionCard">
+                <div className="cardHead">
+                  <div>
+                    <div className="cardTitle">⚠ Low Conviction — Trade Not Recommended</div>
+                    <div className="cardSub">The AI analysis found insufficient edge to recommend a trade.</div>
+                  </div>
+                </div>
+                <div className="cardBody">
+                  <div className="mutedSmall">
+                    {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
+                    Consider waiting for a stronger setup or analyzing a different symbol.
+                  </div>
                 </div>
               </div>
-              <div className="cardBody">
-                <div className="mutedSmall">
-                  {normalizeSymbol(analyzeData?.symbol || symbol) || "This symbol"} did not meet the threshold for a high-conviction trade setup.
-                  Consider waiting for a stronger setup or analyzing a different symbol.
-                </div>
-              </div>
-            </div>
-          ) : (
-            <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
-              <AnalysisCard />
-            </ProGate>
-          )}
+            ) : (
+              <ProGate enabled={gatePro} onUpgrade={() => setTab("pricing")}>
+                <AnalysisCard />
+              </ProGate>
+            )}
+          </div>
         </div>
 
-        <div className="dashCell dashCell--summary"><TopMoversCard /></div>
+        <div className="dashCol dashCol--right">
+          <motion.div className="dashCell dashCell--picks"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}>
+            <AnalyzeHistoryCard />
+          </motion.div>
+          <div className="dashCell dashCell--summary"><TopMoversCard /></div>
+        </div>
       </div>
     );
   };
@@ -12377,8 +12381,11 @@ const renderPage = () => {
 
 
   return (
-    <div className="appShell" style={isNative ? { background: nBg, overflowX: "hidden", maxWidth: "100vw" } : undefined}>
-      <div className="layout" style={{ display: "flex", background: isNative ? nBg : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
+    <div className="appShell" style={isNative ? { background: nBg, overflowX: "clip", maxWidth: "100vw" } : undefined}>
+      {/* overflow-x: clip, not hidden, on appShell/layout/main -- hidden makes
+          each one a scroll container, which silently disables position: sticky
+          on the header and sidebar inside them (they scrolled away on iPad). */}
+      <div className="layout" style={{ display: "flex", background: isNative ? nBg : undefined, overflowX: isNative ? "clip" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
         <aside
           className="sidebar"
           style={{
@@ -12793,7 +12800,7 @@ const renderPage = () => {
           );
         })()}
 
-        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? nBg : undefined, overflowX: isNative ? "hidden" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
+        <main className="main" style={{ flex: 1, minWidth: 0, background: isNative ? nBg : undefined, overflowX: isNative ? "clip" : undefined, maxWidth: isNative ? "100vw" : undefined }}>
           {tab === "dashboard" && marketDataFailure ? (
             <SystemAlert type="warning" message="Market data degraded — analytics delayed." />
           ) : null}
@@ -12835,7 +12842,7 @@ const renderPage = () => {
             </div>
           ) : null}
           {isNative ? (
-          <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+          <div className="headerBar" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8, background: nBg, zIndex: 20 }}>
             <form
               onSubmit={onCmdSubmit}
               style={{
