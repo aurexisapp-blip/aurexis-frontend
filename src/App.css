@@ -491,6 +491,18 @@ a:hover{
 .dashCol--left{ grid-area: left; }
 .dashCol--right{ grid-area: right; }
 .dashCol > .dashCell{ align-self: stretch; }
+
+/* Native pricing: one plan per row on phones, side by side on iPad -- a
+   single column stretched each card across a 13" screen. */
+.pricingPlans--native{ grid-template-columns: 1fr; }
+@media (min-width: 900px){
+  .pricingPlans--native{ grid-template-columns: repeat(var(--plan-count, 3), minmax(0, 1fr)); }
+}
+/* The last card in each column fills whatever height is left, so both
+   columns always end on the same line -- whichever side is shorter
+   (Analysis before a run, Top Movers after one) stretches to match. */
+.dashCol > .dashCell:last-child{ flex: 1; display: flex; flex-direction: column; }
+.dashCol > .dashCell:last-child > *{ flex: 1; }
 .dashCell--banner{ grid-area: banner; }
 .dashCell--hero{ grid-area: hero; }
 .dashCell--why{ grid-area: why; }
@@ -3401,3 +3413,27 @@ a:hover{
   height: 100vh;
   height: 100dvh;
 }
+
+/* ---------- iPad (native app, >= 768px wide) ----------
+   The native layouts use iPhone type and control sizes (11-13px), which
+   read as tiny and sparse on a 13" screen. Scale the page content and the
+   header up together so proportions match an iPad app. Only content boxes
+   are zoomed -- not the sticky, 100vh-tall sidebar or the fixed FAB, whose
+   viewport-relative sizing zoom would distort. */
+.tablet .page > *{ zoom: 1.2; }
+/* Each tab's root fills the screen height, so short pages (Watchlist,
+   Settings, empty Screener/Journal) run their panels to the bottom like an
+   iPad app instead of stopping halfway down. */
+.tablet .page{ display: flex; flex-direction: column; }
+.tablet .page > *{ flex: 1 0 auto; }
+.tablet .headerBar{ zoom: 1.2; }
+.tablet .sidebar > *{ zoom: 1.15; }
+/* Settings on iPad: the iPhone layout (pill nav on top, content below)
+   rather than the desktop sidebar rail -- same rules as the <=767px block
+   minus its bottom-nav clearance, which iPad doesn't have. */
+.tablet .settingsShell{ flex-direction: column; border-radius: 12px; background: transparent !important; border: none !important; }
+.tablet .settingsSidebar{ width: 100% !important; border-right: none !important; border-bottom: none !important; padding: 16px 16px 20px !important; }
+.tablet .settingsSidebar__profile{ display: none; }
+.tablet .settingsSidebar__nav{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+.tablet .settingsNavItem{ width: auto !important; white-space: nowrap; flex-shrink: 0; border-left: none !important; border-radius: 999px !important; padding: 10px 15px !important; }
+.tablet .settingsContent{ padding: 20px 16px 32px !important; }

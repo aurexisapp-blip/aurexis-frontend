@@ -2729,6 +2729,21 @@ function NativeMoverTile({ symbol, right, rightColor, onClick, T, darkMode }) {
 
 function AppInner() {
   const isNative = isNativeApp();
+  // iPad: the native app on a wide screen. The native page layouts were built
+  // for iPhone (one phone-width column, bottom padding for the iPhone tab
+  // bar); on iPad they spread into grids and drop the phone-only spacing.
+  const [isTablet, setIsTablet] = useState(() => isNative && window.innerWidth >= 768);
+  useEffect(() => {
+    if (!isNative) return;
+    const onResize = () => setIsTablet(window.innerWidth >= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [isNative]);
+  // Drives the .tablet CSS scale-up (App.css) -- iPhone-sized type and
+  // controls looked tiny and sparse on a 13" screen.
+  useEffect(() => {
+    document.documentElement.classList.toggle("tablet", isTablet);
+  }, [isTablet]);
 
   // Without this, iOS's default keyboard handling auto-scrolls the WebView's
   // own content (a native UIScrollView content-offset change, not a CSS
@@ -5293,7 +5308,7 @@ async function loadWatchlistLive() {
               <button className="btn btn--ghost" onClick={loadMovers} disabled={loadingMovers}>Refresh</button>
             )}
           </div>
-          <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
+          <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
             {errMovers ? (
               <div className="monoBox monoBox--bad" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <span>Unable to load movers</span>
@@ -5357,7 +5372,9 @@ async function loadWatchlistLive() {
             ) : (
               <div className="mutedSmall">No liquid movers passed UI filters (price ≥ $1, volume ≥ 10k).</div>
             )}
-            <div style={{ marginTop: NATIVE_SPACE.m }}>
+            {/* marginTop auto pins this to the bottom when the card is
+                stretched to match a taller Analysis column. */}
+            <div style={{ marginTop: "auto", paddingTop: NATIVE_SPACE.m }}>
               {isNative ? (
                 <motion.button whileTap={{ scale: 0.96 }} style={{ ...nativeTabStyle(false), width: "100%", justifyContent: "center", borderColor: T.border2 }} onClick={() => setTab("movers")}>Open full movers</motion.button>
               ) : (
@@ -7196,6 +7213,8 @@ async function loadWatchlistLive() {
       // analysisActiveTab/setAnalysisActiveTab intentionally live outside this
       // component (lifted to AppInner) -- see the declaration there for why.
       const a = analysisObj;
+      const _pick = bestPickData && typeof bestPickData === "object" ? (bestPickData.pick || bestPickData.best_pick || bestPickData) : null;
+      const todaysPickSym = normalizeSymbol(_pick?.symbol || _pick?.ticker || "");
 
       // Why This Trade data
       const why      = Array.isArray(a?.why) ? a.why : [];
@@ -7357,7 +7376,24 @@ async function loadWatchlistLive() {
           <div style={{ flex: 1, padding: isNative ? NATIVE_SECONDARY_CARD.bodyPad : "14px 18px 18px", overflow: "auto", minHeight: 0 }}>
             {analysisActiveTab === "why" && (
               !a || !whyHasContent ? (
-                <div className="mutedSmall">{analyzeFallbackText}</div>
+                // A one-tap Analyze for today's pick -- a bare line of muted
+                // text read as a broken/unfinished panel once this card
+                // started filling its column on iPad/desktop. Top-aligned so
+                // it stays in view however tall the column makes the card.
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 14, padding: "28px 12px 12px" }}>
+                  <div style={{ fontSize: 13, color: T.textSec, lineHeight: 1.5, maxWidth: 340 }}>
+                    {analysisAttempted ? analyzeFallbackText : "See the full breakdown: setup signals, what confirms the trade, and what would break it."}
+                  </div>
+                  {!analysisAttempted && todaysPickSym ? (
+                    <button
+                      type="button"
+                      onClick={() => runAnalyze(todaysPickSym)}
+                      style={{ background: "rgba(62,224,163,0.14)", color: "#3EE0A3", border: "1px solid rgba(62,224,163,0.35)", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Analyze {todaysPickSym}
+                    </button>
+                  ) : null}
+                </div>
               ) : (
                 <div style={{ display: "grid", gap: 14 }}>
                   {trSummary ? (
@@ -8261,7 +8297,7 @@ async function loadWatchlistLive() {
       const hasAuthError = Array.isArray(movers) && movers.some((m) => String(m?.data_status || m?.dataStatus || "").toLowerCase() === "auth_error");
 
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Movers</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Market leaders by momentum — tap any row to analyze</div>
@@ -8310,7 +8346,7 @@ async function loadWatchlistLive() {
                         key={m.symbol}
                         onClick={() => onSelectMover(m.symbol)}
                         style={{
-                          display: "flex", alignItems: "center", gap: 12, padding: "13px 18px",
+                          display: "flex", alignItems: "center", gap: 12, padding: isTablet ? "15px 22px" : "13px 18px",
                           borderTop: `0.5px solid ${nHairline}`, cursor: "pointer",
                         }}
                       >
@@ -8708,7 +8744,7 @@ async function loadWatchlistLive() {
 
     if (isNative) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Watchlist</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>
@@ -8756,7 +8792,7 @@ async function loadWatchlistLive() {
                   const progressColor = progress === null ? nHairline : progress >= 90 ? "#3EE0A3" : "#e9b459";
                   const signalText = edgeSignals.length > 0 ? edgeSignals.slice(0, 3).map((s) => fmt(s)).join(" · ") : (noTradeReason || "Edge signals detected");
                   return (
-                    <div key={sym} style={{ padding: "14px 18px", borderTop: `0.5px solid ${nHairline}` }}>
+                    <div key={sym} style={{ padding: isTablet ? "18px 22px" : "14px 18px", borderTop: `0.5px solid ${nHairline}` }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
                         <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", color: nText }}>{sym}</span>
                         <span className="noSelectChrome" style={{
@@ -9072,7 +9108,7 @@ async function loadWatchlistLive() {
       const scoreTier = (s) => (s === null ? null : s >= 70 ? "high" : s >= 45 ? "moderate" : "low");
       const tierColor = (t) => t === "high" ? "#3EE0A3" : t === "moderate" ? "#e9b459" : nTextSec;
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Screener</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Enter symbols separated by commas</div>
@@ -9109,16 +9145,24 @@ async function loadWatchlistLive() {
             </button>
           </div>
 
-          <div style={{ background: nCard, borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ background: nCard, borderRadius: 16, overflow: "hidden", ...(isTablet ? { flex: 1, display: "flex", flexDirection: "column" } : null) }}>
             {loading ? (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: nTextSec }}>Analyzing {loadingSymCount} symbol{loadingSymCount !== 1 ? "s" : ""} in parallel…</div>
                 <div style={{ fontSize: 12, color: nTextFaint, marginTop: 4 }}>This can take up to a minute</div>
               </div>
             ) : !hasScreened || results.length === 0 ? (
+              isTablet ? (
+                <div style={{ flex: 1, minHeight: 320, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "40px 32px", gap: 10 }}>
+                  <div style={{ fontSize: 34, opacity: 0.18 }}>⊞</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: nText }}>Screen up to 10 stocks at once</div>
+                  <div style={{ fontSize: 13, color: nTextSec, maxWidth: 380, lineHeight: 1.5 }}>Each ticker gets an AI score, conviction tier, and entry levels, ranked side by side. Edit the list above and tap Screen.</div>
+                </div>
+              ) : (
               <div style={{ padding: "28px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: nTextSec }}>Add tickers above and tap Screen</div>
               </div>
+              )
             ) : (
               sortedResults.map((row, i) => {
                 const tier = row.error ? null : scoreTier(row.aiScore);
@@ -9661,7 +9705,7 @@ async function loadWatchlistLive() {
 
     if (isNative) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 18, background: nBg, minHeight: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Trade Journal</div>
 
           {total > 0 && (
@@ -9723,11 +9767,19 @@ async function loadWatchlistLive() {
             </div>
           )}
 
-          <div style={{ background: nCard, borderRadius: 16, padding: journalTrades.length ? "0 18px" : 18 }}>
+          <div style={{ background: nCard, borderRadius: 16, padding: journalTrades.length ? "0 18px" : 18, ...(isTablet ? { flex: 1, display: "flex", flexDirection: "column" } : null) }}>
             {journalTrades.length === 0 ? (
+              isTablet ? (
+                <div style={{ flex: 1, minHeight: 320, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "40px 32px", gap: 10 }}>
+                  <div style={{ fontSize: 34, opacity: 0.18 }}>▤</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: nText }}>No trades logged yet</div>
+                  <div style={{ fontSize: 13, color: nTextSec, maxWidth: 380, lineHeight: 1.5 }}>Log a trade with "+ Add Trade" to track entries, exits, and your win rate over time.</div>
+                </div>
+              ) : (
               <div style={{ padding: "20px 0", textAlign: "center" }}>
                 <div style={{ fontSize: 13, color: nTextSec }}>No trades logged yet — tap "+ Add Trade" to log your first entry.</div>
               </div>
+              )
             ) : journalTrades.map((trade, i) => {
               const isClosing = journalCloseId === trade.id;
               const statusColor = trade.status === "won" ? "#3EE0A3" : trade.status === "lost" ? "#e8756b" : nTextSec;
@@ -10384,7 +10436,7 @@ async function loadWatchlistLive() {
         {/* What's coming */}
         <div style={{ ...settingsSection }}>
           <div style={{ ...settingsSectionTitle, marginBottom: 10 }}>What's Coming</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isTablet ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
             {["Price alerts", "Options flow feed", "Strategy backtesting", "Multi-account support"].map(item => (
               <div key={item} style={{
                 padding: "8px 12px", borderRadius: 8, fontSize: 12,
@@ -10833,7 +10885,7 @@ async function loadWatchlistLive() {
     const planBadgeColor = plan === "pro" ? "#818cf8" : plan === "starter" ? "#3EE0A3" : dm ? "rgba(255,255,255,0.35)" : "rgba(8,10,22,0.35)";
 
     return (
-      <div className="settingsShell" style={{ display: "flex", minHeight: isNative ? 0 : "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
+      <div className="settingsShell" style={{ display: "flex", minHeight: isNative ? (isTablet ? "100%" : 0) : "calc(100vh - 120px)", gap: 0, background: isNative ? nBg : (dm ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.02)"), borderRadius: isNative ? 0 : 16, border: bdr, overflow: "hidden" }}>
 
         {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div className="settingsSidebar" style={{ width: 188, flexShrink: 0, borderRight: dm ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)", padding: "20px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -11595,7 +11647,10 @@ async function loadWatchlistLive() {
             fraction of a phone's width was overlapping and getting clipped
             past the right edge), so it stacks to one full-width card per
             plan instead. */}
-        <div style={{ display: "grid", gridTemplateColumns: isNative ? "1fr" : `repeat(${plans.length}, 1fr)`, gap: isNative ? 16 : 14 }}>
+        <div
+          className={isNative ? "pricingPlans--native" : undefined}
+          style={{ display: "grid", gridTemplateColumns: isNative ? undefined : `repeat(${plans.length}, 1fr)`, gap: isNative ? 16 : 14, "--plan-count": plans.length }}
+        >
           {plans.map((plan) => {
             const isCurrent = plan.id === userPlan;
             const isLoading = upgradeLoading === plan.id;
@@ -12967,7 +13022,7 @@ const renderPage = () => {
           )}
 
 
-          <div className="page" style={isNative ? { background: nBg, paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
+          <div className="page" style={isNative ? { background: nBg, paddingBottom: isTablet ? "calc(28px + env(safe-area-inset-bottom, 0px))" : "calc(96px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden", maxWidth: "100vw" } : undefined}>
             {tab === "dashboard" && cmdErr ? (
               <div className="monoBox monoBox--bad" style={{ marginBottom: 12 }}>
                 {cmdErr}
@@ -13046,8 +13101,8 @@ const renderPage = () => {
         title={chatOpen ? "Close AI chat" : "Ask AI"}
         style={isNative ? {
           position: "fixed",
-          bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
-          right: 16,
+          bottom: isTablet ? "calc(52px + env(safe-area-inset-bottom, 0px))" : "calc(96px + env(safe-area-inset-bottom, 0px))",
+          right: isTablet ? 24 : 16,
           width: 50,
           height: 50,
           borderRadius: "50%",
