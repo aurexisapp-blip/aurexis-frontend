@@ -666,13 +666,18 @@ export default function Auth({ defaultView = "login" }) {
   }
 
   /* ── Native iOS app layout ── */
-  if (isMobile && isNative) {
+  // iPad gets this same iPhone layout (not the desktop split screen), scaled
+  // up with the form held to a comfortable centered width -- matching how
+  // the rest of the app renders on iPad (see isTablet in App.jsx).
+  if (isNative) {
+    const isTablet = window.innerWidth >= 768;
+    const tabletScale = isTablet ? { zoom: 1.2 } : null;
     return (
       <div style={N.page}>
         <style>{NATIVE_KEYFRAMES}</style>
         <div style={N.noiseOverlay} aria-hidden="true" />
 
-        <div style={N.header}>
+        <div style={{ ...N.header, ...tabletScale }}>
           <div style={N.headerGlow} aria-hidden="true" />
           <div style={N.headerContent}>
             <motion.a
@@ -732,7 +737,7 @@ export default function Auth({ defaultView = "login" }) {
         </div>
 
         <motion.div
-          style={N.formWrap}
+          style={isTablet ? { ...N.formWrap, ...tabletScale, width: "100%", maxWidth: 520, margin: "0 auto" } : N.formWrap}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.38, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
