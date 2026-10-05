@@ -68,6 +68,91 @@ function DayBars({ data }) {
   );
 }
 
+const OUTCOME_COLOR = { won: T.green, won_drift: T.green, lost: "#f87171", lost_drift: "#f87171" };
+
+function Outcome({ status, ret }) {
+  if (!status) return <span style={{ color: T.textFaint }}>—</span>;
+  const c = OUTCOME_COLOR[status] || T.textSec;
+  return (
+    <span style={{ color: c }}>
+      {status.replace("_", " ")}{ret != null ? ` ${ret > 0 ? "+" : ""}${Number(ret).toFixed(1)}%` : ""}
+    </span>
+  );
+}
+
+function pct(v) { return v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`; }
+
+// Shadow model vs real picks. Admin-only experiment: the shadow model ranks the
+// same candidates the real scanner chose from and logs its top pick; nothing it
+// picks is ever shown to users (see shadow_mode.py on the backend).
+function ShadowComparison({ secret }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState("");
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/shadow`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret, limit: 100 }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setD(await res.json()); setErr("");
+    } catch (e) { setErr(`Could not load shadow data (${e.message}).`); }
+  }, [secret]);
+  useEffect(() => { load(); const id = setInterval(load, 5 * 60 * 1000); return () => clearInterval(id); }, [load]);
+
+  const cell = { padding: "10px 12px", borderTop: `1px solid ${T.cardBorder}`, whiteSpace: "nowrap" };
+  return (
+    <div style={{ marginTop: 40 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 6 }}>
+        <div style={{ fontSize: 20, fontWeight: 800 }}>Shadow model vs real picks</div>
+        <button onClick={load} style={{ background: "none", border: `1px solid ${T.cardBorder}`, color: T.textSec, borderRadius: 8, padding: "5px 12px", fontSize: 12, cursor: "pointer" }}>Refresh</button>
+      </div>
+      <div style={{ fontSize: 12.5, color: T.textSec, marginBottom: 16, lineHeight: 1.5 }}>
+        Logged every background scan, admin-only, never shown to users. Both columns use the same 7-day win/loss rules.
+        {d?.model?.version ? ` Model ${d.model.version}, trained on ${d.model.trained_on} picks through ${d.model.trained_through}.` : ""}
+        {" "}Treat results as noise until each side has 40+ closed picks.
+      </div>
+      {err ? <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{err}</div> : null}
+      {!d ? <div style={{ fontSize: 13, color: T.textFaint }}>Loading…</div> : !d.rows?.length ? (
+        <div style={{ fontSize: 13, color: T.textFaint }}>No shadow picks yet — the first one is logged on the next background scan.</div>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+            <StatCard label="Shadow win rate" value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
+              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.closed} closed / ${d.shadow.pending} open`} />
+            <StatCard label="Real win rate" value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
+              sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.closed} closed / ${d.real.pending} open`} />
+            <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
+          </div>
+          <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ color: T.textFaint, textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {["Scan", "Shadow pick", "Win prob", "Shadow outcome", "Real pick", "Real outcome"].map(h => <th key={h} style={{ padding: "12px 12px", fontWeight: 700 }}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {d.rows.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ ...cell, color: T.textSec }}>{new Date(r.recorded_at * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+                    <td style={{ ...cell, fontWeight: 700 }} title={`Entry ${r.entry_price} · stop ${r.stop} · target ${r.target1}`}>
+                      {r.symbol}{r.same_as_real ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (same)</span> : null}
+                    </td>
+                    <td style={cell}>{(r.win_prob * 100).toFixed(0)}%</td>
+                    <td style={cell}><Outcome status={r.status === "pending" ? null : r.status} ret={r.exit_return_pct} />{r.status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
+                    <td style={{ ...cell, color: r.real_is_trade ? T.text : T.textFaint }}>{r.real_symbol || "—"}{r.real_symbol && !r.real_is_trade ? " (no trade)" : ""}</td>
+                    <td style={cell}><Outcome status={r.real_status === "pending" ? null : r.real_status} ret={r.real_exit_return_pct} />{r.real_status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAnalytics() {
   const [secret, setSecret] = useState(() => {
     try { return sessionStorage.getItem("aurexis_admin_secret") || ""; } catch { return ""; }
@@ -240,6 +325,8 @@ export default function AdminAnalytics() {
             </div>
           </>
         )}
+
+        {secret ? <ShadowComparison secret={secret} /> : null}
       </div>
     </div>
   );
