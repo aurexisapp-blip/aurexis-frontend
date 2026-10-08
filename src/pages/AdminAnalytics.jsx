@@ -82,6 +82,34 @@ function Outcome({ status, ret }) {
 
 function pct(v) { return v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`; }
 
+function shortDate(ts) { return ts ? new Date(ts * 1000).toLocaleDateString([], { month: "short", day: "numeric" }) : "—"; }
+
+// The real system's full record, independent of when shadow logging began --
+// so picks resolved before then (and the latest closes) are always visible.
+function RealAllTime({ a }) {
+  if (!a) return null;
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+        <StatCard label={`Real win rate · all time`} value={a.win_rate == null ? "—" : `${a.win_rate}%`} accent={T.green}
+          sub={`avg ${pct(a.avg_return_pct)} · ${a.closed} closed / ${a.pending} open · since ${shortDate(a.since)}`} />
+      </div>
+      {a.recent_closed?.length ? (
+        <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "12px 16px", fontSize: 12.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: T.textFaint, marginBottom: 8 }}>Latest closed real picks</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+            {a.recent_closed.map(r => (
+              <span key={`${r.symbol}-${r.recorded_at}`} title={`Picked ${shortDate(r.recorded_at)} · closed ${shortDate(r.evaluated_at)}`}>
+                <b>{r.symbol}</b> <Outcome status={r.status} ret={r.exit_return_pct} />
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // Shadow model vs real picks. Admin-only experiment: the shadow model ranks the
 // same candidates the real scanner chose from and logs its top pick; nothing it
 // picks is ever shown to users (see shadow_mode.py on the backend).
@@ -113,14 +141,15 @@ function ShadowComparison({ secret }) {
         {" "}Treat results as noise until each side has 40+ closed picks.
       </div>
       {err ? <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{err}</div> : null}
+      <RealAllTime a={d?.real_all_time} />
       {!d ? <div style={{ fontSize: 13, color: T.textFaint }}>Loading…</div> : !d.rows?.length ? (
         <div style={{ fontSize: 13, color: T.textFaint }}>No shadow picks yet — the first one is logged on the next background scan.</div>
       ) : (
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-            <StatCard label="Shadow win rate" value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
+            <StatCard label={`Shadow · since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
               sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.closed} closed / ${d.shadow.pending} open`} />
-            <StatCard label="Real win rate" value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
+            <StatCard label={`Real · since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
               sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.closed} closed / ${d.real.pending} open`} />
             <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
           </div>
