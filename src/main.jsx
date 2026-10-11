@@ -137,15 +137,30 @@ function isMobilePreview() {
   try { return sessionStorage.getItem("aurexis_mobilepreview") === "1"; } catch { return false; }
 }
 
-function AppGate() {
+function useIsPhoneWidth() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const handler = (e) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+  return isMobile;
+}
+
+// Phone browsers visiting the marketing site get the "open on your computer"
+// screen. Only the homepage/catch-all is gated -- /login, /signup,
+// /mobile-checkout, legal, /support and /blog stay reachable on phones,
+// because the iOS app's upgrade buttons hand off to them in Safari (and App
+// Review follows that flow).
+function LandingGate() {
+  const isMobile = useIsPhoneWidth();
+  if (isMobile && !isMobilePreview()) return <MobileBlock />;
+  return <LandingPage />;
+}
+
+function AppGate() {
+  const isMobile = useIsPhoneWidth();
 
   // Capture OAuth token from URL before the mobile gate check -- this used
   // to run AFTER the `if (isMobile) return <MobileBlock />` below despite
@@ -235,7 +250,7 @@ function RootRoutes() {
         <Route path="/blog" element={<BlogList />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/app/*" element={<AppGate />} />
-        <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingPage />} />
+        <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingGate />} />
       </Routes>
   );
 }
