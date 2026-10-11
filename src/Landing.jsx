@@ -134,10 +134,10 @@ const S = {
   },
   // Hero
   heroWrap: {
-    position: "relative", minHeight: "100vh",
+    position: "relative",
     display: "flex", flexDirection: "column",
-    justifyContent: "center", alignItems: "center",
-    textAlign: "center", padding: "120px 24px 100px",
+    justifyContent: "flex-start", alignItems: "center",
+    textAlign: "center", padding: "clamp(104px, 15vh, 150px) 24px clamp(64px, 10vh, 96px)",
     overflow: "hidden",
   },
   heroBadge: {
@@ -145,7 +145,7 @@ const S = {
     borderRadius: 999, border: "1px solid rgba(34,197,94,0.22)",
     background: "rgba(34,197,94,0.06)",
     fontSize: 11, fontWeight: 700, color: "rgba(134,239,172,0.8)",
-    letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 36,
+    letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 28,
   },
   heroDot: {
     width: 6, height: 6, borderRadius: "50%", background: "#22c55e",
@@ -158,14 +158,12 @@ const S = {
   },
   heroLine2: {
     fontSize: "clamp(36px, 5.5vw, 64px)", fontWeight: 900, lineHeight: 1.1,
-    letterSpacing: "-0.03em", margin: "0 0 32px",
-    background: "linear-gradient(135deg, #4ade80 0%, #22d3ee 60%)",
-    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-    backgroundClip: "text", display: "block",
+    letterSpacing: "-0.03em", margin: "0 0 28px",
+    color: "#3EE0A3", display: "block",
   },
   heroSub: {
     fontSize: "clamp(15px, 2vw, 18px)", color: "rgba(255,255,255,0.42)",
-    lineHeight: 1.6, margin: "0 auto 44px", maxWidth: 460,
+    lineHeight: 1.6, margin: "0 auto 36px", maxWidth: 460,
   },
   heroCta: {
     display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 38px",
@@ -371,9 +369,7 @@ function StatBarItem({ raw, label, delay }) {
     >
       <div style={{
         fontSize: "clamp(38px, 5vw, 56px)", fontWeight: 900, letterSpacing: "-0.04em",
-        background: "linear-gradient(135deg, #4ade80, #22d3ee)",
-        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        backgroundClip: "text", lineHeight: 1, marginBottom: 12,
+        color: "#3EE0A3", lineHeight: 1, marginBottom: 12,
       }}>
         {parsed.prefix}{formatted}{origSuffix}
       </div>
@@ -986,7 +982,7 @@ export default function Landing({ onGetStarted }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.88 }}
           >
-One AI-curated setup, delivered before market open. Entry, stop, and target — ready to trade.
+            One AI-curated setup, delivered before market open. Entry, stop, and target — with the reasoning behind it.
           </motion.p>
 
           {/* CTA */}
@@ -1013,7 +1009,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
               <span>Get Today's Pick</span>
               <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>
             </motion.button>
-            <div style={S.heroCtaSub}>No credit card required for free plan</div>
+            <div style={S.heroCtaSub}>No credit card required for free plan · Educational use · Not investment advice</div>
           </motion.div>
         </section>
 
