@@ -12,6 +12,19 @@ import { setToken, clearToken, registerDevice, getOrCreateDeviceId, alog } from 
 import { onJournalTradeWon, checkActiveWeekReview, recordAppActiveDay } from "./lib/appReview";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
+import { AppLauncher } from "@capacitor/app-launcher";
+
+// Purchase and billing pages must open in the Safari app itself, outside
+// Aurexis -- CapacitorBrowser presents an in-app SFSafariViewController sheet,
+// which App Review treats as checkout happening inside the app (Guideline
+// 3.1.1). Falls back to the in-app sheet only if the system handoff fails.
+async function openInSafari(url) {
+  try {
+    await AppLauncher.openUrl({ url });
+  } catch {
+    CapacitorBrowser.open({ url });
+  }
+}
 import { App as CapacitorApp } from "@capacitor/app";
 import { Keyboard } from "@capacitor/keyboard";
 import { PLAN_PRICING, planPriceLabel } from "./lib/pricing";
@@ -10733,7 +10746,7 @@ async function loadWatchlistLive() {
           // window.open(url, "_blank") doesn't reliably escape a Capacitor
           // WKWebView -- the system browser handoff needs the actual
           // native bridge instead.
-          if (isNative) CapacitorBrowser.open({ url: d.url });
+          if (isNative) openInSafari(d.url);
           else window.open(d.url, "_blank");
         }
       } catch { showToast("Couldn't open billing portal."); }
@@ -11132,7 +11145,7 @@ async function loadWatchlistLive() {
                     Subscriptions are managed on the web, not in this app.
                   </div>
                   <button
-                    onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/app" })}
+                    onClick={() => openInSafari("https://useaurexis.com/app")}
                     style={{ background: "none", border: `0.5px solid ${nHairline}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#3EE0A3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
                   >
                     useaurexis.com ↗
@@ -11221,7 +11234,7 @@ async function loadWatchlistLive() {
                             <div style={{ fontSize: 11, fontWeight: 600, color: inv.status === "Paid" ? "#3EE0A3" : txtG }}>{inv.status}</div>
                             <div>{inv.url ? (
                               isNative ? (
-                                <span onClick={() => CapacitorBrowser.open({ url: inv.url })} style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none", cursor: "pointer" }}>View</span>
+                                <span onClick={() => openInSafari(inv.url)} style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none", cursor: "pointer" }}>View</span>
                               ) : (
                                 <a href={inv.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: _getAvatar(avatarId).text, textDecoration: "none" }}>View</a>
                               )
@@ -11566,7 +11579,7 @@ async function loadWatchlistLive() {
         const url = plan.id === "free"
           ? "https://useaurexis.com/signup?plan=free"
           : `https://useaurexis.com/mobile-checkout?plan=${plan.id}${authToken ? `&token=${encodeURIComponent(authToken)}` : ""}`;
-        CapacitorBrowser.open({ url });
+        openInSafari(url);
         return;
       }
 
