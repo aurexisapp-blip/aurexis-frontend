@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { OPERATED_BY } from "../lib/siteFacts";
 import { useNavigate } from "react-router-dom";
 
 const T = {
@@ -394,7 +395,7 @@ export default function Legal() {
             <H2>10. Changes to Terms</H2>
             <P>We may update these terms at any time. Continued use of the Service constitutes acceptance of the updated terms.</P>
             <H2>11. Governing Law & Contact</H2>
-            <P>For legal notices, support requests, or other inquiries, contact us at <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>aurexis.app@gmail.com</a>. These Terms are governed by the laws of the Commonwealth of Massachusetts.</P>
+            <P>{OPERATED_BY} For legal notices, support requests, or other inquiries, contact us at <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>aurexis.app@gmail.com</a>. These Terms are governed by the laws of the Commonwealth of Massachusetts.</P>
           </SectionBlock>
 
           <Divider />

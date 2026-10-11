@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
+import { COMPANY, FAQ, OPERATED_BY } from "./lib/siteFacts";
 
 // ── Global CSS ────────────────────────────────────────────────────────────────
 // On a phone browser, the landing page is viewable but its login/signup
@@ -101,122 +102,6 @@ function Reveal({ children, delay = 0, y = 28, x = 0, style = {} }) {
     >
       {children}
     </motion.div>
-  );
-}
-
-// ── Ticker tape ───────────────────────────────────────────────────────────────
-const TICKERS = [
-  { sym: "MRVL", chg: "+36.4%" },
-  { sym: "PYPL", chg: "+12.1%" },
-  { sym: "EWZ",  chg: "+8.3%"  },
-  { sym: "EBAY", chg: "+6.2%"  },
-  { sym: "KRE",  chg: "+4.8%"  },
-];
-
-function TickerTape() {
-  const items = [...TICKERS, ...TICKERS, ...TICKERS, ...TICKERS];
-  return (
-    <div style={{
-      overflow: "hidden",
-      borderTop: "1px solid rgba(34,197,94,0.07)",
-      borderBottom: "1px solid rgba(34,197,94,0.07)",
-      background: "rgba(0,0,0,0.85)",
-      padding: "9px 0",
-    }}>
-      <motion.div
-        style={{ display: "flex", gap: 0, width: "max-content" }}
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
-      >
-        {items.map(({ sym, chg }, i) => (
-          <div key={i} style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            padding: "0 40px", borderRight: "1px solid rgba(255,255,255,0.04)",
-            whiteSpace: "nowrap",
-          }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em" }}>{sym}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: "0.04em" }}>{chg}</span>
-            <span style={{ fontSize: 9, color: "rgba(34,197,94,0.5)", fontWeight: 700 }}>✓</span>
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-// ── Proof trades — Bloomberg terminal cards ───────────────────────────────────
-const PROOF_TRADES = [
-  { sym: "MRVL",  entry: "$98",    exit: "$139",   date: "APR 2026" },
-  { sym: "PYPL",  entry: "$62",    exit: "$69.50", date: "MAR 2026" },
-  { sym: "EWZ",   entry: "$29.40", exit: "$31.85", date: "MAR 2026" },
-  { sym: "EBAY",  entry: "$90.80", exit: "$97.70", date: "APR 2026" },
-  { sym: "NOK",   entry: "$8.06",  exit: "$10.40", date: "APR 2026" },
-  { sym: "KRE",   entry: "$63.50", exit: "$69.85", date: "APR 2026" },
-  { sym: "CSCO",  entry: "$84.50", exit: null,     date: "APR 2026", pending: true },
-];
-
-function ProofStrip() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.12 });
-  return (
-    <div ref={ref} style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 4 }}>
-      <div style={{ display: "flex", gap: 10, padding: "0 24px", width: "max-content" }}>
-        {PROOF_TRADES.map(({ sym, entry, exit, date, pending }, i) => (
-          <motion.div
-            key={sym}
-            style={{
-              padding: "16px 18px",
-              background: pending ? "rgba(6,6,4,0.97)" : "rgba(3,7,3,0.97)",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              borderRight: "1px solid rgba(255,255,255,0.06)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-              borderLeft: pending ? "3px solid rgba(245,158,11,0.7)" : "3px solid #22c55e",
-              borderRadius: "0 8px 8px 0",
-              minWidth: 175,
-              fontFamily: '"SF Mono", "Fira Code", "Courier New", monospace',
-            }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.07 }}
-          >
-            <div style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.14em",
-              marginBottom: 9, textTransform: "uppercase",
-              color: pending ? "rgba(245,158,11,0.6)" : "rgba(34,197,94,0.6)",
-            }}>
-              {date} · {pending ? "OPEN TRADE" : "ALPACA VERIFIED"}
-            </div>
-            <div style={{
-              fontSize: 20, fontWeight: 800, color: "rgba(255,255,255,0.95)",
-              letterSpacing: "-0.01em", marginBottom: 10,
-              fontFamily: '"Inter", -apple-system, sans-serif',
-            }}>
-              {sym}
-            </div>
-            <div style={{
-              fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.05em",
-              display: "flex", alignItems: "center", gap: 7,
-            }}>
-              <span>BUY <span style={{ color: "rgba(255,255,255,0.72)", fontWeight: 600 }}>{entry}</span></span>
-              {exit ? (
-                <>
-                  <span style={{ color: "rgba(255,255,255,0.16)", fontSize: 8 }}>▶</span>
-                  <span>EXIT <span style={{ color: "#22c55e", fontWeight: 600 }}>{exit}</span></span>
-                </>
-              ) : (
-                <span style={{
-                  fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.75)",
-                  background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
-                  borderRadius: 4, padding: "2px 6px", letterSpacing: "0.08em", textTransform: "uppercase",
-                }}>
-                  PENDING
-                </span>
-              )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -1046,9 +931,6 @@ export default function Landing({ onGetStarted }) {
           </motion.div>
         </nav>
 
-        {/* ── Ticker tape ── */}
-        <TickerTape />
-
         {/* ── Hero — full viewport ── */}
         <section style={S.heroWrap}>
           {/* Dot grid background */}
@@ -1250,7 +1132,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   {/* Top bar */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      Verified Pick · APR 2026
+                      Example trade plan · illustrative
                     </div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(34,197,94,0.65)", display: "flex", alignItems: "center", gap: 5 }}>
                       <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px rgba(34,197,94,0.9)" }} />
@@ -1276,11 +1158,6 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                           background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.28)",
                           color: "#4ade80", letterSpacing: "0.07em",
                         }}>BULLISH</div>
-                        <div style={{
-                          fontSize: 14, fontWeight: 900, padding: "4px 11px", borderRadius: 6,
-                          background: "rgba(34,197,94,0.13)", border: "1px solid rgba(34,197,94,0.22)",
-                          color: "#22c55e", letterSpacing: "-0.01em",
-                        }}>+36%</div>
                       </div>
                     </div>
 
@@ -1365,14 +1242,14 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                 fontSize: "clamp(15px, 2vw, 17px)", color: "rgba(255,255,255,0.50)",
                 lineHeight: 1.8, marginBottom: 24,
               }}>
-                Aurexis was built during the 2026 tariff crash — one of the most volatile markets in a decade. While others panicked, the system kept finding high-conviction setups. Every pick is timestamped and verified on Alpaca.
+                Aurexis was built during the 2026 tariff crash — one of the most volatile markets in a decade. It's built around discipline instead of hype: one written plan at a time, every idea with a defined stop-loss, and NO TRADE when nothing meets the bar.
               </p>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 fontSize: 11, color: "rgba(255,255,255,0.25)", fontStyle: "italic", letterSpacing: "0.02em",
               }}>
                 <span style={{ fontSize: 13, color: "rgba(34,197,94,0.5)" }}>✓</span>
-                Every pick is timestamped and verified on Alpaca.
+                Every idea has an entry, a stop-loss and a target before you act.
               </div>
             </Reveal>
           </div>
@@ -1401,41 +1278,8 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
             <h2 style={{ ...S.sectionTitle, marginBottom: 8 }}>Frequently asked questions.</h2>
             <p style={{ ...S.sectionSub, marginBottom: 44 }}>Quick answers to common questions.</p>
           </Reveal>
-          {[
-            {
-              question: "What is Aurexis?",
-              answer: "Aurexis is an AI-powered stock signal service that scans 1,200+ stocks daily to find high-conviction trade setups. We provide entry, stop loss, and target levels — you execute the trades in your own brokerage.",
-            },
-            {
-              question: "What broker do I need?",
-              answer: "Any US brokerage works — Robinhood, Fidelity, Schwab, Alpaca, Webull. You execute trades yourself; Aurexis never touches your money.",
-            },
-            {
-              question: "How often do you find picks?",
-              answer: "The system scans every evening after market close. It only alerts when it finds a genuinely high-conviction setup — quality over quantity. Some weeks have multiple picks; some have none. We don't force trades.",
-            },
-            {
-              question: "Is this financial advice?",
-              answer: "No. Aurexis provides AI-generated trade ideas for educational purposes. We are not a registered investment advisor. Always do your own research and consider consulting a financial professional.",
-            },
-            {
-              question: "Can I cancel anytime?",
-              answer: "Yes. Cancel with one click in your account settings. No contracts, no commitments, no cancellation fees. Cancellation takes effect at the end of your current billing period.",
-            },
-            {
-              question: "How is this different from Motley Fool or Alpha Picks?",
-              answer: "Three things: (1) much cheaper at $9/month vs $200–500/year, (2) we publish daily timestamped picks verified on Alpaca, (3) we openly say NO_TRADE when conditions aren't right rather than forcing weak picks.",
-            },
-            {
-              question: "How does Aurexis pick stocks?",
-              answer: "The AI scans 1,200+ stocks each evening using momentum, volume, and technical criteria to find the single highest-conviction setup. It then calculates entry, stop loss, and target levels based on the chart structure. Past results do not guarantee future performance.",
-            },
-            {
-              question: "What happens if a pick doesn't work?",
-              answer: "We use stop losses on every pick to limit downside. Some picks lose — that's normal in any trading system. The goal is profitable expectancy over many trades, not winning every single one.",
-            },
-          ].map(({ question, answer }, i) => (
-            <FaqItem key={question} question={question} answer={answer} index={i} />
+          {FAQ.map(({ q, a }, i) => (
+            <FaqItem key={q} question={q} answer={a} index={i} />
           ))}
         </section>
 
@@ -1478,7 +1322,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
           <Reveal delay={0}>
             <div style={S.sectionLabel}>Pricing</div>
             <h2 style={S.sectionTitle}>Simple, transparent pricing.</h2>
-            <p style={S.sectionSub}>One winning trade covers months of the subscription.</p>
+            <p style={S.sectionSub}>Start free. Cancel anytime. Secure checkout by Stripe.</p>
           </Reveal>
           <div style={{ ...S.pricingRow, gridTemplateColumns: `repeat(${PRICING_PLANS.length}, 1fr)` }} className="pricing-row">
             {PRICING_PLANS.map((plan, i) => (
@@ -1508,7 +1352,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   AI-powered stock signals for everyone.
                 </div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.18)" }}>
-                  © {new Date().getFullYear()} Aurexis. All rights reserved.
+                  © {new Date().getFullYear()} {COMPANY.legalName}. All rights reserved.
                 </div>
               </div>
 
@@ -1518,18 +1362,18 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   Product
                 </div>
                 {[
-                  { label: "Features",    href: "#" },
-                  { label: "Pricing",     href: "#pricing" },
-                  { label: "Performance", href: "#" },
-                  { label: "FAQ",         href: "#" },
-                ].map(({ label, href }) => (
-                  <a key={label} href={href} style={{
+                  { label: "Pricing", href: "#pricing" },
+                  { label: "FAQ",     to: "/faq" },
+                  { label: "About",   to: "/about" },
+                ].map(({ label, href, to }) => {
+                  const style = {
                     display: "block", fontSize: 13, color: "rgba(255,255,255,0.35)",
                     textDecoration: "none", padding: "5px 0", letterSpacing: "0.01em",
-                  }}>
-                    {label}
-                  </a>
-                ))}
+                  };
+                  return to
+                    ? <Link key={label} to={to} style={style}>{label}</Link>
+                    : <a key={label} href={href} style={style}>{label}</a>;
+                })}
               </div>
 
               {/* Legal */}
@@ -1559,9 +1403,8 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   Support
                 </div>
                 {[
-                  { label: "Support Center",        to: "/support" },
-                  { label: "aurexis.app@gmail.com", href: "mailto:aurexis.app@gmail.com" },
-                  { label: "Status",                href: "#" },
+                  { label: "Support Center", to: "/support" },
+                  { label: COMPANY.email,    href: `mailto:${COMPANY.email}` },
                 ].map(({ label, to, href }) => {
                   const style = {
                     display: "block", fontSize: 13, color: "rgba(255,255,255,0.35)",
@@ -1586,7 +1429,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
               }}>
                 Aurexis provides AI-generated trade ideas for educational purposes only. Not investment advice.
                 All trading involves risk. Past performance does not guarantee future results.
-                Verify all trades independently. Built by an independent developer.
+                Verify all trades independently. {OPERATED_BY}
               </p>
             </div>
 

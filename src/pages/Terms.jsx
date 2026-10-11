@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyLayout, { Section, P, UL, Callout } from "./PolicyLayout";
+import { COMPANY } from "../lib/siteFacts";
 
 export default function Terms() {
   return (
@@ -83,7 +84,8 @@ export default function Terms() {
 
       <Section num="11" title="Governing Law &amp; Contact">
         <P>
-          Aurexis is an AI-powered stock signal service. For legal notices, support requests, or other
+          Aurexis is an AI-powered stock signal service operated by {COMPANY.legalName}, a {COMPANY.state}{" "}
+          {COMPANY.entityType}. For legal notices, support requests, or other
           inquiries, contact us at{" "}
           <a href="mailto:aurexis.app@gmail.com" style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>
             aurexis.app@gmail.com

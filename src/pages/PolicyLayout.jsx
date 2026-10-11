@@ -1,5 +1,6 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { COMPANY, OPERATED_BY } from "../lib/siteFacts";
 
 const styles = {
   page: {
@@ -111,7 +112,31 @@ export function Callout({ variant = "warning", children }) {
   );
 }
 
-export default function PolicyLayout({ title, children }) {
+const TRUST_LINKS = [
+  ["About", "/about"], ["FAQ", "/faq"], ["Terms", "/terms"], ["Privacy", "/privacy"],
+  ["Refund Policy", "/refund"], ["Disclaimer", "/disclaimer"], ["Support", "/support"],
+];
+
+// Shown under every policy/info page: who operates Aurexis and how to reach
+// a person -- the first things people (and AI tools) look for to judge
+// whether a site is legitimate.
+function CompanyFooter() {
+  return (
+    <div style={{ marginTop: 64, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 12.5, lineHeight: 1.7, color: "rgba(255,255,255,0.38)" }}>
+      <div>
+        {OPERATED_BY} Contact:{" "}
+        <a href={`mailto:${COMPANY.email}`} style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>{COMPANY.email}</a>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginTop: 10 }}>
+        {TRUST_LINKS.map(([label, to]) => (
+          <Link key={to} to={to} style={{ color: "rgba(255,255,255,0.45)", textDecoration: "none" }}>{label}</Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function PolicyLayout({ title, children, label = "Legal", updated = "April 29, 2026" }) {
   const navigate = useNavigate();
   return (
     <div style={styles.page}>
@@ -124,11 +149,12 @@ export default function PolicyLayout({ title, children }) {
       </div>
 
       <div style={styles.container}>
-        <div style={styles.greenLabel}>Legal</div>
+        <div style={styles.greenLabel}>{label}</div>
         <h1 style={styles.title}>{title}</h1>
-        <div style={styles.updated}>Last updated: April 29, 2026</div>
+        {updated ? <div style={styles.updated}>Last updated: {updated}</div> : <div style={{ height: 38 }} />}
         <div style={styles.rule} />
         {children}
+        <CompanyFooter />
       </div>
     </div>
   );

@@ -1,10 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import PolicyLayout, { Section, P, UL, Callout } from "./PolicyLayout";
+import { COMPANY, OPERATED_BY } from "../lib/siteFacts";
 
 export default function Privacy() {
   return (
     <PolicyLayout title="Privacy Policy">
+
+      <P>
+        This policy covers Aurexis (useaurexis.com and the Aurexis iOS app). {OPERATED_BY} Questions about
+        your data:{" "}
+        <a href={`mailto:${COMPANY.email}`} style={{ color: "rgba(134,239,172,0.8)", textDecoration: "none" }}>{COMPANY.email}</a>.
+      </P>
 
       <Section num="1" title="Information We Collect">
         <UL items={[
