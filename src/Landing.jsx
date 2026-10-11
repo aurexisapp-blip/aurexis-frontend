@@ -1153,7 +1153,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
             {[
               { num: "01", title: "AI scans 1,200+ stocks after close", desc: "Every evening the engine screens momentum, volume, and technical setups across the full market." },
               { num: "02", title: "Get today's pick with entry, stop & target", desc: "One high-conviction setup with precise levels — entry price, stop loss, and profit target." },
-              { num: "03", title: "Execute in your own brokerage", desc: "You own the trade. Place it in Alpaca, Robinhood, TD Ameritrade, or any broker you use." },
+              { num: "03", title: "Execute in your own brokerage", desc: "You own the trade. Place it in Alpaca, Robinhood, Schwab, or any broker you use." },
             ].map(({ num, title, desc }, i) => (
               <Reveal key={num} delay={i * 130} y={20} style={{ flex: 1 }}>
                 <div style={S.timelineItem}>
@@ -1239,7 +1239,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
                   {/* Top bar */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      Today's Pick · APR 2026
+                      Verified Pick · APR 2026
                     </div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(34,197,94,0.65)", display: "flex", alignItems: "center", gap: 5 }}>
                       <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px rgba(34,197,94,0.9)" }} />
@@ -1397,7 +1397,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
             },
             {
               question: "What broker do I need?",
-              answer: "Any US brokerage works — Robinhood, TD Ameritrade, Fidelity, Schwab, Alpaca, Webull. You execute trades yourself; Aurexis never touches your money.",
+              answer: "Any US brokerage works — Robinhood, Fidelity, Schwab, Alpaca, Webull. You execute trades yourself; Aurexis never touches your money.",
             },
             {
               question: "How often do you find picks?",
