@@ -36,6 +36,13 @@ const BEATS = [
   ["Results in about ten seconds", "Why it was picked, what confirms it, what breaks it."],
   ["Every score, explained", "Technical scores, an execution window and score rings."],
 ];
+// The screen recording plays as a sequence of stills instead of a seeked
+// <video>: iOS Safari often won't load or seek a muted video until the user
+// taps play (and ignores preload on cellular / Low Power Mode), which left the
+// scene blank on iPhones. Frames are /landing/frames/f001..f060.jpg (8 fps).
+const FILM_FRAMES = 60;
+const frameSrc = (i) => `/landing/frames/f${String(i + 1).padStart(3, "0")}.jpg`;
+
 const CHAPTERS = ["OPEN", "01 SCAN", "02 PLAN", "03 ANALYZE", "04 SCORE"];
 const SCENE_LEN = { "s-hero": 2.2, "s-scan": 3, "s-plan": 3, "s-film": 4, "s-score": 2.2 };
 
@@ -71,18 +78,28 @@ export default function ScrollFilm() {
     const beats = qa("#sf-beats li");
     const rail = qa(".rail div"), railEl = q(".rail");
     const radar = q(".radar"), copy = q(".hero-copy"), flash = q(".flash"), cue = q(".scroll-cue");
-    const video = q("#sf-film");
-    let wantTime = 0, seeking = false, ticking = false;
-
-    const seekTo = (t) => {
-      wantTime = t;
-      if (!video || !isFinite(video.duration) || !video.duration) return;
-      if (!seeking) { seeking = true; try { video.currentTime = t; } catch { seeking = false; } }
+    const filmImg = q("#sf-film");
+    let ticking = false, framesLoaded = false, shownFrame = -1;
+    const loaded = new Array(FILM_FRAMES).fill(false);
+    // Fetch all frames once the visitor gets near the film scene (keeps the
+    // first page load light); keep references so the browser caches them.
+    const preloadFrames = () => {
+      if (framesLoaded) return;
+      framesLoaded = true;
+      window.__sfFrames = Array.from({ length: FILM_FRAMES }, (_, i) => {
+        const im = new Image(); im.decoding = "async";
+        im.onload = () => { loaded[i] = true; };
+        im.src = frameSrc(i); return im;
+      });
     };
-    const onSeeked = () => { seeking = false; if (Math.abs(video.currentTime - wantTime) > 0.04) seekTo(wantTime); };
-    // iOS Safari often won't decode frames for seeking until a muted video has
-    // started once; a play()+pause() on load primes it (muted+playsInline).
-    const primeVideo = () => { video.play().then(() => video.pause()).catch(() => {}); };
+    const showFrame = (i) => {
+      // nearest already-loaded frame, so a slow connection never shows a blank
+      let k = i;
+      while (k > 0 && !loaded[k]) k--;
+      if (!loaded[k] || k === shownFrame) return;
+      shownFrame = k;
+      filmImg.src = frameSrc(k);
+    };
 
     const setHeights = () => scenes.forEach((s) => {
       s.style.height = reduce ? "auto" : (SCENE_LEN[s.id] * window.innerHeight + window.innerHeight) + "px";
@@ -127,7 +144,7 @@ export default function ScrollFilm() {
       },
       "s-film": (p) => {
         const qq = seg(p, 0.04, 0.96);
-        if (video) seekTo(qq * (video.duration || 7.4));
+        showFrame(Math.min(FILM_FRAMES - 1, Math.round(qq * (FILM_FRAMES - 1))));
         q("#sf-scrub").style.width = qq * 100 + "%";
         q("#sf-tc2").textContent = fmt(qq * 7) + " / 00:07";
         const beat = qq < 0.24 ? 0 : qq < 0.41 ? 1 : qq < 0.63 ? 2 : 3;
@@ -151,6 +168,7 @@ export default function ScrollFilm() {
       scenes.forEach((s, idx) => {
         const p = progress(s), r = s.getBoundingClientRect();
         if (r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight * 0.5) active = idx;
+        if (s.id === "s-film" && r.top < window.innerHeight * 3) preloadFrames();
         if (r.bottom > -50 && r.top < window.innerHeight + 50) draw[s.id](p);
       });
       rail.forEach((d, i) => d.classList.toggle("on", i === active));
@@ -162,23 +180,18 @@ export default function ScrollFilm() {
     if (reduce) {
       el.classList.add("still");
       draw["s-scan"](1); draw["s-plan"](1); draw["s-score"](1);
-      if (video) video.setAttribute("controls", "");
+      filmImg.src = frameSrc(FILM_FRAMES - 1);
       beats[3]?.classList.add("on");
       return () => document.documentElement.classList.remove("sf-page");
     }
     setHeights();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
-    video?.addEventListener("seeked", onSeeked);
-    video?.addEventListener("loadedmetadata", onScroll);
-    video?.addEventListener("loadeddata", primeVideo, { once: true });
     frame();
     return () => {
       document.documentElement.classList.remove("sf-page");
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
-      video?.removeEventListener("seeked", onSeeked);
-      video?.removeEventListener("loadedmetadata", onScroll);
     };
   }, []);
 
@@ -286,7 +299,7 @@ export default function ScrollFilm() {
               </div>
               <div className="film-frame">
                 <div className="bar"><Dots /><em id="sf-tc2">00:00 / 00:07</em></div>
-                <video id="sf-film" src="/landing/analyze_scrub.mp4" poster="/landing/analyze_poster.jpg" muted playsInline preload="auto" aria-label="Screen recording of Aurexis analyzing a stock, scrubbed by scrolling" />
+                <img id="sf-film" src="/landing/analyze_poster.jpg" width="900" height="900" alt="Screen recording of Aurexis analyzing a stock, played by scrolling" />
                 <div className="scrub"><i id="sf-scrub" /></div>
               </div>
             </div>

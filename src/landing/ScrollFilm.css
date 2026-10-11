@@ -118,7 +118,7 @@ html.sf-page, html.sf-page body, html.sf-page #root{height:auto;overflow-x:clip;
 .sf .film-frame .bar{display:flex;align-items:center;gap:6px;padding:10px 12px;background:#12161A;font-family:var(--mono);font-size:11px;color:var(--faint)}
 .sf .film-frame .bar i{width:9px;height:9px;border-radius:50%;display:block}
 .sf .film-frame .bar em{margin-left:auto;font-style:normal;letter-spacing:.14em}
-.sf .film-frame video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#0A0A0C}
+.sf .film-frame img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover;background:#0A0A0C}
 .sf .scrub{height:3px;background:var(--line)} .sf .scrub i{display:block;height:100%;width:0;background:var(--signal)}
 
 /* 5 · scores */
