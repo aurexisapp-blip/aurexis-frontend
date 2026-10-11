@@ -3,6 +3,17 @@ import { motion, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 
 // ── Global CSS ────────────────────────────────────────────────────────────────
+// On a phone browser, the landing page is viewable but its login/signup
+// buttons show the "open this on your computer" screen (/open-on-desktop,
+// see main.jsx) instead -- the web dashboard is built for desktop. The
+// /login and /signup routes themselves stay reachable on phones, since the
+// iOS app's upgrade flow links straight to them in Safari.
+function goToAuth(path) {
+  let preview = false;
+  try { preview = sessionStorage.getItem("aurexis_mobilepreview") === "1"; } catch {}
+  window.location.href = window.innerWidth < 768 && !preview ? "/open-on-desktop" : path;
+}
+
 const GLOBAL_CSS = `
   @keyframes blink {
     0%, 100% { opacity: 1; }
@@ -561,7 +572,7 @@ function PricingCard({ plan, index, onGetStarted }) {
         whileHover={btnHover}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        onClick={() => window.location.href = `/signup?plan=${tier.toLowerCase()}`}
+        onClick={() => goToAuth(`/signup?plan=${tier.toLowerCase()}`)}
       >
         {btnLabel}
       </motion.button>
@@ -1017,7 +1028,7 @@ export default function Landing({ onGetStarted }) {
                 whileHover={{ color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.28)" }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                onClick={() => window.location.href = "/login"}
+                onClick={() => goToAuth("/login")}
               >
                 Log In
               </motion.button>
@@ -1027,7 +1038,7 @@ export default function Landing({ onGetStarted }) {
                 whileHover={{ background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.6)", scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                onClick={() => window.location.href = "/signup"}
+                onClick={() => goToAuth("/signup")}
               >
                 Get Today's Pick →
               </motion.button>
@@ -1115,7 +1126,7 @@ One AI-curated setup, delivered before market open. Entry, stop, and target — 
               transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => window.location.href = "/signup"}
+              onClick={() => goToAuth("/signup")}
             >
               <span>Get Today's Pick</span>
               <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>

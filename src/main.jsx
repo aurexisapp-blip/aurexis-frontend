@@ -148,17 +148,6 @@ function useIsPhoneWidth() {
   return isMobile;
 }
 
-// Phone browsers visiting the marketing site get the "open on your computer"
-// screen. Only the homepage/catch-all is gated -- /login, /signup,
-// /mobile-checkout, legal, /support and /blog stay reachable on phones,
-// because the iOS app's upgrade buttons hand off to them in Safari (and App
-// Review follows that flow).
-function LandingGate() {
-  const isMobile = useIsPhoneWidth();
-  if (isMobile && !isMobilePreview()) return <MobileBlock />;
-  return <LandingPage />;
-}
-
 function AppGate() {
   const isMobile = useIsPhoneWidth();
 
@@ -250,7 +239,9 @@ function RootRoutes() {
         <Route path="/blog" element={<BlogList />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/app/*" element={<AppGate />} />
-        <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingGate />} />
+        {/* Where the landing page's login/signup buttons send phone browsers. */}
+        <Route path="/open-on-desktop" element={<MobileBlock />} />
+        <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingPage />} />
       </Routes>
   );
 }
