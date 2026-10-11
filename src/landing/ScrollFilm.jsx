@@ -36,12 +36,14 @@ const BEATS = [
   ["Results in about ten seconds", "Why it was picked, what confirms it, what breaks it."],
   ["Every score, explained", "Technical scores, an execution window and score rings."],
 ];
-// The screen recording plays as a sequence of stills instead of a seeked
-// <video>: iOS Safari often won't load or seek a muted video until the user
-// taps play (and ignores preload on cellular / Low Power Mode), which left the
-// scene blank on iPhones. Frames are /landing/frames/f001..f060.jpg (8 fps).
-const FILM_FRAMES = 60;
-const frameSrc = (i) => `/landing/frames/f${String(i + 1).padStart(3, "0")}.jpg`;
+// The screen recording plays as a sequence of stills drawn to a <canvas>
+// instead of a seeked <video>: iOS Safari often won't load or seek a muted
+// video until the user taps play, which left the scene blank on iPhones.
+// All 120 source frames at full 900px (WebP, ~2.4 MB), decoded ahead of time
+// so switching frames never flickers; the displayed frame eases toward the
+// scroll position so motion stays smooth even on jumpy touch scrolling.
+const FILM_FRAMES = 120;
+const frameSrc = (i) => `/landing/frames/f${String(i + 1).padStart(3, "0")}.webp`;
 
 const CHAPTERS = ["OPEN", "01 SCAN", "02 PLAN", "03 ANALYZE", "04 SCORE"];
 const SCENE_LEN = { "s-hero": 2.2, "s-scan": 3, "s-plan": 3, "s-film": 4, "s-score": 2.2 };
@@ -78,27 +80,53 @@ export default function ScrollFilm() {
     const beats = qa("#sf-beats li");
     const rail = qa(".rail div"), railEl = q(".rail");
     const radar = q(".radar"), copy = q(".hero-copy"), flash = q(".flash"), cue = q(".scroll-cue");
-    const filmImg = q("#sf-film");
-    let ticking = false, framesLoaded = false, shownFrame = -1;
-    const loaded = new Array(FILM_FRAMES).fill(false);
-    // Fetch all frames once the visitor gets near the film scene (keeps the
-    // first page load light); keep references so the browser caches them.
-    const preloadFrames = () => {
-      if (framesLoaded) return;
-      framesLoaded = true;
-      window.__sfFrames = Array.from({ length: FILM_FRAMES }, (_, i) => {
-        const im = new Image(); im.decoding = "async";
-        im.onload = () => { loaded[i] = true; };
-        im.src = frameSrc(i); return im;
-      });
+    const canvas = q("#sf-film");
+    const ctx2d = canvas.getContext("2d");
+    const frames = new Array(FILM_FRAMES).fill(null); // decoded, ready-to-draw images
+    let ticking = false, framesRequested = false, drawn = -1, target = 0, current = 0, raf = 0, alive = true;
+
+    const poster = new Image();
+    poster.onload = () => { if (drawn < 0) ctx2d.drawImage(poster, 0, 0, canvas.width, canvas.height); };
+    poster.src = "/landing/analyze_poster.jpg";
+
+    // Fetch + decode every frame once the visitor nears the scene (keeps the
+    // first page load light). Loads in order with a few in flight at a time,
+    // so early frames are ready first.
+    const requestFrames = () => {
+      if (framesRequested) return;
+      framesRequested = true;
+      let next = 0;
+      const loadOne = () => {
+        if (!alive || next >= FILM_FRAMES) return;
+        const i = next++;
+        const im = new Image();
+        im.src = frameSrc(i);
+        (im.decode ? im.decode() : new Promise((r) => { im.onload = r; }))
+          .then(() => { frames[i] = im; if (Math.round(current) === i || drawn < 0) paint(); })
+          .catch(() => {})
+          .finally(loadOne);
+      };
+      for (let k = 0; k < 6; k++) loadOne();
+    };
+    const paint = () => {
+      // nearest decoded frame at or before the wanted one, so a slow
+      // connection shows an earlier frame instead of a blank box
+      let k = Math.max(0, Math.min(FILM_FRAMES - 1, Math.round(current)));
+      while (k > 0 && !frames[k]) k--;
+      if (!frames[k] || k === drawn) return;
+      drawn = k;
+      ctx2d.drawImage(frames[k], 0, 0, canvas.width, canvas.height);
+    };
+    const animate = () => {
+      raf = 0;
+      current += (target - current) * 0.35;
+      if (Math.abs(target - current) < 0.3) current = target;
+      paint();
+      if (current !== target) raf = requestAnimationFrame(animate);
     };
     const showFrame = (i) => {
-      // nearest already-loaded frame, so a slow connection never shows a blank
-      let k = i;
-      while (k > 0 && !loaded[k]) k--;
-      if (!loaded[k] || k === shownFrame) return;
-      shownFrame = k;
-      filmImg.src = frameSrc(k);
+      target = i;
+      if (!raf) raf = requestAnimationFrame(animate);
     };
 
     const setHeights = () => scenes.forEach((s) => {
@@ -144,7 +172,7 @@ export default function ScrollFilm() {
       },
       "s-film": (p) => {
         const qq = seg(p, 0.04, 0.96);
-        showFrame(Math.min(FILM_FRAMES - 1, Math.round(qq * (FILM_FRAMES - 1))));
+        showFrame(qq * (FILM_FRAMES - 1));
         q("#sf-scrub").style.width = qq * 100 + "%";
         q("#sf-tc2").textContent = fmt(qq * 7) + " / 00:07";
         const beat = qq < 0.24 ? 0 : qq < 0.41 ? 1 : qq < 0.63 ? 2 : 3;
@@ -168,7 +196,7 @@ export default function ScrollFilm() {
       scenes.forEach((s, idx) => {
         const p = progress(s), r = s.getBoundingClientRect();
         if (r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight * 0.5) active = idx;
-        if (s.id === "s-film" && r.top < window.innerHeight * 3) preloadFrames();
+        if (s.id === "s-film" && r.top < window.innerHeight * 3) requestFrames();
         if (r.bottom > -50 && r.top < window.innerHeight + 50) draw[s.id](p);
       });
       rail.forEach((d, i) => d.classList.toggle("on", i === active));
@@ -180,7 +208,7 @@ export default function ScrollFilm() {
     if (reduce) {
       el.classList.add("still");
       draw["s-scan"](1); draw["s-plan"](1); draw["s-score"](1);
-      filmImg.src = frameSrc(FILM_FRAMES - 1);
+      current = target = FILM_FRAMES - 1; requestFrames();
       beats[3]?.classList.add("on");
       return () => document.documentElement.classList.remove("sf-page");
     }
@@ -189,6 +217,7 @@ export default function ScrollFilm() {
     window.addEventListener("resize", onResize);
     frame();
     return () => {
+      alive = false; if (raf) cancelAnimationFrame(raf);
       document.documentElement.classList.remove("sf-page");
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
@@ -299,7 +328,7 @@ export default function ScrollFilm() {
               </div>
               <div className="film-frame">
                 <div className="bar"><Dots /><em id="sf-tc2">00:00 / 00:07</em></div>
-                <img id="sf-film" src="/landing/analyze_poster.jpg" width="900" height="900" alt="Screen recording of Aurexis analyzing a stock, played by scrolling" />
+                <canvas id="sf-film" width="900" height="900" role="img" aria-label="Screen recording of Aurexis analyzing a stock, played by scrolling" />
                 <div className="scrub"><i id="sf-scrub" /></div>
               </div>
             </div>
