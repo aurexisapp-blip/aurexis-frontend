@@ -240,8 +240,8 @@ export default function ScrollFilm() {
             <a className="l" href="#sf-how" onClick={scrollTo("sf-how")}>How it works</a>
             <a className="l" href="#pricing" onClick={scrollTo("pricing")}>Pricing</a>
             <a className="l" href="#faq" onClick={scrollTo("faq")}>FAQ</a>
-            <button className="l" onClick={() => goToAuth("/login")}>Log in</button>
-            <button className="sfbtn btn-primary" onClick={() => goToAuth("/signup")}>Get today's pick</button>
+            {/* "Get today's pick" lives only at the end of the page, after the film. */}
+            <button className="sfbtn btn-ghost nav-login" onClick={() => goToAuth("/login")}>Log in</button>
           </nav>
         </div>
       </header>
@@ -267,8 +267,7 @@ export default function ScrollFilm() {
               <h1>The market gives<br />one signal a day.<br /><span className="g">We find it.</span></h1>
               <p>One AI-curated setup before the open: entry, stop and targets, with the reasoning behind it. You decide, and you trade in your own brokerage.</p>
               <div className="cta-row">
-                <button className="sfbtn btn-primary" onClick={() => goToAuth("/signup")}>Get today's pick <Arrow /></button>
-                <a className="sfbtn btn-ghost" href="#s-scan" onClick={scrollTo("s-scan")}>Watch how it works</a>
+                <a className="sfbtn btn-ghost" href="#s-scan" onClick={scrollTo("s-scan")}>Watch how it works ↓</a>
               </div>
               <p className="fine">Free plan · No credit card · Educational use, not investment advice</p>
             </div>
@@ -405,7 +404,7 @@ export default function ScrollFilm() {
         <section className="static final">
           <div className="wrap">
             <h2>Tomorrow's setup is<br /><span style={{ color: "var(--signal)" }}>already being scanned.</span></h2>
-            <button className="sfbtn btn-primary" style={{ padding: "20px 32px", fontSize: 18 }} onClick={() => goToAuth("/signup")}>Get today's pick</button>
+            <button className="sfbtn btn-primary" style={{ padding: "20px 32px", fontSize: 18 }} onClick={() => goToAuth("/signup")}>Get today's pick <Arrow /></button>
             <p className="fine">Free plan · No credit card required</p>
           </div>
         </section>

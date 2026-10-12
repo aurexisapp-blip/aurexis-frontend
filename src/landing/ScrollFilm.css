@@ -180,7 +180,6 @@ html.sf-page, html.sf-page body, html.sf-page #root{height:auto;overflow-x:clip;
   .sf .hero-copy{gap:18px}
   .sf .hero-copy h1{font-size:clamp(42px,12vw,56px)}
   .sf .hero-copy p{font-size:16px}
-  .sf .cta-row .btn-ghost{display:none}
   .sf .scan-hud{padding:22px 18px}
   .sf .count{font-size:clamp(64px,20vw,96px)}
   .sf #s-plan .stage{gap:14px;padding:76px 16px 24px}
