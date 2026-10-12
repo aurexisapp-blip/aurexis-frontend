@@ -110,18 +110,74 @@ function MobileBlock() {
         </div>
       </div>
 
-      {/* Mobile app coming soon pill */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 7,
-        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 99, padding: "8px 16px",
-      }}>
-        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15" }} />
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>
-          Mobile app coming soon
-        </span>
-      </div>
+      <LaunchNotifyForm />
     </div>
+  );
+}
+
+// Under the "open on your computer" message: phone visitors can leave an
+// email to hear when the iPhone app launches (POST /auth/launch-notify).
+// Swap this for an App Store link once the app is approved.
+function LaunchNotifyForm() {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState("idle"); // idle | sending | done | error
+  const [err, setErr] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setState("sending"); setErr("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/launch-notify`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), source: "phone_gate" }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || "Something went wrong. Try again.");
+      }
+      setState("done");
+    } catch (e2) { setErr(e2.message || "Something went wrong. Try again."); setState("error"); }
+  };
+  const box = {
+    width: "100%", maxWidth: 320, background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "18px 18px 16px",
+  };
+  if (state === "done") {
+    return (
+      <div style={box}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80", marginBottom: 4 }}>You're on the list ✓</div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>We'll email you when the Aurexis iPhone app is live.</div>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={submit} style={box}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginBottom: 6 }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15" }} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>iPhone app coming soon</span>
+      </div>
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginBottom: 14 }}>
+        Get notified when the app launches.
+      </div>
+      <input
+        type="email" required autoComplete="email" inputMode="email" placeholder="you@email.com"
+        value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address"
+        style={{
+          width: "100%", boxSizing: "border-box", padding: "13px 14px", borderRadius: 10, marginBottom: 10,
+          background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff",
+          fontSize: 16, outline: "none", fontFamily: "inherit",
+        }}
+      />
+      <button type="submit" disabled={state === "sending"} style={{
+        width: "100%", padding: "13px 0", borderRadius: 10, border: "none", cursor: "pointer",
+        background: "#00b450", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit",
+        opacity: state === "sending" ? 0.6 : 1,
+      }}>
+        {state === "sending" ? "Adding…" : "Notify me"}
+      </button>
+      {err ? <div style={{ fontSize: 12, color: "#f87171", marginTop: 8 }}>{err}</div> : null}
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 10 }}>Just the launch email. No spam.</div>
+    </form>
   );
 }
 
