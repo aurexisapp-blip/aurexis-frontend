@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import "./ScrollFilm.css";
 import { COMPANY, FAQ, OPERATED_BY, PLANS } from "../lib/siteFacts";
+import LaunchNotifyForm from "../components/LaunchNotifyForm";
 
 // The landing page as a short "film": five scenes pinned to the viewport and
 // scrubbed by the scroll position (hero -> market scan -> trade plan -> screen
@@ -266,6 +267,8 @@ export default function ScrollFilm() {
               <div className="sfpill"><i />AI STOCK RESEARCH · ONE IDEA A DAY</div>
               <h1>The market gives<br />one signal a day.<br /><span className="g">We find it.</span></h1>
               <p>One AI-curated setup before the open: entry, stop and targets, with the reasoning behind it. You decide, and you trade in your own brokerage.</p>
+              {/* phones only (CSS): sign-up stays at the end of the film on desktop */}
+              <div className="hero-notify"><LaunchNotifyForm source="landing_hero" compact /></div>
               <div className="cta-row">
                 <a className="sfbtn btn-ghost" href="#s-scan" onClick={scrollTo("s-scan")}>Watch how it works ↓</a>
               </div>

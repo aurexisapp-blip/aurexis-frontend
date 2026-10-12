@@ -70,6 +70,26 @@ html.sf-page, html.sf-page body, html.sf-page #root{height:auto;overflow-x:clip;
 .sf .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%, rgba(0,210,120,.85), rgba(0,210,120,.25) 40%, rgba(5,6,7,0) 75%);opacity:0;pointer-events:none}
 .sf .scroll-cue{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--faint);white-space:nowrap}
 .sf .cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.sf .hero-notify{display:none;width:100%;justify-content:center}
+@media (max-width:767px){
+  .sf .hero-notify{display:flex}
+  /* center the hero in the space under the fixed nav, not under the nav itself */
+  .sf #s-hero .stage{padding-top:62px;padding-bottom:6px}
+  .sf .scroll-cue{display:none} /* "Watch how it works ↓" does this job; the cue overlapped the disclaimer */
+}
+/* short phone screens (iPhone SE, Safari with toolbars): tighten the hero so
+   the email box, "Watch how it works" and the disclaimer all fit */
+@media (max-width:767px) and (max-height:620px){
+  .sf .hero-copy{gap:11px}
+  .sf .hero-copy h1{font-size:clamp(30px,9.4vw,42px)}
+  .sf .hero-copy p{font-size:14px;line-height:1.45}
+  .sf .sfpill{padding:6px 11px;font-size:9.5px;letter-spacing:.1em;white-space:nowrap}
+  .sf .cta-row .sfbtn{padding:11px 20px;min-height:42px}
+  .sf .scroll-cue{display:none}
+}
+@media (max-width:767px) and (max-height:580px){
+  .sf .hero-copy > p:not(.fine){display:none}
+}
 
 /* 2 · scan */
 .sf #s-scan .stage{background:var(--stage);flex-direction:column}
@@ -177,7 +197,7 @@ html.sf-page, html.sf-page body, html.sf-page #root{height:auto;overflow-x:clip;
 
 /* phones: every pinned scene has to fit one screen, or its bottom gets cut off */
 @media (max-width:760px){
-  .sf .hero-copy{gap:18px}
+  .sf .hero-copy{gap:16px}
   .sf .hero-copy h1{font-size:clamp(42px,12vw,56px)}
   .sf .hero-copy p{font-size:16px}
   .sf .scan-hud{padding:22px 18px}
