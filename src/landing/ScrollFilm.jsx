@@ -1,5 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+// Self-hosted fonts (not Google Fonts: that shares every visitor's IP with Google).
+import "@fontsource/bricolage-grotesque/500.css";
+import "@fontsource/bricolage-grotesque/700.css";
+import "@fontsource/bricolage-grotesque/800.css";
+import "@fontsource/geist-sans/400.css";
+import "@fontsource/geist-sans/500.css";
+import "@fontsource/geist-sans/600.css";
+import "@fontsource/geist-mono/500.css";
+import "@fontsource/geist-mono/600.css";
 import "./ScrollFilm.css";
 import { COMPANY, FAQ, OPERATED_BY, PLANS } from "../lib/siteFacts";
 import LaunchNotifyForm from "../components/LaunchNotifyForm";
@@ -9,7 +18,6 @@ import LaunchNotifyForm from "../components/LaunchNotifyForm";
 // recording -> scores), then a static ending (how it works, pricing, FAQ).
 // Respects prefers-reduced-motion by showing every scene at its final frame.
 
-const FONTS_HREF = "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap";
 
 // Phone browsers get the "open this on your computer" screen instead of the
 // auth pages from here (see /open-on-desktop in main.jsx); /login and /signup
@@ -63,11 +71,6 @@ export default function ScrollFilm() {
   const root = useRef(null);
 
   useEffect(() => {
-    if (!document.getElementById("sf-fonts")) {
-      const l = document.createElement("link");
-      l.id = "sf-fonts"; l.rel = "stylesheet"; l.href = FONTS_HREF;
-      document.head.appendChild(l);
-    }
     document.documentElement.classList.add("sf-page"); // see html.sf-page in ScrollFilm.css
     const el = root.current;
     const q = (s) => el.querySelector(s);
@@ -388,6 +391,7 @@ export default function ScrollFilm() {
                     <button className={`sfbtn ${featured ? "btn-primary" : "btn-ghost"}`} onClick={() => goToAuth(`/signup?plan=${plan.name.toLowerCase()}`)}>
                       {plan.name === "Free" ? "Start free" : `Choose ${plan.name}`}
                     </button>
+                    {per ? <p className="renew">Renews automatically at {amt}/{per} until you cancel. Cancel anytime.</p> : null}
                   </div>
                 );
               })}

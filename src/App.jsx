@@ -11769,7 +11769,9 @@ async function loadWatchlistLive() {
                 >
                   {isCurrent ? "Current Plan" : isLoading ? "Redirecting…" : plan.btnLabel}
                 </button>
-                {!isCurrent && <div style={{ fontSize: 10, color: T.textGhost, textAlign: "center", marginTop: 8 }}>Cancel anytime</div>}
+                {!isCurrent && <div style={{ fontSize: 10, color: T.textGhost, textAlign: "center", marginTop: 8, lineHeight: 1.45 }}>
+                  {plan.id === "free" ? "Cancel anytime" : `Renews automatically at ${plan.price}/month until you cancel. Cancel anytime.`}
+                </div>}
               </div>
             );
           })}

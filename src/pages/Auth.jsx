@@ -818,7 +818,7 @@ export default function Auth({ defaultView = "login" }) {
                   style={N.checkbox}
                 />
                 <span style={N.termsText}>
-                  By creating an account you agree to our{" "}
+                  By creating an account you confirm you're 18 or older and agree to our{" "}
                   <a
                     href="/terms"
                     onClick={e => { e.preventDefault(); Browser.open({ url: "https://useaurexis.com/terms" }); }}
@@ -957,7 +957,7 @@ export default function Auth({ defaultView = "login" }) {
                   style={{ width: 15, height: 15, marginTop: 2, accentColor: "#00b450", flexShrink: 0, cursor: "pointer" }}
                 />
                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
-                  By creating an account you agree to our{" "}
+                  By creating an account you confirm you're 18 or older and agree to our{" "}
                   <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Terms of Service</a>
                   {" "}and{" "}
                   <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Privacy Policy</a>.
@@ -1098,7 +1098,7 @@ export default function Auth({ defaultView = "login" }) {
                   style={{ width: 15, height: 15, marginTop: 2, accentColor: "#00b450", flexShrink: 0, cursor: "pointer" }}
                 />
                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
-                  By creating an account you agree to our{" "}
+                  By creating an account you confirm you're 18 or older and agree to our{" "}
                   <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Terms of Service</a>
                   {" "}and{" "}
                   <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>Privacy Policy</a>.

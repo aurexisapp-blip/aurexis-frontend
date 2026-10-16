@@ -10,7 +10,15 @@
 ========================================================= */
 
 /* Import Inter as primary font (safe fallback list follows) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Self-hosted (@fontsource) -- loading from Google's servers shares every
+   visitor's IP address with Google, a GDPR issue for EU visitors. */
+@import '@fontsource/inter/300.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/800.css';
+@import '@fontsource/inter/900.css';
 
 @keyframes rippleOut {
   from { transform: scale(0); opacity: 1; }

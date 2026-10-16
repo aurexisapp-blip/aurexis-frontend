@@ -17,6 +17,14 @@ export default function Terms() {
         </P>
       </Section>
 
+      <Section title="Eligibility">
+        <P>
+          You must be at least 18 years old to create an account or use Aurexis. The Service is not directed
+          to children, and we do not knowingly collect information from anyone under 13. If you believe a
+          child has given us information, contact us and we will delete it.
+        </P>
+      </Section>
+
       <Section num="2" title="Description of Service">
         <P>
           Aurexis provides AI-generated stock trade ideas for educational and informational purposes.

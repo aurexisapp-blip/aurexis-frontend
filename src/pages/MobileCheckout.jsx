@@ -150,7 +150,8 @@ export default function MobileCheckout() {
             {loading ? "Loading…" : "Continue to checkout"}
           </button>
           <div style={{ fontSize: 11, color: "#6a6a66", textAlign: "center", marginTop: 10 }}>
-            Cancel anytime. You'll be taken to Stripe's secure checkout.
+            Renews automatically at {planPriceLabel(plan)}/month until you cancel. Cancel anytime in
+            Settings. You'll be taken to Stripe's secure checkout.
           </div>
         </div>
 
