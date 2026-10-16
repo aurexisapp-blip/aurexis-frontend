@@ -139,7 +139,7 @@ function ShadowComparison({ secret }) {
         Logged every background scan, admin-only, never shown to users. Both columns use the same 7-day win/loss rules.
         {d?.model?.version ? ` Model ${d.model.version}, trained on ${d.model.trained_on} picks through ${d.model.trained_through}.` : ""}
         {" "}Below {Math.round((d?.min_trade_prob || 0.5) * 100)}% win probability the shadow model logs no trade (the candidate is still shown).
-        {" "}Results count one pick per ticker per position (a repeat within 7 days is the same trade). Treat them as noise until each side has {d?.target_unique_closed || 40} unique closed picks.
+        {" "}Results count one pick per ticker per position (a repeat within 7 days is the same trade). The comparison that counts is the "since rule" row: shadow picks at 50%+ vs real picks from the moment the 50% rule went live, until each side has {d?.target_unique_closed || 40} unique closed picks. Earlier picks are kept as history.
       </div>
       {err ? <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{err}</div> : null}
       <RealAllTime a={d?.real_all_time} />
@@ -148,17 +148,28 @@ function ShadowComparison({ secret }) {
       ) : (
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-            <StatCard label={`Shadow · since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
+            <StatCard label={`Shadow · all history since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
               sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}${d.shadow.no_trade_scans ? ` · ${d.shadow.no_trade_scans} no-trade scans` : ""}`} />
-            <StatCard label={`Real · since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
+            <StatCard label={`Real · all history since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
               sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.pending} open${d.real.raw_closed > d.real.closed ? ` · ${d.real.raw_closed - d.real.closed} repeats not counted` : ""}`} />
             <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-            <StatCard label="Shadow · unique closed" value={`${d.shadow.closed} / ${d.target_unique_closed || 40}`} accent={T.blue}
-              sub={d.shadow.closed >= (d.target_unique_closed || 40) ? "enough to compare" : `${(d.target_unique_closed || 40) - d.shadow.closed} to go`} />
-            <StatCard label="Real · unique closed" value={`${d.real.closed} / ${d.target_unique_closed || 40}`} accent={T.green}
-              sub={d.real.closed >= (d.target_unique_closed || 40) ? "enough to compare" : `${(d.target_unique_closed || 40) - d.real.closed} to go`} />
+            {(() => {
+              // The 40-pick comparison: shadow picks >= 50% vs real picks,
+              // both counted only from when the 50% rule went live.
+              const r = d.rule, goal = d.target_unique_closed || 40;
+              if (!r) return null;
+              const since = shortDate(r.since);
+              const card = (label, side, accent) => (
+                <StatCard label={label} value={`${side.closed} / ${goal}`} accent={accent}
+                  sub={`${side.closed >= goal ? "enough to compare" : `${goal - side.closed} to go`} · win ${side.win_rate == null ? "—" : `${side.win_rate}%`} · avg ${pct(side.avg_return_pct)} · ${side.pending} open`} />
+              );
+              return (<>
+                {card(`Shadow ≥50%, since ${since} rule · unique closed`, r.shadow, T.blue)}
+                {card(`Real, since ${since} rule · unique closed`, r.real, T.green)}
+              </>);
+            })()}
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
