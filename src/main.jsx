@@ -20,6 +20,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminGrowth from "./pages/AdminGrowth";
 import { BlogList, BlogPost } from "./pages/Blog";
 import LaunchNotifyForm from "./components/LaunchNotifyForm";
+import { SiteAnalytics, isTrackingDisabled } from "./lib/analytics";
 import "./index.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -44,6 +45,7 @@ function useVisitPing() {
     } catch {
       sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
+    if (isTrackingDisabled()) return undefined; // owner visits / ?notrack=1 devices don't count
     const ping = () => {
       const tok = (() => { try { return localStorage.getItem("aurexis_token"); } catch { return null; } })();
       fetch(`${API_BASE_URL}/track/ping`, {
@@ -196,6 +198,8 @@ function NativeRoot() {
 function RootRoutes() {
   useVisitPing();
   return (
+    <>
+      <SiteAnalytics />
       <Routes>
         <Route path="/legal"      element={<Legal />} />
         <Route path="/terms"      element={<Terms />} />
@@ -238,6 +242,7 @@ function RootRoutes() {
         <Route path="/open-on-desktop" element={<MobileBlock />} />
         <Route path="/*" element={isNativeApp() ? <NativeRoot /> : <LandingPage />} />
       </Routes>
+    </>
   );
 }
 
