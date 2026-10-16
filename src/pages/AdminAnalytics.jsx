@@ -92,7 +92,7 @@ function RealAllTime({ a }) {
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <StatCard label={`Real win rate · all time`} value={a.win_rate == null ? "—" : `${a.win_rate}%`} accent={T.green}
-          sub={`avg ${pct(a.avg_return_pct)} · ${a.closed} closed / ${a.pending} open · since ${shortDate(a.since)}`} />
+          sub={`avg ${pct(a.avg_return_pct)} · ${a.closed} unique closed / ${a.pending} open${a.raw_closed > a.closed ? ` (${a.raw_closed} incl. repeats)` : ""} · since ${shortDate(a.since)}`} />
       </div>
       {a.recent_closed?.length ? (
         <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "12px 16px", fontSize: 12.5 }}>
@@ -138,7 +138,7 @@ function ShadowComparison({ secret }) {
       <div style={{ fontSize: 12.5, color: T.textSec, marginBottom: 16, lineHeight: 1.5 }}>
         Logged every background scan, admin-only, never shown to users. Both columns use the same 7-day win/loss rules.
         {d?.model?.version ? ` Model ${d.model.version}, trained on ${d.model.trained_on} picks through ${d.model.trained_through}.` : ""}
-        {" "}Treat results as noise until each side has 40+ closed picks.
+        {" "}Results count one pick per ticker per position (a repeat within 7 days is the same trade). Treat them as noise until each side has {d?.target_unique_closed || 40} unique closed picks.
       </div>
       {err ? <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{err}</div> : null}
       <RealAllTime a={d?.real_all_time} />
@@ -148,10 +148,16 @@ function ShadowComparison({ secret }) {
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <StatCard label={`Shadow · since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
-              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.closed} closed / ${d.shadow.pending} open`} />
+              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}`} />
             <StatCard label={`Real · since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
-              sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.closed} closed / ${d.real.pending} open`} />
+              sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.pending} open${d.real.raw_closed > d.real.closed ? ` · ${d.real.raw_closed - d.real.closed} repeats not counted` : ""}`} />
             <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+            <StatCard label="Shadow · unique closed" value={`${d.shadow.closed} / ${d.target_unique_closed || 40}`} accent={T.blue}
+              sub={d.shadow.closed >= (d.target_unique_closed || 40) ? "enough to compare" : `${(d.target_unique_closed || 40) - d.shadow.closed} to go`} />
+            <StatCard label="Real · unique closed" value={`${d.real.closed} / ${d.target_unique_closed || 40}`} accent={T.green}
+              sub={d.real.closed >= (d.target_unique_closed || 40) ? "enough to compare" : `${(d.target_unique_closed || 40) - d.real.closed} to go`} />
           </div>
           <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
@@ -162,10 +168,10 @@ function ShadowComparison({ secret }) {
               </thead>
               <tbody>
                 {d.rows.map(r => (
-                  <tr key={r.id}>
+                  <tr key={r.id} style={r.repeat ? { opacity: 0.4 } : undefined} title={r.repeat ? "Repeat of an earlier shadow pick of this ticker within 7 days: same position, not counted" : undefined}>
                     <td style={{ ...cell, color: T.textSec }}>{new Date(r.recorded_at * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
                     <td style={{ ...cell, fontWeight: 700 }} title={`Entry ${r.entry_price} · stop ${r.stop} · target ${r.target1}`}>
-                      {r.symbol}{r.same_as_real ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (same)</span> : null}
+                      {r.symbol}{r.same_as_real ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (same)</span> : null}{r.repeat ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (repeat)</span> : null}
                     </td>
                     <td style={cell}>{(r.win_prob * 100).toFixed(0)}%</td>
                     <td style={cell}><Outcome status={r.status === "pending" ? null : r.status} ret={r.exit_return_pct} />{r.status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
