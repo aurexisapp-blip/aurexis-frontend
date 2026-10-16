@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /admin
+Disallow: /mobile-checkout
+Disallow: /open-on-desktop
+
+Sitemap: https://useaurexis.com/sitemap.xml

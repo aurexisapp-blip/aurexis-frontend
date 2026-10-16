@@ -45,6 +45,11 @@ export const DISCLAIMER =
 
 export const FAQ = [
   {
+    // Disambiguation: other "Aurex"/"Aurax" brands show up in search and AI answers.
+    q: "Is Aurexis the same as Aurex AI, AuraxAI or Aurexis Trader?",
+    a: `No. Aurexis (useaurexis.com) is a stock research and paper-trading app by ${COMPANY.legalName}. We never take deposits, connect to brokers or trade for you.`,
+  },
+  {
     q: "Is Aurexis legit?",
     a: `Aurexis is a subscription software product. ${OPERATED_BY} It sells access to a stock research tool — it doesn't take deposits, manage money or place trades. Payments are processed by Stripe, new subscribers have a 7-day money-back guarantee, and you can reach a real person at ${COMPANY.email}.`,
   },

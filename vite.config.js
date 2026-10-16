@@ -21,8 +21,21 @@ function crawlableFacts() {
     name: COMPANY.product,
     legalName: COMPANY.legalName,
     url: COMPANY.url,
+    logo: `${COMPANY.url}/icon-512.png`,
     email: COMPANY.email,
-    address: { '@type': 'PostalAddress', addressRegion: 'MA', addressCountry: 'US' },
+  }
+  const appLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: COMPANY.product,
+    url: COMPANY.url,
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Web, iOS',
+    publisher: { '@type': 'Organization', name: COMPANY.product, legalName: COMPANY.legalName },
+    offers: {
+      '@type': 'Offer', price: '9.00', priceCurrency: 'USD',
+      priceSpecification: { '@type': 'UnitPriceSpecification', price: '9.00', priceCurrency: 'USD', unitText: 'MONTH', billingDuration: 'P1M' },
+    },
   }
   const html = `
     <div id="seo-static">
@@ -51,7 +64,7 @@ function crawlableFacts() {
     transformIndexHtml(src) {
       return src
         .replace('<div id="root"></div>', `<div id="root">${html}\n    </div>`)
-        .replace('</head>', `    <script type="application/ld+json">${JSON.stringify(orgLd)}</script>\n    <script type="application/ld+json">${JSON.stringify(faqLd)}</script>\n  </head>`)
+        .replace('</head>', `    <script type="application/ld+json">${JSON.stringify(orgLd)}</script>\n    <script type="application/ld+json">${JSON.stringify(appLd)}</script>\n    <script type="application/ld+json">${JSON.stringify(faqLd)}</script>\n  </head>`)
     },
   }
 }
