@@ -138,6 +138,7 @@ function ShadowComparison({ secret }) {
       <div style={{ fontSize: 12.5, color: T.textSec, marginBottom: 16, lineHeight: 1.5 }}>
         Logged every background scan, admin-only, never shown to users. Both columns use the same 7-day win/loss rules.
         {d?.model?.version ? ` Model ${d.model.version}, trained on ${d.model.trained_on} picks through ${d.model.trained_through}.` : ""}
+        {" "}Below {Math.round((d?.min_trade_prob || 0.5) * 100)}% win probability the shadow model logs no trade (the candidate is still shown).
         {" "}Results count one pick per ticker per position (a repeat within 7 days is the same trade). Treat them as noise until each side has {d?.target_unique_closed || 40} unique closed picks.
       </div>
       {err ? <div style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{err}</div> : null}
@@ -148,7 +149,7 @@ function ShadowComparison({ secret }) {
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <StatCard label={`Shadow · since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
-              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}`} />
+              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}${d.shadow.no_trade_scans ? ` · ${d.shadow.no_trade_scans} no-trade scans` : ""}`} />
             <StatCard label={`Real · since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
               sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.pending} open${d.real.raw_closed > d.real.closed ? ` · ${d.real.raw_closed - d.real.closed} repeats not counted` : ""}`} />
             <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
@@ -171,10 +172,13 @@ function ShadowComparison({ secret }) {
                   <tr key={r.id} style={r.repeat ? { opacity: 0.4 } : undefined} title={r.repeat ? "Repeat of an earlier shadow pick of this ticker within 7 days: same position, not counted" : undefined}>
                     <td style={{ ...cell, color: T.textSec }}>{new Date(r.recorded_at * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
                     <td style={{ ...cell, fontWeight: 700 }} title={`Entry ${r.entry_price} · stop ${r.stop} · target ${r.target1}`}>
-                      {r.symbol}{r.same_as_real ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (same)</span> : null}{r.repeat ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (repeat)</span> : null}
+                      {r.status === "no_trade"
+                        ? <span style={{ color: T.textFaint, fontWeight: 400 }} title={`Top candidate under ${Math.round((d.min_trade_prob || 0.5) * 100)}% win probability`}>No trade <span style={{ fontSize: 11 }}>(would pick {r.symbol})</span></span>
+                        : r.symbol}
+                      {r.status !== "no_trade" && r.same_as_real ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (same)</span> : null}{r.repeat ? <span style={{ color: T.textFaint, fontWeight: 400 }}> (repeat)</span> : null}
                     </td>
                     <td style={cell}>{(r.win_prob * 100).toFixed(0)}%</td>
-                    <td style={cell}><Outcome status={r.status === "pending" ? null : r.status} ret={r.exit_return_pct} />{r.status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
+                    <td style={cell}>{r.status === "no_trade" ? <span style={{ color: T.textFaint }}>—</span> : <Outcome status={r.status === "pending" ? null : r.status} ret={r.exit_return_pct} />}{r.status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
                     <td style={{ ...cell, color: r.real_is_trade ? T.text : T.textFaint }}>{r.real_symbol || "—"}{r.real_symbol && !r.real_is_trade ? " (no trade)" : ""}</td>
                     <td style={cell}><Outcome status={r.real_status === "pending" ? null : r.real_status} ret={r.real_exit_return_pct} />{r.real_status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
                   </tr>
