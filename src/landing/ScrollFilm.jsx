@@ -267,7 +267,6 @@ export default function ScrollFilm() {
             </div>
             <div className="flash" aria-hidden="true" />
             <div className="hero-copy">
-              <div className="sfpill"><i />AI STOCK RESEARCH · ONE IDEA A DAY</div>
               <h1>The market gives<br />one signal a day.<br /><span className="g">We find it.</span></h1>
               <p>One AI-curated setup before the open: entry, stop and targets, with the reasoning behind it. You decide, and you trade in your own brokerage.</p>
               {/* phones only (CSS): sign-up stays at the end of the film on desktop */}
