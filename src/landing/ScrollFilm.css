@@ -231,3 +231,88 @@ html.sf-page, html.sf-page body, html.sf-page #root{height:auto;overflow-x:clip;
   .sf .faq summary{font-size:17px}
   .sf .timecode{display:none}
 }
+
+/* ======================================================================
+   Apple-style polish layer. Same scenes and copy; this only refines the
+   look: system SF type on Apple devices, pure black ground, glass
+   surfaces, pill buttons, softer light, Apple's easing. Size changes are
+   desktop-only (min-width:768px) so the tuned phone layouts above stand.
+   ====================================================================== */
+.sf{
+  --ground:#000; --stage:#000; --panel:rgba(255,255,255,.045); --line:rgba(255,255,255,.08);
+  --ink:#f5f5f7; --muted:#a1a1a6; --faint:#6e6e73;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",system-ui,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",system-ui,sans-serif;
+  --ease:cubic-bezier(.28,.11,.32,1);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; letter-spacing:-.011em;
+}
+.sf .grain{display:none}
+.sf h1,.sf h2,.sf h3{font-weight:700;letter-spacing:-.03em}
+.sf .hero-copy h1,.sf .plan-head h2,.sf .static h2,.sf .film-copy h2,.sf .final h2{
+  background:linear-gradient(180deg,#fff 30%,#a1a1a6 130%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sf .hero-copy h1 .g,.sf .final h2 span[style]{background:linear-gradient(180deg,#5cf2b0,#00d278);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sf .plan-head h2 span,.sf .static h2 span{-webkit-text-fill-color:#6e6e73}
+
+/* glass nav, Apple height */
+.sf .nav{background:rgba(0,0,0,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(255,255,255,.08)}
+.sf .nav-in{padding-block:10px}
+.sf .brand{font-family:var(--display);font-weight:600;letter-spacing:.18em;font-size:14px}
+
+/* pill buttons */
+.sf .sfbtn{border-radius:980px;font-weight:500;letter-spacing:-.01em;transition:background .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
+.sf .sfbtn:active{transform:scale(.98)}
+.sf .btn-primary{box-shadow:0 0 0 1px rgba(0,210,120,.4),0 12px 40px -12px rgba(0,210,120,.55)}
+.sf .btn-ghost{background:rgba(255,255,255,.08);border:0}
+.sf .btn-ghost:hover{background:rgba(255,255,255,.14)}
+
+/* labels: quiet SF instead of mono caps */
+.sf .eyebrow{font-family:var(--body);text-transform:none;letter-spacing:-.01em;font-weight:600;font-size:clamp(15px,1.5vw,21px)}
+.sf .sfpill{font-family:var(--body);font-weight:600;letter-spacing:.06em;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#d2d2d7;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sf .filters span{font-family:var(--body);letter-spacing:.02em;border-radius:980px}
+.sf .scroll-cue,.sf .timecode,.sf .rail{font-family:var(--body);letter-spacing:.12em}
+
+/* light: one soft bloom instead of a busy glow */
+.sf #s-hero .stage{background:radial-gradient(55% 45% at 50% 46%,rgba(0,210,120,.16),rgba(0,0,0,0) 70%),radial-gradient(120% 80% at 50% 120%,rgba(0,90,60,.25),rgba(0,0,0,0) 60%),#000}
+.sf .radar{opacity:.85;filter:saturate(.9)}
+.sf .hero-copy p{color:var(--muted)}
+
+/* glass surfaces */
+.sf .scan-hud,.sf .chip,.sf .price{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);backdrop-filter:saturate(160%) blur(24px);-webkit-backdrop-filter:saturate(160%) blur(24px)}
+.sf .scan-hud{border-radius:28px}
+.sf .count{font-family:var(--display);font-weight:700;letter-spacing:-.05em}
+.sf .tk{border-color:rgba(255,255,255,.06);font-family:var(--body);transition:opacity .6s var(--ease),transform .6s var(--ease),border-color .6s var(--ease),background .6s var(--ease)}
+.sf .chip{border-radius:20px;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.sf .chip .v{font-family:var(--display);font-weight:600;letter-spacing:-.02em}
+.sf .chip .k{font-family:var(--body);font-weight:600;letter-spacing:.08em}
+.sf .screen-mask{border-radius:22px;border:1px solid rgba(255,255,255,.1);box-shadow:0 60px 140px -30px rgba(0,0,0,.9),0 30px 120px -40px rgba(0,210,120,.28)}
+.sf .film-frame{border-radius:28px;border:1px solid rgba(255,255,255,.1);box-shadow:0 60px 140px -30px rgba(0,0,0,.9),0 30px 120px -40px rgba(0,210,120,.25)}
+.sf .film-frame .bar{background:rgba(255,255,255,.04);font-family:var(--body);border-bottom:1px solid rgba(255,255,255,.06)}
+.sf .beats li b{font-family:var(--display);font-weight:600;letter-spacing:-.02em}
+.sf .beats li{transition:color .5s var(--ease),border-color .5s var(--ease)}
+.sf .ring-dial div{font-family:var(--display);font-weight:600;letter-spacing:-.04em}
+.sf .ring .lab{font-family:var(--body);letter-spacing:.08em}
+.sf .brow b{font-family:var(--display)}
+
+/* ending: airy, Apple-like */
+.sf .moves .n{font-family:var(--display);font-weight:600;color:rgba(255,255,255,.18)}
+.sf .moves h3{font-weight:600;letter-spacing:-.02em}
+.sf .price{border-radius:28px;padding:36px}
+.sf .price.feat{border-color:rgba(0,210,120,.35);background:linear-gradient(180deg,rgba(0,210,120,.12),rgba(255,255,255,.03))}
+.sf .price .amt{font-family:var(--display);font-weight:700;letter-spacing:-.04em}
+.sf .faq summary{font-weight:600;letter-spacing:-.015em}
+.sf .faq summary::after{font-family:var(--body);font-weight:300;font-size:26px;line-height:1;color:var(--muted)}
+.sf footer{background:#000}
+.sf footer p{color:#6e6e73}
+
+@media (min-width:768px){
+  .sf .hero-copy{gap:28px}
+  .sf .hero-copy h1{font-size:clamp(56px,8vw,112px);line-height:1.02;letter-spacing:-.045em}
+  .sf .hero-copy p{font-size:clamp(19px,1.6vw,24px);line-height:1.4;max-width:640px}
+  .sf .plan-head h2,.sf .static h2{font-size:clamp(44px,5.6vw,80px);line-height:1.04;letter-spacing:-.04em}
+  .sf .film-copy h2{font-size:clamp(40px,4.6vw,64px);line-height:1.04}
+  .sf .final h2{font-size:clamp(52px,7vw,104px);line-height:1;letter-spacing:-.045em}
+  .sf .static{padding-block:clamp(120px,18vh,200px)}
+  .sf .sfbtn{padding:15px 28px;font-size:17px}
+  .sf .nav .sfbtn{padding:8px 16px;min-height:36px;font-size:14px}
+  .sf .faq summary{font-size:21px}
+}
