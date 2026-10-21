@@ -92,14 +92,14 @@ function RealAllTime({ a }) {
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <StatCard label={`Real win rate · all time`} value={a.win_rate == null ? "—" : `${a.win_rate}%`} accent={T.green}
-          sub={`avg ${pct(a.avg_return_pct)} · ${a.closed} unique closed / ${a.pending} open${a.raw_closed > a.closed ? ` (${a.raw_closed} incl. repeats)` : ""} · since ${shortDate(a.since)}`} />
+          sub={`avg ${pct(a.avg_return_pct)} · ${a.closed} unique closed / ${a.pending} open${a.raw_closed > a.closed ? ` (${a.raw_closed} incl. repeats)` : ""} · since ${shortDate(a.since)}${vsSpy(a)}`} />
       </div>
       {a.recent_closed?.length ? (
         <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: "12px 16px", fontSize: 12.5 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: T.textFaint, marginBottom: 8 }}>Latest closed real picks</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
             {a.recent_closed.map(r => (
-              <span key={`${r.symbol}-${r.recorded_at}`} title={`Picked ${shortDate(r.recorded_at)} · closed ${shortDate(r.evaluated_at)}`}>
+              <span key={`${r.symbol}-${r.recorded_at}`} title={`Picked ${shortDate(r.recorded_at)} · closed ${shortDate(r.evaluated_at)} · SPY same days ${pct(r.spy_return_pct)}`}>
                 <b>{r.symbol}</b> <Outcome status={r.status} ret={r.exit_return_pct} />
               </span>
             ))}
@@ -113,6 +113,15 @@ function RealAllTime({ a }) {
 // Shadow model vs real picks. Admin-only experiment: the shadow model ranks the
 // same candidates the real scanner chose from and logs its top pick; nothing it
 // picks is ever shown to users (see shadow_mode.py on the backend).
+// Same-window SPY benchmark for a summary block (backend shadow_mode._add_spy):
+// SPY's return over the same days as each closed pick, and the pick's edge over it.
+const vsSpy = (s) => s?.benchmarked
+  ? ` · SPY same days ${pct(s.avg_spy_pct)} · edge ${pct(s.avg_excess_pct)} (${s.beat_spy}/${s.benchmarked} beat SPY)`
+  : "";
+const SpyCell = ({ v }) => v == null
+  ? <span style={{ color: T.textFaint }}>—</span>
+  : <span style={{ color: T.textSec }}>{pct(v)}</span>;
+
 function ShadowComparison({ secret }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
@@ -149,9 +158,9 @@ function ShadowComparison({ secret }) {
         <>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <StatCard label={`Shadow · all history since ${shortDate(d.since)}`} value={d.shadow.win_rate == null ? "—" : `${d.shadow.win_rate}%`} accent={T.blue}
-              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}${d.shadow.no_trade_scans ? ` · ${d.shadow.no_trade_scans} no-trade scans` : ""}`} />
+              sub={`avg ${pct(d.shadow.avg_return_pct)} · ${d.shadow.pending} open${d.shadow.raw_closed > d.shadow.closed ? ` · ${d.shadow.raw_closed - d.shadow.closed} repeats not counted` : ""}${d.shadow.no_trade_scans ? ` · ${d.shadow.no_trade_scans} no-trade scans` : ""}${vsSpy(d.shadow)}`} />
             <StatCard label={`Real · all history since ${shortDate(d.since)}`} value={d.real.win_rate == null ? "—" : `${d.real.win_rate}%`} accent={T.green}
-              sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.pending} open${d.real.raw_closed > d.real.closed ? ` · ${d.real.raw_closed - d.real.closed} repeats not counted` : ""}`} />
+              sub={`avg ${pct(d.real.avg_return_pct)} · ${d.real.pending} open${d.real.raw_closed > d.real.closed ? ` · ${d.real.raw_closed - d.real.closed} repeats not counted` : ""}${vsSpy(d.real)}`} />
             <StatCard label="Same pick" value={`${d.agreement_pct}%`} sub="shadow picked the real pick" />
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
@@ -163,7 +172,7 @@ function ShadowComparison({ secret }) {
               const since = shortDate(r.since);
               const card = (label, side, accent) => (
                 <StatCard label={label} value={`${side.closed} / ${goal}`} accent={accent}
-                  sub={`${side.closed >= goal ? "enough to compare" : `${goal - side.closed} to go`} · win ${side.win_rate == null ? "—" : `${side.win_rate}%`} · avg ${pct(side.avg_return_pct)} · ${side.pending} open`} />
+                  sub={`${side.closed >= goal ? "enough to compare" : `${goal - side.closed} to go`} · win ${side.win_rate == null ? "—" : `${side.win_rate}%`} · avg ${pct(side.avg_return_pct)} · ${side.pending} open${vsSpy(side)}`} />
               );
               return (<>
                 {card(`Shadow ≥50%, since ${since} rule · unique closed`, r.shadow, T.blue)}
@@ -175,7 +184,7 @@ function ShadowComparison({ secret }) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
               <thead>
                 <tr style={{ color: T.textFaint, textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {["Scan", "Shadow pick", "Win prob", "Shadow outcome", "Real pick", "Real outcome"].map(h => <th key={h} style={{ padding: "12px 12px", fontWeight: 700 }}>{h}</th>)}
+                  {["Scan", "Shadow pick", "Win prob", "Shadow outcome", "SPY same days", "Real pick", "Real outcome", "SPY same days"].map(h => <th key={h} style={{ padding: "12px 12px", fontWeight: 700 }}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -190,8 +199,10 @@ function ShadowComparison({ secret }) {
                     </td>
                     <td style={cell}>{(r.win_prob * 100).toFixed(0)}%</td>
                     <td style={cell}>{r.status === "no_trade" ? <span style={{ color: T.textFaint }}>—</span> : <Outcome status={r.status === "pending" ? null : r.status} ret={r.exit_return_pct} />}{r.status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
+                    <td style={cell}><SpyCell v={r.spy_return_pct} /></td>
                     <td style={{ ...cell, color: r.real_is_trade ? T.text : T.textFaint }}>{r.real_symbol || "—"}{r.real_symbol && !r.real_is_trade ? " (no trade)" : ""}</td>
                     <td style={cell}><Outcome status={r.real_status === "pending" ? null : r.real_status} ret={r.real_exit_return_pct} />{r.real_status === "pending" ? <span style={{ color: T.textFaint }}>open</span> : null}</td>
+                    <td style={cell}><SpyCell v={r.real_spy_return_pct} /></td>
                   </tr>
                 ))}
               </tbody>
