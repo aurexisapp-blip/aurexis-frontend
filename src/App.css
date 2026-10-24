@@ -3445,3 +3445,51 @@ a:hover{
 .tablet .settingsSidebar__nav{ display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; }
 .tablet .settingsNavItem{ width: auto !important; white-space: nowrap; flex-shrink: 0; border-left: none !important; border-radius: 999px !important; padding: 10px 15px !important; }
 .tablet .settingsContent{ padding: 20px 16px 32px !important; }
+
+/* ── iOS app (html.native, set from App.jsx) ─────────────────────────────
+   Floating glass tab bar and system type. Scoped to html.native so the
+   website never picks any of this up. */
+html.native, html.native body{
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.nativeTabBar{ display: none; }
+@media (max-width: 767px){
+  html.native .nativeTabBar{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
+    position: fixed;
+    left: 16px; right: 16px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    height: 64px;
+    border-radius: 32px;
+    z-index: 1100;
+    background: rgba(28,32,30,0.72);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  }
+  html.native[data-theme="light"] .nativeTabBar{
+    background: rgba(255,255,255,0.78);
+    border-color: rgba(0,0,0,0.06);
+    box-shadow: 0 10px 30px rgba(10,40,28,0.12);
+  }
+  .nativeTabBar__item{
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; height: 100%;
+    background: none; border: none; cursor: pointer;
+    color: #A2AAA6; font-family: inherit;
+  }
+  html.native[data-theme="light"] .nativeTabBar__item{ color: #5B635F; }
+  .nativeTabBar__item--active{ color: #3EE0A3; }
+  html.native[data-theme="light"] .nativeTabBar__item--active{ color: #0A7A54; }
+  .nativeTabBar__label{ font-size: 11px; font-weight: 500; letter-spacing: 0.01em; }
+  .nativeTabBar__item--active .nativeTabBar__label{ font-weight: 600; }
+  .nativeTabBar__lockDot{
+    position: absolute; top: -1px; right: -3px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #F59E0B;
+  }
+}

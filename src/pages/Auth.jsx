@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isNativeApp } from "../lib/platform";
+import { NATIVE_PALETTE, NATIVE_FONT, NATIVE_TYPE, NATIVE_SPRING, systemPrefersLight } from "../lib/nativeTheme";
+import { tapHaptic, selectionHaptic } from "../lib/haptics";
+import NativeIntro, { NATIVE_INTRO_KEY } from "./NativeIntro";
+import { AppLauncher } from "@capacitor/app-launcher";
+
+// Website pages open in the Safari app, never an in-app sheet: the site links
+// onward to pricing, and checkout must never happen inside the app (3.1.1).
+function openWebsite(url) {
+  AppLauncher.openUrl({ url }).catch(() => {});
+}
 import { setToken, clearToken, registerDevice, getOrCreateDeviceId } from "../lib/authStorage";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 import { Browser } from "@capacitor/browser";
@@ -129,6 +139,11 @@ export default function Auth({ defaultView = "login" }) {
   const isMobile = useMobile();
   const isNative = isNativeApp();
   const [view, setView] = useState(defaultView);
+  // First-open guided reveal (iOS only), once per device.
+  const [showIntro, setShowIntro] = useState(() => {
+    if (!isNativeApp()) return false;
+    try { return !localStorage.getItem(NATIVE_INTRO_KEY); } catch { return false; }
+  });
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -673,167 +688,132 @@ export default function Auth({ defaultView = "login" }) {
   // the rest of the app renders on iPad (see isTablet in App.jsx).
   if (isNative) {
     const isTablet = window.innerWidth >= 768;
-    const tabletScale = isTablet ? { zoom: 1.2 } : null;
+    const P = NATIVE_PALETTE[systemPrefersLight() ? "light" : "dark"];
+    const isLight = P === NATIVE_PALETTE.light;
+    if (showIntro) {
+      return (
+        <NativeIntro
+          P={P}
+          onDone={(v) => {
+            try { localStorage.setItem(NATIVE_INTRO_KEY, "1"); } catch { /* storage unavailable */ }
+            setShowIntro(false);
+            switchView(v);
+          }}
+        />
+      );
+    }
+    const field = {
+      height: 52, boxSizing: "border-box", width: "100%", borderRadius: 12,
+      border: `1px solid ${P.hairline}`, background: P.surface, color: P.text,
+      fontFamily: NATIVE_FONT, fontSize: 17, padding: "0 16px", outline: "none",
+    };
+    const btn = {
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+      width: "100%", height: 52, borderRadius: 12, fontFamily: NATIVE_FONT,
+      fontSize: 17, fontWeight: 600, cursor: "pointer", boxSizing: "border-box",
+    };
+    const submitDisabled = loading || (!isLogin && !termsAccepted);
     return (
-      <div style={N.page}>
-        <style>{NATIVE_KEYFRAMES}</style>
-        <div style={N.noiseOverlay} aria-hidden="true" />
-
-        <div style={{ ...N.header, ...tabletScale }}>
-          <div style={N.headerGlow} aria-hidden="true" />
-          <div style={N.headerContent}>
-            <motion.a
-              href="/" style={N.logoRow}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-            >
-              <img src="/brand-mark.png" alt="Aurexis" style={N.logoMark} />
-              <span style={N.logoText}>AUREXIS</span>
-            </motion.a>
-
-            <div style={N.tagline}>
-              <motion.span
-                style={N.taglineLine1}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.14, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                One AI pick.
-              </motion.span>
-              <br />
-              <motion.span
-                style={N.taglineLine2}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.22, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                Every trading day.
-              </motion.span>
-            </div>
-
-            <div style={N.statsRow}>
-              {[
-                { val: "1,200+", label: "Scanned",    counter: true,  live: false },
-                { val: "1",      label: "Daily pick",  counter: false, live: true  },
-                { val: "3",      label: "Signals",     counter: false, live: false },
-              ].map(({ val, label, counter, live }, i) => (
-                <motion.div
-                  key={label}
-                  style={N.statBadge}
-                  initial={{ opacity: 0, scale: 0.95, y: 4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.26 + i * 0.06, duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div style={N.statVal}>
-                    {counter ? <AnimatedCounter to={1200} suffix="+" duration={800} startDelay={260} /> : val}
-                  </div>
-                  <div style={N.statLabel}>
-                    {label}
-                    {live && <span style={N.liveDot} aria-hidden="true" />}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-
+      <div style={{ minHeight: "100vh", background: P.bg, color: P.text, fontFamily: NATIVE_FONT, boxSizing: "border-box", padding: "calc(env(safe-area-inset-top, 0px) + 28px) 24px calc(env(safe-area-inset-bottom, 0px) + 28px)" }}>
         <motion.div
-          style={isTablet ? { ...N.formWrap, ...tabletScale, width: "100%", maxWidth: 520, margin: "0 auto" } : N.formWrap}
+          key={view}
+          style={isTablet ? { width: "100%", maxWidth: 480, margin: "0 auto", zoom: 1.15 } : undefined}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          transition={NATIVE_SPRING}
         >
-          <div style={N.formHeading}>{isLogin ? "Welcome back" : "Create your account"}</div>
-          <div style={N.formSub}>{isLogin ? "Sign in to your account." : "Create your free account."}</div>
+          <img src="/brand-mark.png" alt="" style={{ width: 48, height: 48, borderRadius: 12, marginBottom: 20 }} />
+          <div style={{ ...NATIVE_TYPE.largeTitle }}>{isLogin ? "Welcome back" : "Create your account"}</div>
+          <div style={{ ...NATIVE_TYPE.body, color: P.textSec, marginTop: 8, marginBottom: 32 }}>
+            {isLogin ? "Sign in to see tonight's pick." : "Free. Takes a few seconds."}
+          </div>
 
-          <div style={N.socials}>
-            <button type="button" style={N.appleBtn} onClick={handleAppleSignIn} disabled={loading}>
-              <AppleIcon />
-              <span>Sign in with Apple</span>
-            </button>
-            <button type="button" style={N.socialBtn} onClick={handleGoogleNativeSignIn} disabled={loading}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Apple HIG: white button on dark backgrounds, black on light. */}
+            <motion.button
+              whileTap={{ scale: 0.97 }} type="button" onClick={() => { tapHaptic(); handleAppleSignIn(); }} disabled={loading}
+              style={{ ...btn, border: isLight ? "1px solid #000" : "1px solid #fff", background: isLight ? "#000" : "#fff", color: isLight ? "#fff" : "#000" }}
+            >
+              <span style={{ display: "flex", color: isLight ? "#fff" : "#000" }}><AppleIcon /></span>
+              <span>{isLogin ? "Sign in with Apple" : "Sign up with Apple"}</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }} type="button" onClick={() => { tapHaptic(); handleGoogleNativeSignIn(); }} disabled={loading}
+              style={{ ...btn, border: `1px solid ${P.hairline}`, background: P.surface, color: P.text }}
+            >
               <GoogleIcon />
               <span>Continue with Google</span>
-            </button>
+            </motion.button>
           </div>
 
-          <div style={N.divider}>
-            <div style={N.dividerLine} />
-            <span style={N.dividerLabel}>or continue with email</span>
-            <div style={N.dividerLine} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "26px 0" }} aria-hidden="true">
+            <div style={{ flex: 1, height: 1, background: P.hairline }} />
+            <span style={{ fontSize: 13, color: P.textSec }}>or use email</span>
+            <div style={{ flex: 1, height: 1, background: P.hairline }} />
           </div>
 
-          <form onSubmit={isLogin ? handleLogin : handleSignup} style={N.fields} noValidate>
+          <form onSubmit={isLogin ? handleLogin : handleSignup} style={{ display: "flex", flexDirection: "column", gap: 12 }} noValidate>
             {!isLogin && (
               <div style={{ display: "flex", gap: 12 }}>
                 <input
                   type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                  required autoComplete="given-name" placeholder="First name"
-                  style={{ ...N.input, flex: 1 }}
+                  required autoComplete="given-name" placeholder="First name" aria-label="First name"
+                  style={{ ...field, flex: 1, minWidth: 0 }}
                 />
                 <input
                   type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
-                  required autoComplete="family-name" placeholder="Last name"
-                  style={{ ...N.input, flex: 1 }}
+                  required autoComplete="family-name" placeholder="Last name" aria-label="Last name"
+                  style={{ ...field, flex: 1, minWidth: 0 }}
                 />
               </div>
             )}
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              required autoComplete="email" placeholder="Email address" style={N.input}
+              required autoComplete="email" placeholder="Email" aria-label="Email" style={field}
             />
-            <div>
-              <input
-                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                required autoComplete={isLogin ? "current-password" : "new-password"}
-                placeholder={isLogin ? "Password" : "Password (min 8 characters)"} style={N.input}
-              />
-              {isLogin && (
-                <div style={{ textAlign: "right", marginTop: 10 }}>
-                  <button type="button" onClick={openForgot} style={N.forgotLink}>
-                    Forgot password?
-                  </button>
-                </div>
-              )}
-            </div>
+            <input
+              type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              required autoComplete={isLogin ? "current-password" : "new-password"} aria-label="Password"
+              placeholder={isLogin ? "Password" : "Password (8+ characters)"} style={field}
+            />
+            {isLogin && (
+              <button type="button" onClick={openForgot} style={{ alignSelf: "flex-end", background: "none", border: "none", color: P.accent, fontFamily: NATIVE_FONT, fontSize: 15, fontWeight: 500, padding: "4px 0", cursor: "pointer" }}>
+                Forgot password?
+              </button>
+            )}
 
             {!isLogin && (
-              <label style={N.termsRow}>
+              <label style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 13, lineHeight: 1.5, color: P.textSec, marginTop: 4 }}>
                 <input
-                  type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
-                  style={N.checkbox}
+                  type="checkbox" checked={termsAccepted} onChange={e => { selectionHaptic(); setTermsAccepted(e.target.checked); }}
+                  style={{ width: 22, height: 22, margin: 0, accentColor: P.accent, flexShrink: 0 }}
                 />
-                <span style={N.termsText}>
-                  By creating an account you confirm you're 18 or older and agree to our{" "}
-                  <a
-                    href="/terms"
-                    onClick={e => { e.preventDefault(); Browser.open({ url: "https://useaurexis.com/terms" }); }}
-                    style={N.termsLink}
-                  >Terms of Service</a>
+                <span>
+                  I'm 18 or older and agree to the{" "}
+                  <a href="/terms" onClick={e => { e.preventDefault(); openWebsite("https://useaurexis.com/terms"); }} style={{ color: P.accent, textDecoration: "none" }}>Terms</a>
                   {" "}and{" "}
-                  <a
-                    href="/privacy"
-                    onClick={e => { e.preventDefault(); Browser.open({ url: "https://useaurexis.com/privacy" }); }}
-                    style={N.termsLink}
-                  >Privacy Policy</a>.
+                  <a href="/privacy" onClick={e => { e.preventDefault(); openWebsite("https://useaurexis.com/privacy"); }} style={{ color: P.accent, textDecoration: "none" }}>Privacy Policy</a>.
                 </span>
               </label>
             )}
 
-            {error ? <div style={N.errorBox}>{error}</div> : null}
+            {error ? <div style={{ ...N.errorBox, fontFamily: NATIVE_FONT }}>{error}</div> : null}
 
-            <button type="submit" style={{ ...N.submit, opacity: (!isLogin && !termsAccepted) ? 0.45 : 1 }} disabled={loading || (!isLogin && !termsAccepted)}>
+            <motion.button
+              whileTap={submitDisabled ? undefined : { scale: 0.97 }}
+              type="submit" disabled={submitDisabled} onClick={() => { if (!submitDisabled) tapHaptic(); }}
+              style={{ ...btn, marginTop: 4, border: "none", background: P.primaryBg, color: P.primaryInk, opacity: submitDisabled ? 0.4 : 1 }}
+            >
               {loading
                 ? (isLogin ? "Signing in…" : "Creating account…")
-                : (isLogin ? "Sign In" : "Create Free Account")}
-            </button>
+                : (isLogin ? "Sign in" : "Create free account")}
+            </motion.button>
           </form>
 
-          <div style={N.switchRow}>
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button type="button" style={N.switchLink} onClick={() => switchView(isLogin ? "signup" : "login")}>
-              {isLogin ? "Sign up free" : "Sign in"}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 28, fontSize: 15, color: P.textSec }}>
+            {isLogin ? "New to Aurexis?" : "Already have an account?"}
+            <button type="button" onClick={() => { selectionHaptic(); switchView(isLogin ? "signup" : "login"); }} style={{ background: "none", border: "none", color: P.accent, fontFamily: NATIVE_FONT, fontSize: 15, fontWeight: 600, padding: "10px 4px", cursor: "pointer" }}>
+              {isLogin ? "Create an account" : "Sign in"}
             </button>
           </div>
         </motion.div>

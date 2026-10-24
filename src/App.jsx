@@ -27,6 +27,8 @@ async function openInSafari(url) {
 import { App as CapacitorApp } from "@capacitor/app";
 import { Keyboard } from "@capacitor/keyboard";
 import { PLAN_PRICING, planPriceLabel } from "./lib/pricing";
+import { NATIVE_TYPE, NATIVE_SPRING, NATIVE_FONT } from "./lib/nativeTheme";
+import { tapHaptic, selectionHaptic } from "./lib/haptics";
 
 // App Review Guideline 3.1.1: the iOS app sells nothing and points to no other
 // way to buy. Every price, upgrade button, checkout and billing link is
@@ -2452,6 +2454,76 @@ function analyzeRemaining(plan) {
   if (canAccess(plan, "starter")) return Infinity;
   return Math.max(0, ANALYZE_FREE_LIMIT - getAnalyzeUsedToday());
 }
+// iOS app navigation: four tabs, each grouping existing screens. Explore and
+// Journal switch between their screens with a segmented control.
+const NATIVE_TAB_GROUPS = [
+  { key: "today", label: "Today", tabs: ["dashboard"] },
+  { key: "explore", label: "Explore", tabs: ["movers", "screener"], segments: [{ tab: "movers", label: "Movers" }, { tab: "screener", label: "Screener", minPlan: "pro" }] },
+  { key: "journal", label: "Journal", tabs: ["tradejournal", "watchlist"], segments: [{ tab: "tradejournal", label: "Journal", minPlan: "starter" }, { tab: "watchlist", label: "Watchlist", minPlan: "starter" }] },
+  { key: "account", label: "Account", tabs: ["settings", "support", "pricing", "launch", "portfolio"] },
+];
+
+function NativeTabIcon({ k }) {
+  const paths = {
+    today: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" fill="currentColor" /></>,
+    explore: <><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></>,
+    journal: <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6" /></>,
+    account: <><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
+  };
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[k]}</svg>
+  );
+}
+
+function NativeSegmented({ segments, value, onChange, userPlan, darkMode }) {
+  return (
+    <div role="tablist" style={{ display: "grid", gridTemplateColumns: `repeat(${segments.length}, minmax(0, 1fr))`, padding: 2, borderRadius: 10, background: darkMode ? "#1C201E" : "#E3E7E4", fontFamily: NATIVE_FONT }}>
+      {segments.map((sg) => {
+        const active = sg.tab === value;
+        const locked = sg.minPlan && !canAccess(userPlan, sg.minPlan);
+        return (
+          <button
+            key={sg.tab} role="tab" aria-selected={active} type="button"
+            onClick={() => { if (!active) { selectionHaptic(); onChange(sg.tab); } }}
+            style={{ position: "relative", height: 32, border: "none", background: "none", cursor: "pointer", fontFamily: NATIVE_FONT, fontSize: 13, fontWeight: active ? 600 : 500, color: darkMode ? "#F3F5F4" : "#0A0C0B" }}
+          >
+            {active && (
+              <motion.span layoutId="nativeSegmentPill" transition={NATIVE_SPRING} style={{ position: "absolute", inset: 0, borderRadius: 8, background: darkMode ? "#3A403D" : "#FFFFFF", boxShadow: "0 3px 8px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04)" }} />
+            )}
+            <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              {sg.label}
+              {locked && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked" role="img"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// iOS locked-feature backdrop: neutral shapes only, so nothing behind a lock
+// reads as real data. The lock and upgrade card on top are unchanged.
+function NativeLockedSkeleton({ rows = 5 }) {
+  const bar = (w, h = 10, o = 0.1) => <div style={{ width: w, height: h, borderRadius: h / 2, background: `rgba(255,255,255,${o})` }} />;
+  return (
+    <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }} aria-hidden="true">
+      <div style={{ display: "flex", gap: 10 }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{ flex: 1, height: 64, borderRadius: 14, background: "rgba(255,255,255,0.05)" }} />
+        ))}
+      </div>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.04)" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>{bar("55%")}{bar("35%", 8, 0.07)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StarterFakePreview() {
   return (
     <div style={{ padding: "16px 18px", minHeight: "100%", height: "100%", background: "#111110", borderRadius: 14 }}>
@@ -2552,7 +2624,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
       accentRgb: "96,165,250", accent: "#60a5fa",
       headline: "Screen & track like a pro",
       features: [
-        "Live screener across 1,200+ stocks",
+        IS_NATIVE ? "Live stock screener" : "Live screener across 1,200+ stocks",
         "Portfolio tracker with P&L analytics",
         "Advanced filtering & custom signals",
       ],
@@ -2563,7 +2635,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
   const override = featureOverrides[feature] || {};
   const cfg = { ...base, ...override };
 
-  const fakePreview = requires === "pro" ? <ProFakePreview /> : <StarterFakePreview />;
+  const fakePreview = IS_NATIVE ? <NativeLockedSkeleton /> : requires === "pro" ? <ProFakePreview /> : <StarterFakePreview />;
   const btnGrad = {
     starter: "linear-gradient(135deg,#3EE0A3,#22C88E)",
     pro:     "linear-gradient(135deg,#3b82f6,#1d4ed8)",
@@ -2656,9 +2728,11 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
 // stays visually dominant over the secondary cards.
 function nativeCardShadow(darkMode, glow) {
   const base = darkMode
-    ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 26px rgba(0,0,0,0.42)"
-    : "0 1px 0 rgba(255,255,255,0.75) inset, 0 8px 20px rgba(0,0,0,0.08)";
-  return glow ? `${base}, 0 0 0 1px rgba(34,200,142,0.12)` : base;
+    ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 32px rgba(0,0,0,0.45)"
+    : "0 1px 2px rgba(0,0,0,0.05), 0 12px 28px rgba(10,40,28,0.08)";
+  return glow
+    ? `${base}, 0 24px 50px ${darkMode ? "rgba(0,0,0,0.35)" : "rgba(10,40,28,0.06)"}, 0 0 0 1px rgba(62,224,163,0.16)`
+    : base;
 }
 
 const NATIVE_DASHBOARD_KEYFRAMES = `
@@ -2695,11 +2769,11 @@ const NATIVE_SPACE = { xs: 4, s: 8, m: 12, l: 16, xl: 20 };
 // departs from this (larger radius, bolder title, glow shadow) to stay
 // visually dominant.
 const NATIVE_SECONDARY_CARD = {
-  radius: 18,
+  radius: 22,
   headerPad: `${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.m}px`,
   bodyPad: `${NATIVE_SPACE.m}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px`,
-  title: { fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" },
-  label: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" },
+  title: { fontSize: 17, fontWeight: 600, letterSpacing: "-0.01em" },
+  label: { fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" },
 };
 
 // Data-tile grid (Today's Leaders / Top Movers) -- fixed height + radius +
@@ -2761,6 +2835,9 @@ function AppInner() {
   useEffect(() => {
     document.documentElement.classList.toggle("tablet", isTablet);
   }, [isTablet]);
+  useEffect(() => {
+    document.documentElement.classList.toggle("native", isNative);
+  }, [isNative]);
 
   // Without this, iOS's default keyboard handling auto-scrolls the WebView's
   // own content (a native UIScrollView content-offset change, not a CSS
@@ -2946,7 +3023,9 @@ function AppInner() {
         setUserProfile(me);
         const key = `aurexis_onboarding_done_${me.id}`;
         const forceFlag = localStorage.getItem("aurexis_force_onboarding");
-        if (!localStorage.getItem(key) || forceFlag === "1") {
+        if (IS_NATIVE) {
+          localStorage.setItem(key, "1");
+        } else if (!localStorage.getItem(key) || forceFlag === "1") {
           localStorage.removeItem("aurexis_force_onboarding");
           const name = me.first_name || localStorage.getItem("aurexis_user_first_name") || "";
           setOnboardingUserName(name);
@@ -3014,11 +3093,13 @@ function AppInner() {
   // (same colors web light mode uses) for the light branch, and keep the
   // exact same hex native already had for the dark branch, so dark mode is
   // pixel-identical to before this fix -- only light mode is new behavior.
-  const nBg         = darkMode ? "#0a0a0a" : "#f0f2f6";
-  const nCard       = darkMode ? "#111110" : "#ffffff";
-  const nHairline   = darkMode ? "#1a1a19" : "rgba(0,0,0,0.08)";
-  const nText       = darkMode ? "#f5f5f4" : "#0a0d1a";
-  const nTextSec    = darkMode ? "#8a8a86" : "rgba(10,13,26,0.55)";
+  // iOS uses the redesign palette (lib/nativeTheme.js); the website keeps
+  // its original values, since a few web cards read nCard too.
+  const nBg         = isNative ? (darkMode ? "#0A0C0B" : "#F4F5F3") : (darkMode ? "#0a0a0a" : "#f0f2f6");
+  const nCard       = isNative ? (darkMode ? "#141716" : "#FFFFFF") : (darkMode ? "#111110" : "#ffffff");
+  const nHairline   = isNative ? (darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : (darkMode ? "#1a1a19" : "rgba(0,0,0,0.08)");
+  const nText       = isNative ? (darkMode ? "#F3F5F4" : "#0A0C0B") : (darkMode ? "#f5f5f4" : "#0a0d1a");
+  const nTextSec    = isNative ? (darkMode ? "#A2AAA6" : "#5B635F") : (darkMode ? "#8a8a86" : "rgba(10,13,26,0.55)");
   const nTextFaint  = darkMode ? "#6a6a66" : "rgba(10,13,26,0.40)";
 
   const [tab, setTab] = useState("dashboard");
@@ -6342,7 +6423,7 @@ async function loadWatchlistLive() {
       const t1GainPct    = Number(best0?.target_1_gain_pct);
       const t2GainPct    = Number(best0?.target_2_gain_pct);
       const t3GainPct    = Number(best0?.target_3_gain_pct);
-      const horizonLabel = String(best0?.time_horizon_label || "3–7 days");
+      const horizonLabel = String(best0?.time_horizon_label || (IS_NATIVE ? "—" : "3–7 days"));
       const entryNote    = String(best0?.entry_note || "Limit order at entry price");
       const trailingStopPlan = Array.isArray(best0?.trailing_stop_plan) ? best0.trailing_stop_plan : [];
       const pickRationale    = Array.isArray(best0?.pick_rationale) ? best0.pick_rationale : [];
@@ -6491,7 +6572,7 @@ async function loadWatchlistLive() {
                       <div className="heroTicker" style={{ letterSpacing: "0.04em" }}>████</div>
                     </div>
                     <div className="heroRight">
-                      <div className="heroConvictionBadge" style={{ fontSize: 11, letterSpacing: "0.08em", padding: "6px 14px" }}>HIGH CONVICTION</div>
+                      <div className="heroConvictionBadge" style={{ fontSize: 11, letterSpacing: "0.08em", padding: "6px 14px" }}>{IS_NATIVE ? "" : "HIGH CONVICTION"}</div>
                     </div>
                   </div>
                 </div>
@@ -6815,13 +6896,13 @@ async function loadWatchlistLive() {
         <div
           className={`card heroCard heroCard--${convStyle.bgKey}`}
           style={isNative ? {
-            borderRadius: 20,
-            border: "1px solid rgba(34,200,142,0.16)",
+            borderRadius: 28,
+            border: "1px solid rgba(62,224,163,0.2)",
             boxShadow: nativeCardShadow(darkMode, true),
           } : undefined}
         >
           <div className={`heroBg heroBg--${convStyle.bgKey}`} />
-          <div className="heroBody" style={isNative ? { padding: `${NATIVE_SPACE.xl}px ${NATIVE_SPACE.l}px ${NATIVE_SPACE.l}px` } : undefined}>
+          <div className="heroBody" style={isNative ? { padding: "24px 22px 20px" } : undefined}>
             <div className="heroTop">
               <div className="heroLeft">
                 <div className="aiPickLabel">
@@ -6867,7 +6948,7 @@ async function loadWatchlistLive() {
                 </div>
                 {false ? null : (
                   <>
-                    <div className="heroTicker" style={isNative ? { fontSize: 30, fontWeight: 800 } : undefined}>{ticker || "—"}</div>
+                    <div className="heroTicker" style={isNative ? { fontSize: 40, fontWeight: 700, letterSpacing: "-0.02em" } : undefined}>{ticker || "—"}</div>
                     <div className="heroPrice">
                       {Number.isFinite(livePrice) && livePrice > 0 ? (
                         <>
@@ -7161,7 +7242,7 @@ async function loadWatchlistLive() {
                 ) : (
                   <div style={{ display: "flex", gap: 6, alignItems: "baseline", filter: "blur(4px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}>
                     <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.textFaint }}>R/R</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>2.4</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{IS_NATIVE ? "—" : "2.4"}</span>
                   </div>
                 )
               ) : null}
@@ -7216,7 +7297,13 @@ async function loadWatchlistLive() {
                 </div>
               );
             })()}
-            <div className="heroTrustLine">AI scans 1,200+ stocks daily to surface high-conviction setups</div>
+            {IS_NATIVE ? (
+              Number(bestPayload0?.candidates_scored) > 0 ? (
+                <div className="heroTrustLine">{Number(bestPayload0.candidates_scored).toLocaleString()} stocks scored for this pick</div>
+              ) : null
+            ) : (
+              <div className="heroTrustLine">AI scans 1,200+ stocks daily to surface high-conviction setups</div>
+            )}
           </div>
         </div>
       );
@@ -7476,7 +7563,7 @@ async function loadWatchlistLive() {
 
             {analysisActiveTab === "summary" && !canAccess(userPlan, "starter") && (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
-                <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
+                {IS_NATIVE ? <NativeLockedSkeleton rows={3} /> : <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
                   <div style={{ padding: "8px 0 6px", marginBottom: 8 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 6 }}>OVERVIEW</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>Strong institutional accumulation noted across multiple sessions. Analyst upgrades driven by earnings revision momentum and improving forward guidance. Options flow skewing heavily bullish with large call sweeps at key strikes.</div>
@@ -7499,7 +7586,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>}
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
@@ -7555,7 +7642,7 @@ async function loadWatchlistLive() {
 
             {analysisActiveTab === "metrics" && !canAccess(userPlan, "starter") && (
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", minHeight: 200 }}>
-                <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
+                {IS_NATIVE ? <NativeLockedSkeleton rows={3} /> : <div style={{ filter: "blur(5px)", opacity: 0.6, pointerEvents: "none", userSelect: "none", padding: "4px 0" }}>
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em", marginBottom: 8 }}>TECHNICAL SCORES</div>
                     {[["Momentum", 78],["Trend", 71],["Volatility", 55],["Liquidity", 84],["Risk", 38]].map(([lbl, val]) => {
@@ -7589,7 +7676,7 @@ async function loadWatchlistLive() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>}
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
@@ -8316,7 +8403,7 @@ async function loadWatchlistLive() {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Movers</div>
+            <div style={{ ...NATIVE_TYPE.largeTitle, color: nText }}>Movers</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Market leaders by momentum — tap any row to analyze</div>
           </div>
 
@@ -8763,7 +8850,7 @@ async function loadWatchlistLive() {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Watchlist</div>
+            <div style={{ ...NATIVE_TYPE.largeTitle, color: nText }}>Watchlist</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>
               Setups close to clearing our conviction threshold
             </div>
@@ -9127,7 +9214,7 @@ async function loadWatchlistLive() {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Screener</div>
+            <div style={{ ...NATIVE_TYPE.largeTitle, color: nText }}>Screener</div>
             <div style={{ fontSize: 13, color: nTextSec, marginTop: 4 }}>Enter symbols separated by commas</div>
           </div>
 
@@ -9723,7 +9810,7 @@ async function loadWatchlistLive() {
     if (isNative) {
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: isTablet ? 24 : 20, padding: isTablet ? 28 : 18, background: nBg, minHeight: "100%" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: nText, letterSpacing: "-0.01em" }}>Trade Journal</div>
+          <div style={{ ...NATIVE_TYPE.largeTitle, color: nText }}>Trade Journal</div>
 
           {total > 0 && (
             <div style={{ background: nCard, borderRadius: 16, padding: "16px 18px", display: "flex", flexWrap: "wrap" }}>
@@ -10270,7 +10357,7 @@ async function loadWatchlistLive() {
     const faqs = [
       {
         q: "How does the AI pick stocks?",
-        a: "Aurexis scans 1,200+ stocks daily using a multi-signal model — momentum, volume anomalies, options flow, short interest, and news sentiment. Each signal is weighted by its historical win rate and combined into a conviction score.",
+        a: IS_NATIVE ? "Aurexis scans US stocks each trading day using a multi-signal model — momentum, volume anomalies, options flow, short interest, and news sentiment. Each signal is weighted by its historical win rate and combined into a conviction score." : "Aurexis scans 1,200+ stocks daily using a multi-signal model — momentum, volume anomalies, options flow, short interest, and news sentiment. Each signal is weighted by its historical win rate and combined into a conviction score.",
       },
       {
         q: "When does the daily pick update?",
@@ -10436,7 +10523,7 @@ async function loadWatchlistLive() {
           <div
             onClick={() => {
               const url = "https://useaurexis.com/support";
-              if (isNative) CapacitorBrowser.open({ url });
+              if (isNative) openInSafari(url);
               else window.open(url, "_blank", "noopener,noreferrer");
             }}
             style={{
@@ -10870,7 +10957,22 @@ async function loadWatchlistLive() {
       </div>
     );
 
-    const Toggle = ({ enabled, onChange }) => (
+    const Toggle = ({ enabled, onChange }) => isNative ? (
+      // iOS switch: system size and green, sprung knob, selection haptic.
+      <button
+        type="button" role="switch" aria-checked={!!enabled}
+        onClick={(e) => { selectionHaptic(); onChange?.(e); }}
+        style={{ width: 51, height: 31, borderRadius: 16, border: "none", cursor: "pointer", flexShrink: 0, padding: 0,
+          background: enabled ? "#34C759" : dm ? "rgba(120,120,128,0.32)" : "rgba(120,120,128,0.16)",
+          position: "relative", transition: "background 0.25s ease" }}
+      >
+        <motion.span
+          animate={{ x: enabled ? 20 : 0 }} transition={NATIVE_SPRING}
+          style={{ position: "absolute", top: 2, left: 2, width: 27, height: 27, borderRadius: "50%",
+            background: "#fff", boxShadow: "0 3px 8px rgba(0,0,0,0.15), 0 3px 1px rgba(0,0,0,0.06)" }}
+        />
+      </button>
+    ) : (
       <button
         onClick={onChange}
         style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
@@ -11406,7 +11508,7 @@ async function loadWatchlistLive() {
                       { label: "Download your data", action: "Contact aurexis.app@gmail.com" },
                       { label: "Delete account & all data", action: "Settings → Account → Delete account" },
                       { label: "Opt out of marketing", action: "Unsubscribe link in any email" },
-                      { label: "Full privacy policy", action: <span onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/legal#privacy" })} style={{ color: "#3EE0A3", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>View policy ↗</span> },
+                      { label: "Full privacy policy", action: <span onClick={() => (isNative ? openInSafari("https://useaurexis.com/legal#privacy") : CapacitorBrowser.open({ url: "https://useaurexis.com/legal#privacy" }))} style={{ color: "#3EE0A3", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>View policy ↗</span> },
                     ].map(({ label, action }, i, arr) => (
                       <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < arr.length - 1 ? `0.5px solid ${nHairline}` : "none" }}>
                         <div style={{ fontSize: 13, color: nText, fontWeight: 500 }}>{label}</div>
@@ -12796,6 +12898,30 @@ const renderPage = () => {
               {navIconPaths[navKey]}
             </svg>
           );
+          if (IS_NATIVE) {
+            return (
+              <nav className="nativeTabBar" aria-label="Primary">
+                {NATIVE_TAB_GROUPS.map((g) => {
+                  const active = g.tabs.includes(tab);
+                  const locked = g.key === "journal" && !canAccess(userPlan, "starter");
+                  return (
+                    <motion.button
+                      key={g.key} type="button" whileTap={{ scale: 0.92 }}
+                      className={`nativeTabBar__item ${active ? "nativeTabBar__item--active" : ""}`}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => { if (!active) selectionHaptic(); setMobileMoreOpen(false); setTab(active ? tab : g.tabs[0]); }}
+                    >
+                      <span style={{ position: "relative", display: "inline-flex" }}>
+                        <NativeTabIcon k={g.key} />
+                        {locked && <span className="nativeTabBar__lockDot" aria-label="Locked" role="img" />}
+                      </span>
+                      <span className="nativeTabBar__label">{g.label}</span>
+                    </motion.button>
+                  );
+                })}
+              </nav>
+            );
+          }
           return (
             <>
               <nav className="mobileBottomNav" aria-label="Primary" style={{ "--nav-active-rgb": _getAvatar(avatarId).rgb }}>
@@ -12926,7 +13052,7 @@ const renderPage = () => {
                 disabled={loadingAnalyze || savingPortfolio}
                 style={{
                   flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
-                  background: "#3EE0A3", color: "#06120c", border: "none",
+                  background: darkMode ? "#3EE0A3" : "#0A7A54", color: darkMode ? "#04110C" : "#FFFFFF", border: "none",
                   borderRadius: 12, padding: "9px 16px",
                   fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
                 }}
@@ -12937,7 +13063,7 @@ const renderPage = () => {
                   <span style={{
                     fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
                     background: analyzeRemaining(userPlan) <= 1 ? "rgba(240,132,122,0.25)" : "rgba(6,18,12,0.15)",
-                    color: analyzeRemaining(userPlan) <= 1 ? "#7a1f16" : "#06120c",
+                    color: analyzeRemaining(userPlan) <= 1 ? "#7a1f16" : (darkMode ? "#06120c" : "#FFFFFF"),
                     borderRadius: 4, padding: "1px 5px",
                   }}>{analyzeRemaining(userPlan)}/{ANALYZE_FREE_LIMIT}</span>
                 )}
@@ -13026,14 +13152,23 @@ const renderPage = () => {
                 {cmdErr}
               </div>
             ) : null}
+            {IS_NATIVE && !isTablet && (() => {
+              const g = NATIVE_TAB_GROUPS.find((x) => x.segments && x.tabs.includes(tab));
+              if (!g) return null;
+              return (
+                <div style={{ padding: "8px 18px 0" }}>
+                  <NativeSegmented segments={g.segments} value={tab} onChange={setTab} userPlan={userPlan} darkMode={darkMode} />
+                </div>
+              );
+            })()}
             {safePage ? (
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={tab}
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={IS_NATIVE ? { opacity: 0, y: 10 } : { opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  exit={IS_NATIVE ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                  transition={IS_NATIVE ? NATIVE_SPRING : { duration: 0.25, ease: "easeOut" }}
                 >
                   {safePage}
                 </motion.div>
@@ -13072,7 +13207,7 @@ const renderPage = () => {
       <div className="persistentRiskFooter">
         {isNative ? (
           <span
-            onClick={() => CapacitorBrowser.open({ url: "https://useaurexis.com/legal" })}
+            onClick={() => openInSafari("https://useaurexis.com/legal")}
             style={{ color: "inherit", textDecoration: "none", cursor: "pointer" }}
           >
             For educational and paper-trading use only. Not investment advice. Verify all trades independently.
