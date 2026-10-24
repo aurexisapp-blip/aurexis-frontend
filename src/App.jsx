@@ -14,15 +14,14 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { Browser as CapacitorBrowser } from "@capacitor/browser";
 import { AppLauncher } from "@capacitor/app-launcher";
 
-// Purchase and billing pages must open in the Safari app itself, outside
-// Aurexis -- CapacitorBrowser presents an in-app SFSafariViewController sheet,
-// which App Review treats as checkout happening inside the app (Guideline
-// 3.1.1). Falls back to the in-app sheet only if the system handoff fails.
+// Purchase pages open in the Safari app itself, outside Aurexis. Never fall
+// back to CapacitorBrowser: that presents an in-app SFSafariViewController
+// sheet, which App Review treats as checkout happening inside the app.
 async function openInSafari(url) {
   try {
     await AppLauncher.openUrl({ url });
   } catch {
-    CapacitorBrowser.open({ url });
+    /* no in-app fallback */
   }
 }
 import { App as CapacitorApp } from "@capacitor/app";
@@ -11050,7 +11049,7 @@ async function loadWatchlistLive() {
               <FieldRow label="Full name" value={displayName} />
               <FieldRow label="Email address" value={email} />
               <FieldRow label="Plan" value={`${planLabel} plan`} action={
-                !IS_NATIVE && plan !== "pro" && (
+                plan !== "pro" && (
                   <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#22C88E", color: "#fff" }}>
                     Upgrade
                   </button>
@@ -11611,6 +11610,17 @@ async function loadWatchlistLive() {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>YOUR PLAN</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", marginBottom: 8 }}>{_planName}</div>
           <div style={{ fontSize: 14, color: T.textSec, lineHeight: 1.6 }}>You're signed in on the {_planName} plan.</div>
+          {userPlan !== "pro" && (
+            <>
+              <button
+                onClick={() => openInSafari(`https://useaurexis.com/mobile-checkout?plan=${userPlan === "starter" ? "pro" : "starter"}`)}
+                style={{ marginTop: 24, width: "100%", padding: "14px 0", borderRadius: 12, border: "none", background: "#22C88E", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Upgrade on useaurexis.com ↗
+              </button>
+              <div style={{ fontSize: 11.5, color: T.textFaint, marginTop: 10, lineHeight: 1.5 }}>Opens in Safari. Payment is completed on our website, not in the app.</div>
+            </>
+          )}
         </div>
       );
     }
