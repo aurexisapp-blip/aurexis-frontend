@@ -10742,7 +10742,6 @@ async function loadWatchlistLive() {
     }, [settingsTab]);
 
     const openPortal = async () => {
-      if (IS_NATIVE) return;
       const token = localStorage.getItem("aurexis_token");
       try {
         const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -11142,7 +11141,7 @@ async function loadWatchlistLive() {
           {/* BILLING ──────────────────────────────────────────────────── */}
           {settingsTab === "billing" && (
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>{IS_NATIVE ? "Your plan" : "Plan & Billing"}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
 
               {/* Current plan card */}
               <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "20px 22px", marginBottom: 20 }}>
@@ -11159,19 +11158,13 @@ async function loadWatchlistLive() {
                   {isPaidPlan
                     ? isCancelling
                       ? <>Access ends on <b style={{ color: "#f87171" }}>{periodEndDate}</b>. You can reactivate any time before then.</>
-                      : IS_NATIVE ? <>Your plan is active.</> : <>Your subscription renews automatically. Cancel any time from this page.</>
-                    : IS_NATIVE ? <>You're on the Free plan.</> : <>You're on the Free plan. Upgrade to unlock full picks, unlimited analysis, and scanner access.</>
+                      : <>Your subscription renews automatically. Cancel any time from this page.</>
+                    : <>You're on the Free plan. Upgrade to unlock full picks, unlimited analysis, and scanner access.</>
                   }
                 </div>
               </div>
 
-              {IS_NATIVE && plan !== "pro" && (
-                <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px", marginBottom: 28 }} onClick={() => setTab("pricing")}>
-                  Upgrade options →
-                </button>
-              )}
-
-              {!IS_NATIVE && <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+              <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
                 {isPaidPlan && isCancelling && (
                   <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={handleReactivateSubscription} disabled={cancelLoading}>
                     {cancelLoading ? "…" : "Reactivate subscription"}
@@ -11182,15 +11175,15 @@ async function loadWatchlistLive() {
                     {cancelLoading ? "…" : "Cancel subscription"}
                   </button>
                 )}
-                {!IS_NATIVE && !isPaidPlan && (
+                {!isPaidPlan && (
                   <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={() => setTab("pricing")}>
                     View plans →
                   </button>
                 )}
-              </div>}
+              </div>
 
               {/* Payment method */}
-              {!IS_NATIVE && isPaidPlan && (
+              {isPaidPlan && (
                 <>
                   <SectionTitle>Payment</SectionTitle>
                   <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "16px 18px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -11244,7 +11237,7 @@ async function loadWatchlistLive() {
                 </>
               )}
 
-              {!IS_NATIVE && <>
+              <>
               <SectionTitle>Plan Features</SectionTitle>
               <div style={{ overflowX: "auto" }}>
               <div style={{ minWidth: 480 }}>
@@ -11278,7 +11271,7 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, fontWeight: 600, color: txtS, marginBottom: 4 }}>7-day money-back guarantee</div>
                 <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
               </div>
-              </>}
+              </>
             </div>
           )}
 
