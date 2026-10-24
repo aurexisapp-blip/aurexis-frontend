@@ -87,7 +87,7 @@ export const FAQ = [
   },
   {
     q: "How are payments handled?",
-    a: `${PAYMENTS} In the iPhone app, subscribing opens useaurexis.com in Safari, where checkout is completed on the website.`,
+    a: `${PAYMENTS}`,
   },
   {
     q: "Can I cancel anytime?",

@@ -29,6 +29,11 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { Keyboard } from "@capacitor/keyboard";
 import { PLAN_PRICING, planPriceLabel } from "./lib/pricing";
 
+// App Review Guideline 3.1.1: the iOS app sells nothing and points to no other
+// way to buy. Every price, upgrade button, checkout and billing link is
+// hidden when IS_NATIVE; the web app keeps all of it.
+const IS_NATIVE = isNativeApp();
+
 import {
   apiFetch as apiClientFetch,
   analyzeSymbol as apiAnalyzeSymbol,
@@ -192,8 +197,8 @@ function SkeletonCard({ title }) {
           }}
         >
           <div className="mutedSmall" style={{ fontWeight: 900, marginBottom: 10 }}>Pro feature</div>
-          <div className="mutedSmall" style={{ marginBottom: 12 }}>Upgrade to unlock trade plans, execution timing, and reasoning.</div>
-          <button className="btn btn--primary" onClick={onUpgrade}>Upgrade</button>
+          <div className="mutedSmall" style={{ marginBottom: 12 }}>{IS_NATIVE ? "Trade plans, execution timing, and reasoning are not included in your current plan." : "Upgrade to unlock trade plans, execution timing, and reasoning."}</div>
+          {!IS_NATIVE && <button className="btn btn--primary" onClick={onUpgrade}>Upgrade</button>}
         </div>
       </div>
     </div>
@@ -2605,10 +2610,10 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
               borderRadius: 20, padding: "3px 11px",
             }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: cfg.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                {cfg.label} · {cfg.price}/mo
+                {IS_NATIVE ? cfg.label : `${cfg.label} · ${cfg.price}/mo`}
               </span>
             </div>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)", letterSpacing: "0.02em" }}>Cancel anytime</span>
+            {!IS_NATIVE && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.20)", letterSpacing: "0.02em" }}>Cancel anytime</span>}
           </div>
 
           {/* Headline */}
@@ -2627,7 +2632,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
           </div>
 
           {/* CTA */}
-          <button onClick={() => setTab("pricing")} style={{
+          {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{
             width: "100%", padding: "11px 0", borderRadius: 10, cursor: "pointer",
             background: btnGrad, color: "#fff", border: "none",
             fontSize: 13, fontWeight: 700, letterSpacing: "0.01em",
@@ -2638,7 +2643,7 @@ function PlanGate({ requires, userPlan, children, setTab, feature }) {
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}
           >
             Upgrade to {cfg.label} →
-          </button>
+          </button>}
         </div>
       </div>
     </div>
@@ -3500,7 +3505,7 @@ function AppInner() {
   // backend (/api/chat, GPT-4o-mini with live account context), not a local
   // keyword matcher. On any failure (network, rate limit, LLM down) it shows
   // an honest "unavailable" message rather than a canned/fake answer.
-  const CHAT_UPGRADE_REPLY = "AURO is a Starter+ feature — upgrade to chat with your AI analyst.";
+  const CHAT_UPGRADE_REPLY = IS_NATIVE ? "AURO isn't included in your current plan." : "AURO is a Starter+ feature — upgrade to chat with your AI analyst.";
 
   const sendChatText = React.useCallback(async (text) => {
     const msg = String(text || "").trim();
@@ -4408,7 +4413,7 @@ async function loadWatchlistLive() {
     // Enforce daily analyze limit for free users
     if (!canAccess(userPlan, "starter") && analyzeRemaining(userPlan) <= 0) {
       setTab("pricing");
-      showToast?.("Daily limit reached — upgrade to Starter for unlimited analyzes.");
+      showToast?.(IS_NATIVE ? "Daily limit reached — try again tomorrow." : "Daily limit reached — upgrade to Starter for unlimited analyzes.");
       return;
     }
 
@@ -5985,7 +5990,7 @@ async function loadWatchlistLive() {
                       position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                       cursor: "pointer",
                     }}
-                      onClick={(e) => { e.stopPropagation(); setTab("pricing"); }}
+                      onClick={(e) => { e.stopPropagation(); if (!IS_NATIVE) setTab("pricing"); }}
                     >
                       <div style={{
                         display: "flex", alignItems: "center", gap: 5,
@@ -5994,7 +5999,7 @@ async function loadWatchlistLive() {
                         padding: "5px 12px", backdropFilter: "blur(6px)",
                       }}>
                         <span style={{ fontSize: 10 }}>🔒</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#3EE0A3" }}>Starter to unlock</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#3EE0A3" }}>{IS_NATIVE ? "Locked" : "Starter to unlock"}</span>
                       </div>
                     </div>
                   )}
@@ -6469,10 +6474,10 @@ async function loadWatchlistLive() {
       if (!loadingBestPick && showBlurGate) {
         const _gateTitle = isNoTradeFreeDay ? "No Trade Signal Today" : "Unlock Today's AI Pick";
         const _gateSub = isNoTradeFreeDay
-          ? "No qualifying setup today — the AI only signals high-conviction trades. Upgrade to see full analysis every trading day."
+          ? (IS_NATIVE ? "No qualifying setup today — the AI only signals high-conviction trades." : "No qualifying setup today — the AI only signals high-conviction trades. Upgrade to see full analysis every trading day.")
           : freePickUsed
-          ? "You've used your free pick for this month. Upgrade to see every daily pick."
-          : "Upgrade to Starter for unlimited daily picks, or use your 1 free monthly pick.";
+          ? (IS_NATIVE ? "You've used your free pick for this month." : "You've used your free pick for this month. Upgrade to see every daily pick.")
+          : (IS_NATIVE ? "Use your 1 free monthly pick." : "Upgrade to Starter for unlimited daily picks, or use your 1 free monthly pick.");
 
         return (
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
@@ -6506,13 +6511,13 @@ async function loadWatchlistLive() {
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>{_gateTitle}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>{_gateSub}</div>
-              <button onClick={() => setTab("pricing")} style={{
+              {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{
                 padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14,
                 background: "linear-gradient(90deg, #22C88E, #3EE0A3)",
                 color: "#fff", border: "none", boxShadow: "0 4px 20px rgba(34,200,142,0.35)",
               }}>
                 Upgrade to Starter →
-              </button>
+              </button>}
               {!freePickUsed && !isNoTradeFreeDay && (
                 <button onClick={_useFreePick} disabled={freePickLoading} style={{
                   background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8,
@@ -6789,9 +6794,9 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#22C88E", textTransform: "uppercase", marginBottom: 4 }}>Weekly Limit</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>You've used your 3 picks this week</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 280, marginBottom: 8 }}>
-                Resets Monday. Upgrade to Pro for unlimited daily picks.
+                {IS_NATIVE ? "Resets Monday." : "Resets Monday. Upgrade to Pro for unlimited daily picks."}
               </div>
-              <button
+              {!IS_NATIVE && <button
                 onClick={() => setTab("pricing")}
                 style={{
                   padding: "12px 32px", borderRadius: 10, cursor: "pointer",
@@ -6801,7 +6806,7 @@ async function loadWatchlistLive() {
                 }}
               >
                 Upgrade to Pro for unlimited →
-              </button>
+              </button>}
             </div>
           </div>
         );
@@ -6986,10 +6991,10 @@ async function loadWatchlistLive() {
                   </div>
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.75),rgba(7,11,18,0.65))", borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Pro · $29/mo</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>Upgrade for full trade plan</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>{IS_NATIVE ? "Pro" : "Pro · $29/mo"}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{IS_NATIVE ? "Full trade plan" : "Upgrade for full trade plan"}</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop loss · 3 Fibonacci targets</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>
+                  {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade to Pro →</button>}
                 </div>
               </div>
             ) : canAccess(userPlan, "pro") ? (
@@ -7133,10 +7138,10 @@ async function loadWatchlistLive() {
                   </div>
                 </div>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,rgba(7,11,18,0.7),rgba(7,11,18,0.6))", borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>Starter · $9/mo</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em", textTransform: "uppercase" }}>{IS_NATIVE ? "Starter" : "Starter · $9/mo"}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Unlock full execution plan</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: -2 }}>Entry · Stop · 3 targets · Trailing stop plan</div>
-                  <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>
+                  {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "8px 20px", borderRadius: 9, background: "#22C88E", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Upgrade →</button>}
                 </div>
               </div>
             )}
@@ -7499,11 +7504,11 @@ async function loadWatchlistLive() {
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>{IS_NATIVE ? "STARTER" : "STARTER · $9/MO"}</span>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock AI news & sentiment analysis</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Catalysts, risk flags, and analyst sentiment — updated on every analysis.</div>
-                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>
+                    {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>}
                   </div>
                 </div>
               </div>
@@ -7589,11 +7594,11 @@ async function loadWatchlistLive() {
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", padding: "0 16px 24px", background: "linear-gradient(to bottom, rgba(7,9,16,0) 20%, rgba(7,9,16,0.7) 55%, rgba(7,9,16,0.96) 100%)" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.25)", borderRadius: 16, padding: "2px 10px", marginBottom: 7 }}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>STARTER · $9/MO</span>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: "#3EE0A3", letterSpacing: "0.06em" }}>{IS_NATIVE ? "STARTER" : "STARTER · $9/MO"}</span>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Unlock technical scores & execution plan</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14 }}>Momentum, trend, volatility, R/R ratio, stop loss, and AI score rings.</div>
-                    <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>
+                    {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg,#22C88E,#22C88E)", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 18px rgba(34,200,142,0.25)" }}>Upgrade to Starter →</button>}
                   </div>
                 </div>
               </div>
@@ -8384,9 +8389,9 @@ async function loadWatchlistLive() {
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#3EE0A3" }}>{hiddenCount} more movers</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: nText }}>Unlock the full leaderboard</div>
               <div style={{ fontSize: 12, color: nTextSec, lineHeight: 1.6, maxWidth: 260 }}>See every momentum mover, live — updated throughout the trading day.</div>
-              <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "10px 24px", borderRadius: 999, background: "#3EE0A3", color: "#06120c", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{ marginTop: 6, padding: "10px 24px", borderRadius: 999, background: "#3EE0A3", color: "#06120c", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 Upgrade to Starter →
-              </button>
+              </button>}
             </div>
           )}
         </div>
@@ -8535,14 +8540,14 @@ async function loadWatchlistLive() {
                       <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", textAlign: "center", lineHeight: 1.6, maxWidth: 260, marginBottom: 6 }}>
                         See every momentum mover, live — updated throughout the trading day.
                       </div>
-                      <button onClick={() => setTab("pricing")} style={{
+                      {!IS_NATIVE && <button onClick={() => setTab("pricing")} style={{
                         padding: "11px 28px", borderRadius: 10, cursor: "pointer",
                         background: "linear-gradient(90deg,#22C88E,#3EE0A3)",
                         color: "#fff", border: "none", fontSize: 13, fontWeight: 700,
                         boxShadow: "0 4px 20px rgba(34,200,142,0.30)",
                       }}>
                         Upgrade to Starter →
-                      </button>
+                      </button>}
                     </div>
                   )}
                 </div>
@@ -8659,7 +8664,7 @@ async function loadWatchlistLive() {
           quotaDetail.plan === "starter";
         setCandidatesError(
           isStarterWeeklyQuota
-            ? "You've seen your 3 picks for this week on Starter — resets Monday, or upgrade to Pro for unlimited picks."
+            ? (IS_NATIVE ? "You've seen your 3 picks for this week on Starter — resets Monday." : "You've seen your 3 picks for this week on Starter — resets Monday, or upgrade to Pro for unlimited picks.")
             : "Could not load system candidates — click refresh to retry"
         );
       } finally {
@@ -10738,6 +10743,7 @@ async function loadWatchlistLive() {
     }, [settingsTab]);
 
     const openPortal = async () => {
+      if (IS_NATIVE) return;
       const token = localStorage.getItem("aurexis_token");
       try {
         const r = await fetch(`${API}/stripe/billing-portal`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
@@ -11044,7 +11050,7 @@ async function loadWatchlistLive() {
               <FieldRow label="Full name" value={displayName} />
               <FieldRow label="Email address" value={email} />
               <FieldRow label="Plan" value={`${planLabel} plan`} action={
-                plan !== "pro" && (
+                !IS_NATIVE && plan !== "pro" && (
                   <button onClick={() => setTab("pricing")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, background: "#22C88E", color: "#fff" }}>
                     Upgrade
                   </button>
@@ -11137,21 +11143,7 @@ async function loadWatchlistLive() {
           {/* BILLING ──────────────────────────────────────────────────── */}
           {settingsTab === "billing" && (
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>Plan & Billing</div>
-
-              {isNative && (
-                <div style={{ background: nCard, borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 12.5, color: nTextSec, lineHeight: 1.5 }}>
-                    Subscriptions are managed on the web, not in this app.
-                  </div>
-                  <button
-                    onClick={() => openInSafari("https://useaurexis.com/app")}
-                    style={{ background: "none", border: `0.5px solid ${nHairline}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#3EE0A3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-                  >
-                    useaurexis.com ↗
-                  </button>
-                </div>
-              )}
+              <div style={{ fontSize: 18, fontWeight: 700, color: txt, letterSpacing: "-0.02em", marginBottom: 22 }}>{IS_NATIVE ? "Your plan" : "Plan & Billing"}</div>
 
               {/* Current plan card */}
               <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "20px 22px", marginBottom: 20 }}>
@@ -11168,13 +11160,13 @@ async function loadWatchlistLive() {
                   {isPaidPlan
                     ? isCancelling
                       ? <>Access ends on <b style={{ color: "#f87171" }}>{periodEndDate}</b>. You can reactivate any time before then.</>
-                      : <>Your subscription renews automatically. Cancel any time from this page.</>
-                    : <>You're on the Free plan. Upgrade to unlock full picks, unlimited analysis, and scanner access.</>
+                      : IS_NATIVE ? <>Your plan is active.</> : <>Your subscription renews automatically. Cancel any time from this page.</>
+                    : IS_NATIVE ? <>You're on the Free plan.</> : <>You're on the Free plan. Upgrade to unlock full picks, unlimited analysis, and scanner access.</>
                   }
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+              {!IS_NATIVE && <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
                 {isPaidPlan && isCancelling && (
                   <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={handleReactivateSubscription} disabled={cancelLoading}>
                     {cancelLoading ? "…" : "Reactivate subscription"}
@@ -11185,15 +11177,15 @@ async function loadWatchlistLive() {
                     {cancelLoading ? "…" : "Cancel subscription"}
                   </button>
                 )}
-                {!isPaidPlan && (
+                {!IS_NATIVE && !isPaidPlan && (
                   <button className="btn btn--primary" style={{ fontSize: 12, padding: "8px 18px" }} onClick={() => setTab("pricing")}>
                     View plans →
                   </button>
                 )}
-              </div>
+              </div>}
 
               {/* Payment method */}
-              {isPaidPlan && (
+              {!IS_NATIVE && isPaidPlan && (
                 <>
                   <SectionTitle>Payment</SectionTitle>
                   <div style={{ background: bg, border: bdr, borderRadius: 12, padding: "16px 18px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -11247,6 +11239,7 @@ async function loadWatchlistLive() {
                 </>
               )}
 
+              {!IS_NATIVE && <>
               <SectionTitle>Plan Features</SectionTitle>
               <div style={{ overflowX: "auto" }}>
               <div style={{ minWidth: 480 }}>
@@ -11280,6 +11273,7 @@ async function loadWatchlistLive() {
                 <div style={{ fontSize: 12, fontWeight: 600, color: txtS, marginBottom: 4 }}>7-day money-back guarantee</div>
                 <div style={{ fontSize: 12, color: txtG, lineHeight: 1.6 }}>New subscribers can request a full refund within 7 days of their first payment — no questions asked. Email aurexis.app@gmail.com.</div>
               </div>
+              </>}
             </div>
           )}
 
@@ -11303,7 +11297,7 @@ async function loadWatchlistLive() {
                     <div style={{ fontSize: 12, color: txtG, lineHeight: 1.65 }}>
                       {canAccess(userPlan, "starter")
                         ? "You'll see the ticker and setup as soon as it's ready — even with the app closed."
-                        : "Free plan gets a heads-up when a new pick drops; upgrade to see the pick itself."}
+                        : (IS_NATIVE ? "Free plan gets a heads-up when a new pick drops." : "Free plan gets a heads-up when a new pick drops; upgrade to see the pick itself.")}
                     </div>
                   </div>
                 </>
@@ -11318,9 +11312,9 @@ async function loadWatchlistLive() {
                   ].map(({ label, value }) => (
                     <FieldRow key={label} label={label} value={value}
                       action={
-                        <div onClick={() => setTab("pricing")} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+                        <div onClick={() => { if (!IS_NATIVE) setTab("pricing"); }} style={{ display: "flex", alignItems: "center", gap: 7, cursor: IS_NATIVE ? "default" : "pointer" }}>
                           <span style={{ fontSize: 13, opacity: 0.5 }}>🔒</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: "#3EE0A3", background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.22)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.01em", whiteSpace: "nowrap" }}>Upgrade</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "#3EE0A3", background: "rgba(34,200,142,0.12)", border: "1px solid rgba(34,200,142,0.22)", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.01em", whiteSpace: "nowrap" }}>{IS_NATIVE ? "Locked" : "Upgrade"}</span>
                         </div>
                       }
                     />
@@ -11568,20 +11562,7 @@ async function loadWatchlistLive() {
       // this handoff specifically. The user comes back to a plan that's
       // already current by the time they reopen the app (see usePlan's
       // appStateChange listener + the manual refresh button below).
-      if (isNative) {
-        // The native app's WKWebView and the external Safari view CapacitorBrowser
-        // opens are separate storage contexts -- localStorage.aurexis_token never
-        // crosses that boundary, so /mobile-checkout always saw a logged-out user
-        // and forced a redundant web login before it could reach Stripe. Passing
-        // the token through the URL (captured on the other end, same pattern
-        // AppGate already uses for the OAuth redirect) skips that entirely.
-        const authToken = localStorage.getItem("aurexis_token") || "";
-        const url = plan.id === "free"
-          ? "https://useaurexis.com/signup?plan=free"
-          : `https://useaurexis.com/mobile-checkout?plan=${plan.id}${authToken ? `&token=${encodeURIComponent(authToken)}` : ""}`;
-        openInSafari(url);
-        return;
-      }
+      if (IS_NATIVE) return; // the iOS app never starts a purchase
 
       if (plan.id === "free") {
         window.location.href = "/signup?plan=free";
@@ -11620,6 +11601,18 @@ async function loadWatchlistLive() {
       } finally {
         setUpgradeLoading(null);
       }
+    }
+
+    // iOS: no plans, prices, purchase buttons or billing links (Guideline 3.1.1).
+    if (IS_NATIVE) {
+      const _planName = { free: "Free", starter: "Starter", pro: "Pro" }[userPlan] || "Free";
+      return (
+        <div style={{ padding: "20px 16px 40px", maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: T.textFaint, marginBottom: 10 }}>YOUR PLAN</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: T.text, letterSpacing: "-0.02em", marginBottom: 8 }}>{_planName}</div>
+          <div style={{ fontSize: 14, color: T.textSec, lineHeight: 1.6 }}>You're signed in on the {_planName} plan.</div>
+        </div>
+      );
     }
 
     return (

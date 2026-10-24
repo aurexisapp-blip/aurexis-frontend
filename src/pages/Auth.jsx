@@ -35,6 +35,8 @@ const PLANS = [
 function getInitialPlan() {
   const param = new URLSearchParams(window.location.search).get("plan") || "";
   const valid = ["free", "starter", "pro"];
+  // The iOS app never sells a plan (Guideline 3.1.1): native sign-ups are always Free.
+  if (isNativeApp()) return "free";
   return valid.includes(param.toLowerCase()) ? param.toLowerCase() : "starter";
 }
 
@@ -63,7 +65,7 @@ function GoogleIcon() {
 
 function AppleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 17 20" fill="none" style={{ flexShrink: 0 }}>
+    <svg width="19" height="22" viewBox="0 0 17 20" fill="none" style={{ flexShrink: 0, marginTop: -2 }}>
       <path
         d="M14.09 10.63c-.02-2.12 1.73-3.14 1.81-3.19-.99-1.44-2.53-1.64-3.08-1.66-1.31-.13-2.56.77-3.23.77-.66 0-1.69-.75-2.78-.73-1.43.02-2.75.83-3.48 2.11-1.49 2.58-.38 6.4 1.06 8.5.71 1.02 1.55 2.17 2.66 2.13 1.07-.04 1.47-.69 2.76-.69 1.28 0 1.65.69 2.78.67 1.15-.02 1.87-1.04 2.57-2.07.81-1.18 1.14-2.33 1.16-2.39-.03-.01-2.21-.85-2.23-3.35z"
         fill="currentColor"
@@ -179,7 +181,7 @@ export default function Auth({ defaultView = "login" }) {
     const nextRaw = params.get("next") || "";
     const nextTarget = nextRaw.startsWith("/") ? nextRaw : "/app";
     const viaMobileCheckout = nextRaw.startsWith("/mobile-checkout");
-    const shouldAutoCheckout = Boolean(token) && plan && plan !== "free" && (isNewSignup || viaMobileCheckout);
+    const shouldAutoCheckout = !isNative && Boolean(token) && plan && plan !== "free" && (isNewSignup || viaMobileCheckout);
 
     if (shouldAutoCheckout) {
       const successUrl = viaMobileCheckout
@@ -743,7 +745,7 @@ export default function Auth({ defaultView = "login" }) {
           transition={{ delay: 0.38, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         >
           <div style={N.formHeading}>{isLogin ? "Welcome back" : "Create your account"}</div>
-          <div style={N.formSub}>{isLogin ? "Sign in to your account." : "Start free, upgrade anytime."}</div>
+          <div style={N.formSub}>{isLogin ? "Sign in to your account." : "Create your free account."}</div>
 
           <div style={N.socials}>
             <button type="button" style={N.appleBtn} onClick={handleAppleSignIn} disabled={loading}>
@@ -797,21 +799,6 @@ export default function Auth({ defaultView = "login" }) {
             </div>
 
             {!isLogin && (
-              <div style={N.planRow}>
-                {PLANS.map((p) => {
-                  const active = plan === p.id;
-                  return (
-                    <button key={p.id} type="button" onClick={() => setPlan(p.id)}
-                      style={{ ...N.planPill, ...(active ? N.planPillActive : {}) }}>
-                      <span style={{ ...N.planPillLabel, ...(active ? { color: "#fff" } : {}) }}>{p.label}</span>
-                      <span style={{ ...N.planPillPrice, ...(active ? { color: "#4ade80" } : {}) }}>{p.price}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {!isLogin && (
               <label style={N.termsRow}>
                 <input
                   type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
@@ -839,7 +826,7 @@ export default function Auth({ defaultView = "login" }) {
             <button type="submit" style={{ ...N.submit, opacity: (!isLogin && !termsAccepted) ? 0.45 : 1 }} disabled={loading || (!isLogin && !termsAccepted)}>
               {loading
                 ? (isLogin ? "Signing in…" : "Creating account…")
-                : (isLogin ? "Sign In" : plan === "free" ? "Create Free Account" : "Create Account & Pay")}
+                : (isLogin ? "Sign In" : "Create Free Account")}
             </button>
           </form>
 
@@ -1202,17 +1189,16 @@ const S = {
     cursor: "pointer",
     fontFamily: "inherit", width: "100%",
   },
-  // Apple HIG for web: solid black, white glyph/wordmark -- kept visually
-  // distinct from the translucent Google button, same as the native version.
+  // Apple HIG: on dark backgrounds use the white button (black glyph/text).
   appleBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
     padding: "12px 16px", borderRadius: 11,
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    fontSize: 14, fontWeight: 600,
+    border: "1px solid #000",
+    background: "#fff",
+    color: "#000",
+    fontSize: 17, fontWeight: 600,
     cursor: "pointer",
-    fontFamily: "inherit", width: "100%",
+    fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif", width: "100%",
   },
   divider:     { display: "flex", alignItems: "center", gap: 12, marginBottom: 22 },
   dividerLine: { flex: 1, height: 1, background: "rgba(255,255,255,0.07)" },
@@ -1409,17 +1395,16 @@ const N = {
     fontFamily: "inherit", width: "100%", minHeight: 54,
     boxSizing: "border-box",
   },
-  // Apple Human Interface Guidelines: solid black, white wordmark/glyph,
-  // full width -- kept visually distinct from the Google button below it.
+  // Apple HIG: white button (black glyph/text) on dark backgrounds, full width.
   appleBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
     padding: "16px 20px", borderRadius: 16,
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    fontSize: 16, fontWeight: 600,
+    border: "1px solid #000",
+    background: "#fff",
+    color: "#000",
+    fontSize: 17, fontWeight: 600,
     cursor: "pointer",
-    fontFamily: "inherit", width: "100%", minHeight: 54,
+    fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif", width: "100%", minHeight: 54,
     boxSizing: "border-box",
   },
 
